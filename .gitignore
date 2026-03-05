@@ -1,5 +1,9 @@
-node_modules/*
-.tern-project
-.DS_Store
+# Environment variables
 .env
+
+# Dependencies
+node_modules/
+
+# Build output
 dist/
+.DS_Store
