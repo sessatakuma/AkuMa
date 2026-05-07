@@ -90,17 +90,25 @@ ruby > rt {
     z-index: 1;
 }
 
-.kana-shell-editable > .kana {
-    display: inline-block;
-    line-height: 1;
-    vertical-align: top;
+.kana-shell-editable > .kana::after {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    top: 0.1em;
+    bottom: 0;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    pointer-events: none;
+    transition: background-color 0.2s ease;
+    z-index: -1;
 }
 
-.kana-shell-editable > .kana:hover {
+.kana-shell-editable > .kana:hover::after {
     background-color: var(--kana-edit-hover-bg);
 }
 
-.kana-shell-editable:has(.kana-accent-hitbox:hover) > .kana {
+.kana-shell-editable:has(.kana-accent-hitbox:hover) > .kana::after {
     background-color: transparent;
 }
 
