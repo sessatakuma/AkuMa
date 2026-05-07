@@ -21,7 +21,6 @@ export default function Kana({
     onFocusChange,
 }: KanaProps) {
     const textRef = useRef<HTMLSpanElement>(null);
-    const shellClassName = `kana-shell ${editable ? 'kana-shell-editable' : 'kana-shell-surface'}`;
 
     const getCurrentText = (): string => {
         const currentText = textRef.current?.innerText ?? text;
@@ -72,8 +71,27 @@ export default function Kana({
         }
     };
 
+    if (!editable) {
+        return (
+            <span
+                ref={textRef}
+                className={`kana kana-surface-control ${accent ? `accent-${accentName[accent]}` : ''}`}
+            >
+                {text}
+                <button
+                    type='button'
+                    className='kana-accent-hitbox'
+                    onClick={changeAccent}
+                    onMouseDown={handleAccentMouseDown}
+                    aria-label='アクセントを切り替え'
+                    title='アクセントを切り替え'
+                />
+            </span>
+        );
+    }
+
     return (
-        <span className={shellClassName}>
+        <span className='kana-shell kana-shell-editable'>
             <button
                 type='button'
                 className='kana-accent-hitbox'
@@ -84,10 +102,8 @@ export default function Kana({
             />
             <span
                 ref={textRef}
-                className={`kana ${accent ? `accent-${accentName[accent]}` : ''} ${
-                    editable ? 'furigana' : ''
-                }`}
-                contentEditable={editable}
+                className={`kana ${accent ? `accent-${accentName[accent]}` : ''} furigana`}
+                contentEditable
                 suppressContentEditableWarning
                 onBlur={finishEditing}
                 onFocus={handleFocus}

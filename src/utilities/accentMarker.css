@@ -81,3 +81,7 @@ ruby > rt {
 .kana-shell-editable > .kana:hover {
     background-color: var(--kana-edit-hover-bg);
 }
+
+.kana-surface-control {
+    position: relative;
+}
