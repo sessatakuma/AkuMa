@@ -1,110 +1,37 @@
 :root {
     --accent-color: var(--color-accent-red);
     --accent-width: 2px;
-    --accent-drop-height: 0.4rem;
-    --accent-gap-surface: calc(0.5em + 0.25rem);
-    --accent-gap-ruby: 0.25rem;
-    --accent-hitbox-height: 0.875rem;
-    --kana-edit-hover-bg: color-mix(in srgb, var(--color-accent-red) 8%, transparent);
-    --kana-edit-focus-bg: color-mix(in srgb, var(--color-accent-red) 14%, transparent);
 }
 
 ruby > rt {
     height: 1em;
 }
 
-.kana-unit {
-    position: relative;
-    display: inline-block;
-    border-radius: var(--radius-sm);
-}
-
-.kana-visual {
-    position: relative;
-    display: inline-block;
-    border-top: 0 solid var(--accent-color);
-}
-
-.kana-unit[data-accent='flat'] .kana-visual,
-.kana-unit[data-accent='drop'] .kana-visual {
+[class*='accent'] {
     border-top-width: var(--accent-width);
-    padding-top: var(--accent-gap-surface);
+    border: none;
+    border-top: 0 solid var(--accent-color);
+    padding-top: calc(0.5em + 0.25rem) !important;
+
+    &:is(.main-content ruby > rt [class*='accent']) {
+        padding-top: calc(0em + 0.25rem) !important;
+    }
 }
 
-.kana-unit[data-ruby='true'][data-accent='flat'] .kana-visual,
-.kana-unit[data-ruby='true'][data-accent='drop'] .kana-visual {
-    padding-top: var(--accent-gap-ruby);
+.accent-drop {
+    position: relative;
 }
 
-.kana-unit[data-accent='drop'] .kana-visual::after {
+.accent-drop::after {
     content: '';
     position: absolute;
-    top: 0;
+    display: block;
     right: 0;
-    height: var(--accent-drop-height);
+    top: 0;
+    height: 0.4rem;
     border-left: solid var(--accent-color) var(--accent-width);
 }
 
-.kana-unit[data-accent='drop']:last-child {
+.accent-drop:last-child {
     margin-right: 1px;
-}
-
-.kana-text {
-    display: inline-block;
-}
-
-.kana-accent-toggle {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    border: none;
-    background: transparent;
-    border-radius: inherit;
-    color: inherit;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    z-index: 1;
-}
-
-.kana-unit.is-editable .kana-accent-toggle {
-    inset: 0 auto auto 0;
-    height: var(--accent-hitbox-height);
-    min-width: 100%;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-}
-
-.kana-text-editable {
-    border-radius: var(--radius-sm);
-    transition:
-        background-color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-.kana-text-editable:empty {
-    min-width: 0.75em;
-}
-
-.kana-unit.is-editable:hover .kana-text-editable,
-.kana-text-editable:focus {
-    background-color: var(--kana-edit-hover-bg);
-}
-
-.kana-text-editable:focus {
-    background-color: var(--kana-edit-focus-bg);
-}
-
-.kana-unit.is-editable:hover .kana-accent-toggle,
-.kana-accent-toggle:focus-visible {
-    opacity: 1;
-}
-
-.kana-unit.is-editable .kana-accent-toggle::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    right: 2px;
-    height: 2px;
-    border-radius: 999px;
-    background-color: var(--accent-color);
 }

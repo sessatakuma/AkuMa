@@ -55,8 +55,7 @@
 .action-button:focus-visible,
 .menu-item:focus-visible,
 .switch input:focus-visible + .slider,
-.kana-accent-toggle:focus-visible,
-.kana-text-editable:focus-visible {
+.kana:focus-visible {
     outline: 2px solid var(--color-accent-green);
     outline-offset: 2px;
 }
@@ -121,18 +120,6 @@ rt {
     user-select: none;
     text-align: center;
     color: var(--color-text-secondary);
-}
-
-.kana-unit {
-    cursor: default;
-}
-
-.kana-accent-toggle {
-    cursor: pointer;
-}
-
-.kana-text-editable {
-    cursor: text;
 }
 
 .dark-theme .result-area {

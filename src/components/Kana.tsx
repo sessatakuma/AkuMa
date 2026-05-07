@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type MouseEvent } from 'react';
+import { useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
 import { placeholder } from 'utilities/placeholder';
 import type { AccentValueType } from 'utilities/types';
@@ -20,82 +20,56 @@ export default function Kana({
     editable = false,
     onFocusChange,
 }: KanaProps) {
-    const textRef = useRef<HTMLSpanElement>(null);
+    const [firstClick, setFirstClick] = useState(editable);
 
-    const getCurrentText = (): string => {
-        const currentText = textRef.current?.innerText ?? text;
-        const trimmed = currentText.trim();
-
-        if (!editable) {
-            return currentText;
-        }
-
-        return trimmed.length === 0 ? placeholder : currentText;
+    const changeType = (event: MouseEvent<HTMLSpanElement>): void => {
+        const target = event.target as HTMLSpanElement;
+        onUpdate?.(target.innerText, ((accent + 1 - (firstClick ? 1 : 0)) % 3) as AccentValueType);
+        setFirstClick(false);
     };
 
-    const commit = (nextAccent: AccentValueType): void => {
-        onUpdate?.(getCurrentText(), nextAccent);
-    };
-
-    const changeType = (event: MouseEvent<HTMLButtonElement>): void => {
-        event.preventDefault();
-        event.stopPropagation();
-        commit(((accent + 1) % 3) as AccentValueType);
-    };
-
-    const finishEditing = (): void => {
+    const finishEditing = (event: FocusEvent<HTMLSpanElement>): void => {
         if (!editable) return;
-        commit(accent);
+        const target = event.target as HTMLSpanElement;
+        onUpdate?.(target.innerText, accent);
+        setFirstClick(true);
         onFocusChange?.(false);
     };
 
-    const handleFocus = (): void => {
+    const handleFocus = (_event: FocusEvent<HTMLSpanElement>): void => {
         onFocusChange?.(true);
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLSpanElement>): void => {
+        const target = event.target as HTMLSpanElement;
         if ((event.metaKey || event.ctrlKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
             return;
         }
 
+        if (event.key === 'Backspace' && target.innerText.length <= 1) {
+            target.innerText = placeholder;
+        }
+
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            textRef.current?.blur();
+            if (target.innerText.length === 0) target.innerText = placeholder;
+            target.blur();
         }
-    };
-
-    const handleMouseDown = (event: MouseEvent<HTMLButtonElement>): void => {
-        if (!editable) return;
-        event.preventDefault();
     };
 
     return (
         <span
-            className={`kana-unit ${editable ? 'is-editable' : ''}`}
-            data-accent={accentName[accent]}
-            data-ruby={editable ? 'true' : 'false'}
+            className={`kana ${accent ? `accent-${accentName[accent]}` : ''} ${
+                editable ? 'furigana' : ''
+            }`}
+            onClick={changeType}
+            contentEditable={editable}
+            suppressContentEditableWarning
+            onBlur={finishEditing}
+            onFocus={handleFocus}
+            onKeyDown={handleKeyDown}
         >
-            <button
-                type='button'
-                className='kana-accent-toggle'
-                onClick={changeType}
-                onMouseDown={handleMouseDown}
-                aria-label='Toggle accent'
-                title='アクセントを切り替え'
-            />
-            <span className='kana-visual'>
-                <span
-                    ref={textRef}
-                    className={`kana-text ${editable ? 'kana-text-editable' : ''}`}
-                    contentEditable={editable}
-                    suppressContentEditableWarning
-                    onBlur={finishEditing}
-                    onFocus={handleFocus}
-                    onKeyDown={handleKeyDown}
-                >
-                    {text}
-                </span>
-            </span>
+            {text}
         </span>
     );
 }
