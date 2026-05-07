@@ -64,6 +64,14 @@ ruby > rt {
     z-index: 2;
 }
 
+.kana-shell-editable .kana-accent-hitbox {
+    left: 0;
+    right: 0;
+    top: -0.42rem;
+    height: 0.22rem;
+    border-radius: 999px;
+}
+
 .kana-shell:focus-within::before,
 .kana-accent-hitbox:focus-visible {
     background-color: var(--kana-edit-focus-bg);
