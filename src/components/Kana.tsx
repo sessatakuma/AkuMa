@@ -1,4 +1,4 @@
-import { useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
+import { useRef, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
 import { placeholder } from 'utilities/placeholder';
 import type { AccentValueType } from 'utilities/types';
@@ -20,19 +20,32 @@ export default function Kana({
     editable = false,
     onFocusChange,
 }: KanaProps) {
-    const [firstClick, setFirstClick] = useState(editable);
+    const textRef = useRef<HTMLSpanElement>(null);
+
+    const getCurrentText = (): string => {
+        const currentText = textRef.current?.innerText ?? text;
+        if (!editable) {
+            return currentText;
+        }
+
+        return currentText.trim().length === 0 ? placeholder : currentText;
+    };
 
     const changeType = (event: MouseEvent<HTMLSpanElement>): void => {
         const target = event.target as HTMLSpanElement;
-        onUpdate?.(target.innerText, ((accent + 1 - (firstClick ? 1 : 0)) % 3) as AccentValueType);
-        setFirstClick(false);
+        onUpdate?.(target.innerText, ((accent + 1) % 3) as AccentValueType);
+    };
+
+    const changeEditableAccent = (event: MouseEvent<HTMLButtonElement>): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        onUpdate?.(getCurrentText(), ((accent + 1) % 3) as AccentValueType);
     };
 
     const finishEditing = (event: FocusEvent<HTMLSpanElement>): void => {
         if (!editable) return;
         const target = event.target as HTMLSpanElement;
         onUpdate?.(target.innerText, accent);
-        setFirstClick(true);
         onFocusChange?.(false);
     };
 
@@ -57,17 +70,35 @@ export default function Kana({
         }
     };
 
+    if (editable) {
+        return (
+            <span className='kana-edit-shell'>
+                <button
+                    type='button'
+                    className='kana-accent-hitbox'
+                    onClick={changeEditableAccent}
+                    aria-label='アクセントを切り替え'
+                    title='アクセントを切り替え'
+                />
+                <span
+                    ref={textRef}
+                    className={`kana ${accent ? `accent-${accentName[accent]}` : ''} furigana`}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={finishEditing}
+                    onFocus={handleFocus}
+                    onKeyDown={handleKeyDown}
+                >
+                    {text}
+                </span>
+            </span>
+        );
+    }
+
     return (
         <span
-            className={`kana ${accent ? `accent-${accentName[accent]}` : ''} ${
-                editable ? 'furigana' : ''
-            }`}
+            className={`kana ${accent ? `accent-${accentName[accent]}` : ''}`}
             onClick={changeType}
-            contentEditable={editable}
-            suppressContentEditableWarning
-            onBlur={finishEditing}
-            onFocus={handleFocus}
-            onKeyDown={handleKeyDown}
         >
             {text}
         </span>
