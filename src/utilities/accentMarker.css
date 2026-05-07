@@ -37,12 +37,12 @@ ruby > rt {
     margin-right: 1px;
 }
 
-.kana-edit-shell {
+.kana-shell {
     position: relative;
     display: inline-block;
 }
 
-.kana-edit-shell::before {
+.kana-shell::before {
     content: '';
     position: absolute;
     inset: 0 -1px;
@@ -50,10 +50,6 @@ ruby > rt {
     background-color: transparent;
     transition: background-color 0.2s ease;
     pointer-events: none;
-}
-
-.kana-edit-shell:focus-within::before {
-    background-color: var(--kana-edit-focus-bg);
 }
 
 .kana-accent-hitbox {
@@ -68,16 +64,20 @@ ruby > rt {
     z-index: 2;
 }
 
-.kana-accent-hitbox:hover,
+.kana-shell:focus-within::before,
 .kana-accent-hitbox:focus-visible {
+    background-color: var(--kana-edit-focus-bg);
+}
+
+.kana-accent-hitbox:hover {
     background-color: var(--kana-edit-hover-bg);
 }
 
-.kana-edit-shell > .kana {
+.kana-shell > .kana {
     position: relative;
     z-index: 1;
 }
 
-.kana-edit-shell > .kana:hover {
+.kana-shell-editable > .kana:hover {
     background-color: var(--kana-edit-hover-bg);
 }
