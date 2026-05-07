@@ -13,12 +13,13 @@ ruby > rt {
     height: 1em;
 }
 
-[class*='accent'] {
+.kana.accent-flat,
+.kana.accent-drop {
     border: none;
     border-top: solid var(--accent-color) var(--accent-width);
     padding-top: calc(0.5em + 0.25rem) !important;
 
-    &:is(.main-content ruby > rt [class*='accent']) {
+    &:is(.main-content ruby > rt .kana.accent-flat, .main-content ruby > rt .kana.accent-drop) {
         padding-top: calc(0em + 0.25rem) !important;
     }
 }
