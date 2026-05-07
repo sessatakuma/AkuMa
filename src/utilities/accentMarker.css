@@ -90,7 +90,7 @@ ruby > rt {
     z-index: 1;
 }
 
-.kana-shell-editable > .kana::after {
+.kana-shell-editable > .kana::before {
     content: '';
     position: absolute;
     left: -1px;
@@ -104,11 +104,11 @@ ruby > rt {
     z-index: -1;
 }
 
-.kana-shell-editable > .kana:hover::after {
+.kana-shell-editable > .kana:hover::before {
     background-color: var(--kana-edit-hover-bg);
 }
 
-.kana-shell-editable:has(.kana-accent-hitbox:hover) > .kana::after {
+.kana-shell-editable:has(.kana-accent-hitbox:hover) > .kana::before {
     background-color: transparent;
 }
 
