@@ -52,10 +52,6 @@ ruby > rt {
     pointer-events: none;
 }
 
-.kana-edit-shell:hover::before {
-    background-color: var(--kana-edit-hover-bg);
-}
-
 .kana-edit-shell:focus-within::before {
     background-color: var(--kana-edit-focus-bg);
 }
@@ -72,7 +68,16 @@ ruby > rt {
     z-index: 2;
 }
 
+.kana-accent-hitbox:hover,
+.kana-accent-hitbox:focus-visible {
+    background-color: var(--kana-edit-hover-bg);
+}
+
 .kana-edit-shell > .kana {
     position: relative;
     z-index: 1;
+}
+
+.kana-edit-shell > .kana:hover {
+    background-color: var(--kana-edit-hover-bg);
 }
