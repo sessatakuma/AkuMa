@@ -3,6 +3,10 @@
     --accent-width: 2px;
     --kana-edit-hover-bg: color-mix(in srgb, var(--color-accent-red) 8%, transparent);
     --kana-edit-focus-bg: color-mix(in srgb, var(--color-accent-red) 12%, transparent);
+    --kana-accent-hitbox-top: -0.35rem;
+    --kana-accent-hitbox-height: 0.5rem;
+    --kana-accent-hitbox-top-ruby: -0.28rem;
+    --kana-accent-hitbox-height-ruby: 0.16rem;
 }
 
 ruby > rt {
@@ -56,8 +60,8 @@ ruby > rt {
     position: absolute;
     left: -1px;
     right: -1px;
-    top: -0.35rem;
-    height: 0.5rem;
+    top: var(--kana-accent-hitbox-top);
+    height: var(--kana-accent-hitbox-height);
     border: none;
     background: transparent;
     border-radius: var(--radius-sm);
@@ -67,8 +71,8 @@ ruby > rt {
 .kana-shell-editable .kana-accent-hitbox {
     left: 0;
     right: 0;
-    top: -0.42rem;
-    height: 0.22rem;
+    top: var(--kana-accent-hitbox-top-ruby);
+    height: var(--kana-accent-hitbox-height-ruby);
     border-radius: 999px;
 }
 
@@ -84,6 +88,12 @@ ruby > rt {
 .kana-shell > .kana {
     position: relative;
     z-index: 1;
+}
+
+.kana-shell-editable > .kana {
+    display: inline-block;
+    line-height: 1;
+    vertical-align: top;
 }
 
 .kana-shell-editable > .kana:hover {
