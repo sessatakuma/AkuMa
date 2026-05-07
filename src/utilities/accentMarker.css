@@ -7,6 +7,7 @@
     --kana-accent-hitbox-height: 0.5rem;
     --kana-accent-hitbox-top-ruby: -0.28rem;
     --kana-accent-hitbox-height-ruby: 0.16rem;
+    --kana-accent-hitbox-overlap-ruby: 0.08rem;
 }
 
 ruby > rt {
@@ -88,7 +89,7 @@ ruby > rt {
     left: 0;
     right: 0;
     top: auto;
-    bottom: 0;
+    bottom: calc(var(--kana-accent-hitbox-overlap-ruby) * -1);
     height: var(--kana-accent-hitbox-height-ruby);
     pointer-events: auto;
 }
