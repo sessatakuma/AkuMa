@@ -52,7 +52,6 @@ export default function Input({ paragraph, setParagraph }: InputProps) {
                 value={paragraph}
                 onChange={e => setParagraph(e.target.value)}
                 placeholder='文章を入力...'
-                style={{ minHeight: '100%' }}
             />
 
             <div className='input-actions'>
