@@ -3,7 +3,12 @@ import { useState, useEffect, forwardRef, useRef } from 'react';
 import Kana from 'components/Kana';
 import SkeletonLoader from 'components/SkeletonLoader';
 import { Copy, Image as ImageIcon, FileText, ArrowDownToLine, CodeXml, Moon } from 'lucide-react';
-import { cloneWords, getAccentArray, getAccentNumberFromArray, getReadingFromFurigana } from 'utilities/accent';
+import {
+    cloneWords,
+    getAccentArray,
+    getAccentNumberFromArray,
+    getReadingFromFurigana,
+} from 'utilities/accent';
 import isKana from 'utilities/isKana';
 import { isKanaReading, splitKanaSyllables } from 'utilities/kanaUtils';
 import { placeholder } from 'utilities/placeholder';
@@ -155,7 +160,11 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                 });
         };
 
-        const updateKana = (wordIndex: number, textIndex: number, newAccent: AccentValueType): void => {
+        const updateKana = (
+            wordIndex: number,
+            textIndex: number,
+            newAccent: AccentValueType,
+        ): void => {
             updateWords(currentWords => {
                 const nextWords = cloneWords(currentWords);
                 const word = nextWords[wordIndex];
@@ -281,13 +290,18 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                             return (
                                 <span key={`${wordIndex}-${word.surface}`}>
                                     {surfaceSegments.map((segment, charIndex) => (
-                                        <ruby key={`${wordIndex}-${charIndex}`} className='kana-only-ruby'>
+                                        <ruby
+                                            key={`${wordIndex}-${charIndex}`}
+                                            className='kana-only-ruby'
+                                        >
                                             <span className='kana-only-base'>{segment}</span>
                                             <rt>
                                                 <Kana
                                                     text={segment}
                                                     ghost
-                                                    accent={kanaAccents[charIndex] ?? AccentValue.None}
+                                                    accent={
+                                                        kanaAccents[charIndex] ?? AccentValue.None
+                                                    }
                                                     onUpdate={(_ignore, newAccent) =>
                                                         updateKana(wordIndex, charIndex, newAccent)
                                                     }
@@ -312,7 +326,12 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                             text={char.text === placeholder ? '' : char.text}
                                             accent={char.accent}
                                             onUpdate={(newText, newAccent) =>
-                                                updateFurigana(wordIndex, charIndex, newText, newAccent)
+                                                updateFurigana(
+                                                    wordIndex,
+                                                    charIndex,
+                                                    newText,
+                                                    newAccent,
+                                                )
                                             }
                                             onFocusChange={onEditingChange}
                                         />

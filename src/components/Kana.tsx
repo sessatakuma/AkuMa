@@ -1,6 +1,7 @@
 import { useRef, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
 import { placeholder } from 'utilities/placeholder';
+
 import type { AccentValueType } from 'utilities/types';
 
 interface KanaProps {
@@ -52,7 +53,7 @@ export default function Kana({
         onFocusChange?.(false);
     };
 
-    const handleFocus = (_event: FocusEvent<HTMLSpanElement>): void => {
+    const handleFocus = (): void => {
         onFocusChange?.(true);
     };
 

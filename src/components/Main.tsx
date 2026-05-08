@@ -59,7 +59,9 @@ export default function Main() {
                 return currentPast;
             }
 
-            setFutureWords(currentFuture => [cloneWords(wordsRef.current), ...currentFuture].slice(0, 50));
+            setFutureWords(currentFuture =>
+                [cloneWords(wordsRef.current), ...currentFuture].slice(0, 50),
+            );
             setWords(cloneWords(previousWords));
             return currentPast.slice(0, -1);
         });
@@ -100,13 +102,13 @@ export default function Main() {
                                 : word.accent.length > 0
                                   ? [...word.accent].map(a => ({
                                         text: a.furigana,
-                                        accent: a.accent_marking_type as typeof AccentValue[keyof typeof AccentValue],
+                                        accent: a.accent_marking_type as (typeof AccentValue)[keyof typeof AccentValue],
                                     }))
                                   : [{ text: '', accent: AccentValue.None }],
                             accent: kanaWord
                                 ? [...word.accent].map(
                                       a =>
-                                          a.accent_marking_type as typeof AccentValue[keyof typeof AccentValue],
+                                          a.accent_marking_type as (typeof AccentValue)[keyof typeof AccentValue],
                                   )
                                 : AccentValue.None,
                         };

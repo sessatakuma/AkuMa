@@ -1,12 +1,12 @@
 :root {
     /* Color Palette - Clean & Chill */
     --color-bg-primary: hsl(0, 8%, 90%); /* Stone 50 */
-    --color-bg-secondary: #FFFFFF; /* White */
-    --color-bg-secondary-hover: #FAFAF9; /* Stone 50 */
-    
-    --color-text-primary: #1F2937; /* Gray 800 */
-    --color-text-secondary: #6B7280; /* Gray 500 */
-    --color-text-inverted: #FFFFFF;
+    --color-bg-secondary: #ffffff; /* White */
+    --color-bg-secondary-hover: #fafaf9; /* Stone 50 */
+
+    --color-text-primary: #1f2937; /* Gray 800 */
+    --color-text-secondary: #6b7280; /* Gray 500 */
+    --color-text-inverted: #ffffff;
 
     /* Accents */
     /* Green - Legacy Brand Accent */
@@ -20,24 +20,24 @@
     --color-accent-red-light: #fcf2f2;
 
     /* UI Elements */
-    --color-border: #E5E7EB; /* Gray 200 */
+    --color-border: #e5e7eb; /* Gray 200 */
     --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
-    
+
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
 
     /* Dark Theme Palette (for Result Area) */
-    --color-bg-dark-panel: #1F2937; /* Gray 800 */
+    --color-bg-dark-panel: #1f2937; /* Gray 800 */
     --color-bg-dark-hover: #374151; /* Gray 700 */
-    --color-text-dark-primary: #F9FAFB; /* Gray 50 */
-    --color-text-dark-secondary: #9CA3AF; /* Gray 400 */
-    --color-border-dark: #4B5563; /* Gray 600 */
+    --color-text-dark-primary: #f9fafb; /* Gray 50 */
+    --color-text-dark-secondary: #9ca3af; /* Gray 400 */
+    --color-border-dark: #4b5563; /* Gray 600 */
     --color-text-menu-fixed: #374151; /* Gray 700 - Fixed dark text for white menus */
-    --color-switch-track: #D1D5DB;
-    --color-switch-thumb: #FFFFFF;
+    --color-switch-track: #d1d5db;
+    --color-switch-thumb: #ffffff;
 
     /* Semantic / Feedback */
     --color-feedback-success: var(--color-accent-green);
@@ -75,7 +75,12 @@ body {
     overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: 'Noto Sans JP', sans-serif;
     font-weight: 700;
     color: var(--color-text-primary);
