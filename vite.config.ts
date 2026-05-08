@@ -2,14 +2,114 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 
 const DEFAULT_DEV_MARK_ACCENT_PROXY_TARGET = 'https://accent-marker.hsichen.dev';
+const DEFAULT_MARK_ACCENT_UPSTREAM_URL = 'https://api.sessatakuma.dev/api/MarkAccent/';
+
+interface MarkAccentProxyOptions {
+    apiKey?: string;
+    publicProxyTarget: string;
+    upstreamUrl: string;
+}
+
+function createMarkAccentProxy(options: MarkAccentProxyOptions) {
+    const normalizedPublicProxyTarget = options.publicProxyTarget.replace(/\/$/, '');
+    const normalizedUpstreamUrl = options.upstreamUrl.replace(/\/$/, '');
+
+    const proxyRequest = async (
+        req: NodeJS.ReadableStream & {
+            method?: string;
+            headers: Record<string, string | string[] | undefined>;
+        },
+        res: {
+            statusCode: number;
+            setHeader: (name: string, value: string) => void;
+            end: (body: string) => void;
+        },
+    ) => {
+        if (req.method !== 'POST') {
+            res.statusCode = 405;
+            res.setHeader('Allow', 'POST');
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+            return;
+        }
+
+        try {
+            const body = await new Promise<string>((resolve, reject) => {
+                let rawBody = '';
+
+                req.on('data', chunk => {
+                    rawBody += chunk;
+                });
+                req.on('end', () => resolve(rawBody));
+                req.on('error', reject);
+            });
+
+            const requestHeaders: Record<string, string> = {
+                'Content-Type': Array.isArray(req.headers['content-type'])
+                    ? req.headers['content-type'][0]
+                    : req.headers['content-type'] || 'application/json',
+            };
+
+            const requestUrl = options.apiKey
+                ? normalizedUpstreamUrl
+                : `${normalizedPublicProxyTarget}/api/mark-accent`;
+
+            if (options.apiKey) {
+                requestHeaders['X-API-KEY'] = options.apiKey;
+            }
+
+            const upstreamResponse = await fetch(requestUrl, {
+                method: 'POST',
+                headers: requestHeaders,
+                body,
+            });
+
+            res.statusCode = upstreamResponse.status;
+            res.setHeader(
+                'Content-Type',
+                upstreamResponse.headers.get('content-type') || 'application/json',
+            );
+            res.end(await upstreamResponse.text());
+        } catch (error) {
+            console.error('Local MarkAccent proxy failed:', error);
+            res.statusCode = 502;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Upstream request failed' }));
+        }
+    };
+
+    return {
+        name: 'mark-accent-proxy',
+        configureServer(server: {
+            middlewares: { use: (path: string, handler: typeof proxyRequest) => void };
+        }) {
+            server.middlewares.use('/api/mark-accent', proxyRequest);
+        },
+        configurePreviewServer(server: {
+            middlewares: { use: (path: string, handler: typeof proxyRequest) => void };
+        }) {
+            server.middlewares.use('/api/mark-accent', proxyRequest);
+        },
+    };
+}
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     const devMarkAccentProxyTarget =
         env.VITE_MARK_ACCENT_API_URL?.trim() || DEFAULT_DEV_MARK_ACCENT_PROXY_TARGET;
+    const markAccentApiKey = env.MARK_ACCENT_API_KEY?.trim();
+    const markAccentUpstreamUrl =
+        env.MARK_ACCENT_UPSTREAM_URL?.trim() || DEFAULT_MARK_ACCENT_UPSTREAM_URL;
 
     return {
-        plugins: [react()],
+        plugins: [
+            react(),
+            createMarkAccentProxy({
+                apiKey: markAccentApiKey,
+                publicProxyTarget: devMarkAccentProxyTarget,
+                upstreamUrl: markAccentUpstreamUrl,
+            }),
+        ],
         resolve: {
             alias: {
                 components: '/src/components',
@@ -19,12 +119,6 @@ export default defineConfig(({ mode }) => {
         server: {
             port: 3000,
             open: true,
-            proxy: {
-                '/api/mark-accent': {
-                    target: devMarkAccentProxyTarget,
-                    changeOrigin: true,
-                },
-            },
         },
         build: {
             outDir: 'dist',

@@ -17,7 +17,21 @@ bun i
 
 ## Set up dev server
 
-Local development uses the Vite dev server as a same-origin proxy for `/api/mark-accent`. By default it forwards to:
+Local development and `vite preview` use a same-origin proxy for `/api/mark-accent`.
+
+If you have an API key, add it to `.env` and requests will go directly to the real upstream API:
+
+```bash
+MARK_ACCENT_API_KEY=<our_api_key>
+```
+
+You can optionally override the direct upstream host too:
+
+```bash
+MARK_ACCENT_UPSTREAM_URL=https://api.sessatakuma.dev/api/MarkAccent/
+```
+
+Without a local API key, the proxy falls back to the public host:
 
 ```text
 https://accent-marker.hsichen.dev
@@ -39,7 +53,7 @@ bun dev
 
 1. Import the repository into Vercel.
 2. Add `MARK_ACCENT_API_KEY` as an environment variable in the Vercel project settings.
-3. Optionally add `MARK_ACCENT_UPSTREAM_URL` if the upstream public API host changes.
+3. Optionally add `MARK_ACCENT_UPSTREAM_URL` if the direct upstream API host changes.
 4. Deploy with the default Vite build settings.
 
 In production, the frontend calls `/api/mark-accent`, and Vercel forwards the request server-side so the API key is not exposed to the browser.

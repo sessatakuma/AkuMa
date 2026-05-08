@@ -1,4 +1,4 @@
-const DEFAULT_UPSTREAM_URL = 'https://accent-marker.hsichen.dev/api/mark-accent';
+const DEFAULT_UPSTREAM_URL = 'https://api.sessatakuma.dev/api/MarkAccent/';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
