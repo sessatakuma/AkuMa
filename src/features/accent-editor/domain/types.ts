@@ -16,3 +16,19 @@ export interface Word {
     furigana: FuriganaItem[];
     accent: AccentValueType | AccentValueType[];
 }
+
+export interface AccentEntry {
+    furigana: string;
+    accent_marking_type: number;
+}
+
+export interface MarkAccentApiResultEntry {
+    surface: string;
+    furigana: string;
+    accent: AccentEntry[];
+}
+
+export interface MarkAccentApiResponse {
+    status: number;
+    result: MarkAccentApiResultEntry[];
+}

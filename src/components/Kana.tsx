@@ -8,7 +8,7 @@ import {
 
 import { placeholder } from 'utilities/placeholder';
 
-import type { AccentValueType } from 'utilities/types';
+import type { AccentValueType } from 'features/accent-editor/domain/types';
 
 interface KanaProps {
     text: string;

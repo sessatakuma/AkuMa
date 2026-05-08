@@ -112,7 +112,10 @@ export default defineConfig(({ mode }) => {
         ],
         resolve: {
             alias: {
+                app: '/src/app',
                 components: '/src/components',
+                features: '/src/features',
+                shared: '/src/shared',
                 utilities: '/src/utilities',
             },
         },

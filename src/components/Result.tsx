@@ -12,7 +12,11 @@ import {
 import isKana from 'utilities/isKana';
 import { isKanaReading, splitKanaSyllables } from 'utilities/kanaUtils';
 import { placeholder } from 'utilities/placeholder';
-import { AccentValue, type AccentValueType, type Word } from 'utilities/types';
+import {
+    AccentValue,
+    type AccentValueType,
+    type Word,
+} from 'features/accent-editor/domain/types';
 
 import 'components/Result.css';
 import markdownExportStyles from '../../hackMD.css?raw';
