@@ -19,9 +19,6 @@ ruby > rt {
 }
 
 .kana-only-base {
-    display: inline-block;
-    width: 1em;
-    min-width: 1em;
     text-align: center;
 }
 
