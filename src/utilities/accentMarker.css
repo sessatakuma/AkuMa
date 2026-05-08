@@ -1,44 +1,134 @@
-/* accent options */
 :root {
-    --accent-color: var(--color-accent-red); /* Map to red accent from global palette */
+    --accent-color: var(--color-accent-red);
     --accent-width: 2px;
+    --kana-accent-lane-height: 1em;
+    --kana-accent-hitbox-height: 0.5rem;
+    --kana-accent-hitbox-overlap: 0.125rem;
+    --kana-drop-height: 0.4rem;
+    --kana-edit-hover-bg: color-mix(in srgb, var(--color-accent-red) 8%, transparent);
+    --kana-edit-focus-bg: color-mix(in srgb, var(--color-accent-red) 12%, transparent);
 }
 
-/* prevent layout disorder in safari */
 ruby > rt {
-    height: 1em;
+    min-height: 1em;
 }
 
-/* accent definition */
-[class*='accent'] {
-    /* height matching w/ rt */
-    padding-top: calc(0.5em + 0.25rem) !important;
-
-    /* no need for rt */
-    &:is(.main-content ruby > rt [class*='accent']) {
-        padding-top: calc(0em + 0.25rem) !important;
-    }
-
-    border: 0 solid var(--accent-color) !important;
-    border-top-width: var(--accent-width) !important;
+.kana-only-ruby > rt {
+    width: 1em;
+    min-width: 1em;
 }
 
-/* trailing drop for all accent-drop marks */
-.accent-drop {
+.kana-only-base {
+    display: inline-block;
+    width: 1em;
+    min-width: 1em;
+    text-align: center;
+}
+
+.kana-shell {
     position: relative;
+    display: inline-grid;
+    grid-template-rows: var(--kana-accent-lane-height) auto;
+    align-items: start;
+    min-width: max-content;
 }
 
-.accent-drop::after {
+.kana-shell[data-empty='true'] {
+    min-width: 1em;
+}
+
+.kana-only-ruby > rt > .kana-shell {
+    width: 1em;
+    min-width: 1em;
+}
+
+.kana-accent-lane {
+    position: relative;
+    inset-inline: auto;
+    height: var(--kana-accent-lane-height);
+    pointer-events: none;
+}
+
+.kana-accent-hitbox {
+    position: absolute;
+    inset-inline: 0;
+    bottom: calc(var(--kana-accent-hitbox-overlap) * -1);
+    height: var(--kana-accent-hitbox-height);
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    min-height: 0;
+    border: none;
+    appearance: none;
+    box-shadow: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.kana-accent-hitbox:hover {
+    background-color: var(--kana-edit-hover-bg);
+}
+
+.kana-accent-hitbox:focus-visible {
+    background-color: var(--kana-edit-focus-bg);
+}
+
+.kana-shell[data-accent='flat'] > .kana-accent-lane::before,
+.kana-shell[data-accent='drop'] > .kana-accent-lane::before {
     content: '';
     position: absolute;
-    display: block;
-    right: 0;
-    top: 0;
-    height: 0.4rem;
-    border-left: solid var(--accent-color) var(--accent-width);
+    inset-inline: 0;
+    bottom: 0;
+    border-top: var(--accent-width) solid var(--accent-color);
+    pointer-events: none;
 }
 
-/* prevent trailing drop sticking to the right */
-.accent-drop:last-child {
-    margin-right: 1px;
+.kana-shell[data-accent='drop'] > .kana-accent-lane::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: calc(-1 * var(--kana-drop-height) + var(--accent-width));
+    height: var(--kana-drop-height);
+    border-left: var(--accent-width) solid var(--accent-color);
+    pointer-events: none;
+}
+
+.kana-text {
+    position: relative;
+    z-index: 1;
+}
+
+.kana-shell[data-ghost='true'] > .kana-text {
+    display: block;
+    visibility: hidden;
+    block-size: 0;
+    line-height: 0;
+    overflow: hidden;
+    white-space: pre;
+}
+
+.kana-shell[data-editable='true'] > .kana-text::before {
+    content: '';
+    position: absolute;
+    inset: 0.1em -1px 0;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.kana-shell[data-editable='true'] > .kana-text:hover::before {
+    background-color: var(--kana-edit-hover-bg);
+}
+
+.kana-shell[data-editable='true']:focus-within > .kana-text::before {
+    background-color: var(--kana-edit-focus-bg);
+}
+
+.kana-shell[data-editable='true']:has(.kana-accent-hitbox:hover) > .kana-text::before,
+.kana-shell[data-editable='true']:has(.kana-accent-hitbox:focus-visible) > .kana-text::before {
+    background-color: transparent;
 }

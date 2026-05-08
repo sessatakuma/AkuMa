@@ -3,13 +3,12 @@
     flex-direction: column;
     height: 100%;
     padding: 1.5rem;
-    border-radius: var(--radius-lg); /* Match input radius */
+    border-radius: var(--radius-lg);
     transition:
         background-color 0.2s ease,
         color 0.2s ease;
 }
 
-/* Dark Theme applied to the container */
 .result-container-inner.dark-result {
     background-color: var(--color-bg-dark-panel);
     color: var(--color-text-dark-primary);
@@ -19,8 +18,8 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
-    margin-top: auto; /* Push to bottom */
-    padding-top: 1rem; /* Some breathing room from content */
+    margin-top: auto;
+    padding-top: 1rem;
 }
 
 .export-group {
@@ -53,8 +52,17 @@
     border-color: var(--color-text-secondary);
 }
 
+.action-button:focus-visible,
+.menu-item:focus-visible,
+.switch input:focus-visible + .slider,
+.kana-accent-hitbox:focus-visible,
+.kana-text:focus-visible {
+    outline: 2px solid var(--color-accent-green);
+    outline-offset: 2px;
+}
+
 .result-container-inner.dark-result .action-button {
-    color: var(--color-text-dark-secondary); /* Light gray for dark mode */
+    color: var(--color-text-dark-secondary);
 }
 
 .result-container-inner.dark-result .action-button:hover {
@@ -75,12 +83,12 @@
 
 .empty-state {
     display: flex;
-    justify-content: flex-start; /* Align to top-left like textarea */
+    justify-content: flex-start;
     align-items: flex-start;
     height: 100%;
     color: var(--color-text-secondary);
-    font-size: 1.5rem; /* Match input size */
-    opacity: 0.6; /* Match input placeholder opacity */
+    font-size: 1.5rem;
+    opacity: 0.6;
     padding: 0;
 }
 
@@ -88,24 +96,22 @@
     font-size: 1.5rem;
     margin: 0;
     color: inherit;
-    line-height: 2.5; /* Match input line height for alignment */
+    line-height: 2.5;
 }
 
 .result-area {
     font-size: 1.5rem;
-    line-height: 2.5; /* Match input line height for alignment */
+    line-height: 2.5;
     color: var(--color-text-primary);
-    padding: 0; /* Remove padding to align with Input */
+    padding: 0;
     border-radius: var(--radius-md);
     transition:
         background-color 0.2s ease,
         color 0.2s ease;
 }
 
-/* Ruby Styling */
 ruby {
-    /* Standard ruby display */
-    display: inline-block; /* Fallback */
+    display: inline-block;
     display: ruby;
 }
 
@@ -114,7 +120,7 @@ rt {
     line-height: 1.2;
     user-select: none;
     text-align: center;
-    color: var(--color-text-secondary); /* Milder color */
+    color: var(--color-text-secondary);
 }
 
 .dark-theme .result-area {
@@ -143,7 +149,7 @@ rt {
     box-shadow: var(--shadow-hover);
     animation: fadeInOut 2s ease forwards;
     z-index: 10;
-    pointer-events: none; /* Let clicks pass through if it ever covers something, though outside flow */
+    pointer-events: none;
 }
 
 .toast-notification.toast-warning {
@@ -185,7 +191,7 @@ rt {
     bottom: 100%;
     right: 0;
     width: 100px;
-    background-color: var(--color-bg-secondary); /* Enforce white background */
+    background-color: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
@@ -196,14 +202,10 @@ rt {
     flex-direction: column;
     justify-content: center;
     gap: 0.25rem;
-    /* Force dark text color since background is white */
     color: var(--color-text-menu-fixed);
     text-align: left;
 }
 
-/* Ensure background is solid */
-
-/* Switch Styling */
 .theme-switch-container {
     display: flex;
     justify-content: flex-start;
@@ -212,7 +214,7 @@ rt {
     padding: 0.5rem 0.75rem;
     gap: 0.5rem;
     cursor: default;
-    color: var(--color-text-secondary); /* Force dark text */
+    color: var(--color-text-secondary);
     border-bottom: 1px solid var(--color-border);
 }
 
@@ -236,13 +238,11 @@ rt {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background-color: var(--color-switch-track);
     transition: 0.4s;
     border-radius: 32px;
     width: 32px;
 }
-
-/* TODO: revisit to clean up css, use variables to maintain slider */
 
 .slider:before {
     position: absolute;
@@ -251,7 +251,7 @@ rt {
     width: 14px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: var(--color-switch-thumb);
     transition: 0.4s;
     border-radius: 50%;
 }
@@ -289,7 +289,6 @@ input:checked + .slider:before {
     border-color: var(--color-text-secondary);
 }
 
-/* Ensure empty state text handles dark mode */
 .result-container-inner.dark-result .empty-state {
     color: var(--color-text-dark-secondary);
 }
@@ -298,7 +297,6 @@ input:checked + .slider:before {
     color: var(--color-text-dark-secondary);
 }
 
-/* Force all standard text in dark result to be light */
 .result-container-inner.dark-result .result-area,
 .result-container-inner.dark-result .result-area span,
 .result-container-inner.dark-result .result-area ruby {

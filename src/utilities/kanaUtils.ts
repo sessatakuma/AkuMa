@@ -1,6 +1,6 @@
 // utilities/kanaUtils.ts
 export function splitKanaSyllables(kana: string): string[] {
-    const smallKana = 'ゃゅょァィゥェォャュョヮぁぃぅぇぉっッ';
+    const smallKana = 'ゃゅょァィゥェォャュョヮぁぃぅぇぉ';
     const result: string[] = [];
 
     for (let i = 0; i < kana.length; i++) {
@@ -16,4 +16,8 @@ export function splitKanaSyllables(kana: string): string[] {
     }
 
     return result;
+}
+
+export function isKanaReading(text: string): boolean {
+    return /^[ぁ-んァ-ンーゔゞ゛゜・･ー]+$/.test(text);
 }

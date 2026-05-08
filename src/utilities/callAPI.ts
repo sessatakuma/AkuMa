@@ -38,7 +38,6 @@ export async function fetchFuriganaFromAPI(text: string): Promise<ProcessedWord[
         const data: APIResponse = await response.json();
 
         if (response.ok && data.status === 200 && Array.isArray(data.result)) {
-            // TODO: add placeholder for foreign words
             return data.result.map((entry: APIResultEntry) => {
                 let furigana: string | string[] = entry.furigana;
                 if (isKana(entry.surface)) furigana = '';
