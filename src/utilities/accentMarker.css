@@ -13,6 +13,11 @@ ruby > rt {
     min-height: 1em;
 }
 
+.kana-only-ruby > rt {
+    width: 1em;
+    min-width: 1em;
+}
+
 .kana-shell {
     position: relative;
     display: inline-grid;
