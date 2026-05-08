@@ -251,6 +251,12 @@ rt {
     outline-offset: 2px;
 }
 
+.result-container-inner.dark-result .save-menu-dropdown {
+    background-color: var(--color-bg-dark-panel);
+    border-color: var(--color-border-dark);
+    color: var(--color-text-dark-primary);
+}
+
 .menu-inline-row {
     display: flex;
     align-items: center;
@@ -261,6 +267,10 @@ rt {
 .menu-divider {
     border-top: 1px solid var(--color-border);
     margin: 0.25rem 0;
+}
+
+.result-container-inner.dark-result .menu-divider {
+    border-top-color: var(--color-border-dark);
 }
 
 .switch {
