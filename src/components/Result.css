@@ -50,7 +50,6 @@
 .action-button:hover {
     background-color: var(--color-bg-secondary-hover);
     color: var(--color-text-primary);
-    border-color: var(--color-text-secondary);
 }
 
 .action-button:focus-visible,
@@ -330,7 +329,6 @@ input:checked + .slider:before {
 .menu-item:hover {
     background-color: var(--color-bg-secondary-hover);
     color: var(--color-text-primary);
-    border-color: var(--color-text-secondary);
 }
 
 .result-container-inner.dark-result .menu-item:hover {
