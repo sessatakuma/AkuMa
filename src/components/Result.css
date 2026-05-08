@@ -83,11 +83,13 @@
 
 .result-hint {
     margin-top: 0.75rem;
+    align-self: center;
     color: var(--color-text-secondary);
     font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: 0.01em;
     line-height: 1.5;
+    text-align: center;
     white-space: nowrap;
 }
 
