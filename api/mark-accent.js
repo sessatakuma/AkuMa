@@ -1,5 +1,7 @@
-const DEFAULT_UPSTREAM_URL = 'https://api.sessatakuma.dev/api/MarkAccent/';
-const PROXY_PATH = '/api/mark-accent';
+import {
+    DEFAULT_MARK_ACCENT_UPSTREAM_URL,
+    isMarkAccentProxyLoop,
+} from '../config/mark-accent.js';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -13,21 +15,13 @@ export default async function handler(request, response) {
     }
 
     try {
-        const upstreamUrl = process.env.MARK_ACCENT_UPSTREAM_URL || DEFAULT_UPSTREAM_URL;
-        const requestHost = request.headers.host;
+        const upstreamUrl =
+            process.env.MARK_ACCENT_UPSTREAM_URL || DEFAULT_MARK_ACCENT_UPSTREAM_URL;
 
-        if (requestHost) {
-            const currentUrl = new URL(`https://${requestHost}${PROXY_PATH}`);
-            const parsedUpstreamUrl = new URL(upstreamUrl);
-
-            if (
-                parsedUpstreamUrl.host === currentUrl.host &&
-                parsedUpstreamUrl.pathname.replace(/\/$/, '') === PROXY_PATH
-            ) {
-                return response.status(500).json({
-                    error: 'MARK_ACCENT_UPSTREAM_URL points to this proxy route and causes a loop',
-                });
-            }
+        if (isMarkAccentProxyLoop(request.headers.host, upstreamUrl)) {
+            return response.status(500).json({
+                error: 'MARK_ACCENT_UPSTREAM_URL points to this proxy route and causes a loop',
+            });
         }
 
         const upstreamResponse = await fetch(upstreamUrl, {

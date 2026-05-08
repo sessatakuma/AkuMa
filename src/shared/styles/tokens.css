@@ -1,0 +1,51 @@
+:root {
+    --font-body: 'Noto Sans JP', sans-serif;
+    --font-display: 'Noto Sans JP', sans-serif;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+
+    --color-bg-primary: hsl(0, 8%, 90%);
+    --color-bg-secondary: #ffffff;
+    --color-bg-secondary-hover: #fafaf9;
+
+    --color-text-primary: #1f2937;
+    --color-text-secondary: #6b7280;
+    --color-text-inverted: #ffffff;
+
+    --color-accent-green: #619e83;
+    --color-accent-green-hover: #4e7e69;
+    --color-accent-green-light: #eff7f4;
+
+    --color-accent-red: #9e4145;
+    --color-accent-red-hover: #7e3437;
+    --color-accent-red-light: #fcf2f2;
+
+    --color-border: #e5e7eb;
+    --color-bg-dark-panel: #1f2937;
+    --color-bg-dark-hover: #374151;
+    --color-text-dark-primary: #f9fafb;
+    --color-text-dark-secondary: #9ca3af;
+    --color-border-dark: #4b5563;
+    --color-text-menu-fixed: #374151;
+    --color-switch-track: #d1d5db;
+    --color-switch-thumb: #ffffff;
+
+    --color-feedback-success: var(--color-accent-green);
+    --color-feedback-warning: var(--color-accent-red);
+    --color-feedback-text: var(--color-text-inverted);
+
+    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+}

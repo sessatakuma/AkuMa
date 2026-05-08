@@ -1,8 +1,12 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 
-const DEFAULT_DEV_MARK_ACCENT_PROXY_TARGET = 'https://accent-marker.hsichen.dev';
-const DEFAULT_MARK_ACCENT_UPSTREAM_URL = 'https://api.sessatakuma.dev/api/MarkAccent/';
+import {
+    DEFAULT_MARK_ACCENT_PUBLIC_PROXY_TARGET,
+    DEFAULT_MARK_ACCENT_UPSTREAM_URL,
+    MARK_ACCENT_PROXY_PATH,
+    normalizeMarkAccentUrl,
+} from './config/mark-accent.js';
 
 interface MarkAccentProxyOptions {
     apiKey?: string;
@@ -11,8 +15,8 @@ interface MarkAccentProxyOptions {
 }
 
 function createMarkAccentProxy(options: MarkAccentProxyOptions) {
-    const normalizedPublicProxyTarget = options.publicProxyTarget.replace(/\/$/, '');
-    const normalizedUpstreamUrl = options.upstreamUrl.replace(/\/$/, '');
+    const normalizedPublicProxyTarget = normalizeMarkAccentUrl(options.publicProxyTarget);
+    const normalizedUpstreamUrl = normalizeMarkAccentUrl(options.upstreamUrl);
 
     const proxyRequest = async (
         req: NodeJS.ReadableStream & {
@@ -83,12 +87,12 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions) {
         configureServer(server: {
             middlewares: { use: (path: string, handler: typeof proxyRequest) => void };
         }) {
-            server.middlewares.use('/api/mark-accent', proxyRequest);
+            server.middlewares.use(MARK_ACCENT_PROXY_PATH, proxyRequest);
         },
         configurePreviewServer(server: {
             middlewares: { use: (path: string, handler: typeof proxyRequest) => void };
         }) {
-            server.middlewares.use('/api/mark-accent', proxyRequest);
+            server.middlewares.use(MARK_ACCENT_PROXY_PATH, proxyRequest);
         },
     };
 }
@@ -96,7 +100,7 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions) {
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     const devMarkAccentProxyTarget =
-        env.VITE_MARK_ACCENT_API_URL?.trim() || DEFAULT_DEV_MARK_ACCENT_PROXY_TARGET;
+        env.VITE_MARK_ACCENT_API_URL?.trim() || DEFAULT_MARK_ACCENT_PUBLIC_PROXY_TARGET;
     const markAccentApiKey = env.MARK_ACCENT_API_KEY?.trim();
     const markAccentUpstreamUrl =
         env.MARK_ACCENT_UPSTREAM_URL?.trim() || DEFAULT_MARK_ACCENT_UPSTREAM_URL;
