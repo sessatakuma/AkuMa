@@ -5,6 +5,7 @@
     --kana-accent-hitbox-height: 0.5rem;
     --kana-accent-hitbox-overlap: 0.125rem;
     --kana-drop-height: 0.4rem;
+    --kana-ghost-lane-shift: 0.4em;
     --kana-edit-hover-bg: color-mix(in srgb, var(--color-accent-red) 8%, transparent);
     --kana-edit-focus-bg: color-mix(in srgb, var(--color-accent-red) 12%, transparent);
 }
@@ -23,6 +24,10 @@ ruby > rt {
 
 .kana-shell[data-empty='true'] {
     min-width: 1em;
+}
+
+.kana-shell[data-ghost='true'] {
+    transform: translateY(var(--kana-ghost-lane-shift));
 }
 
 .kana-accent-lane {
