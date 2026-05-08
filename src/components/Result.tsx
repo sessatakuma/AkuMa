@@ -564,6 +564,18 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                         role='menu'
                                         aria-labelledby='save-menu-trigger'
                                     >
+                                        <button
+                                            className='menu-item'
+                                            onClick={() => {
+                                                downloadImage();
+                                                setIsMenuOpen(false);
+                                            }}
+                                            role='menuitem'
+                                            type='button'
+                                        >
+                                            <ImageIcon size={16} />
+                                            <span>画像</span>
+                                        </button>
                                         <div className='theme-switch-container'>
                                             <Moon size={16} className='theme-switch-label' />
                                             <label className='switch'>
@@ -579,19 +591,6 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                             </label>
                                         </div>
                                         <div className='menu-divider'></div>
-                                        <button
-                                            className='menu-item'
-                                            onClick={() => {
-                                                downloadImage();
-                                                setIsMenuOpen(false);
-                                            }}
-                                            role='menuitem'
-                                            type='button'
-                                        >
-                                            <ImageIcon size={16} />
-                                            <span>画像</span>
-                                        </button>
-                                        <div className='menu-divider' aria-hidden='true'></div>
                                         <button
                                             className='menu-item'
                                             onClick={() => {
