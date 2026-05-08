@@ -1,4 +1,4 @@
-const UPSTREAM_URL = 'https://api.sessatakuma.dev/api/MarkAccent/';
+const DEFAULT_UPSTREAM_URL = 'https://accent-marker.hsichen.dev/api/mark-accent';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -12,7 +12,8 @@ export default async function handler(request, response) {
     }
 
     try {
-        const upstreamResponse = await fetch(UPSTREAM_URL, {
+        const upstreamUrl = process.env.MARK_ACCENT_UPSTREAM_URL || DEFAULT_UPSTREAM_URL;
+        const upstreamResponse = await fetch(upstreamUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

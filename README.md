@@ -17,10 +17,16 @@ bun i
 
 ## Set up dev server
 
-Add a `.env` file in the root directory with the server-side API key:
+Local development calls the public API directly. By default it uses:
 
+```text
+https://accent-marker.hsichen.dev/api/mark-accent
 ```
-MARK_ACCENT_API_KEY=<our_api_key>
+
+If you need to point the app at a different public API host, add this to `.env`:
+
+```bash
+VITE_MARK_ACCENT_API_URL=https://accent-marker.sessatakuma.dev/api/mark-accent
 ```
 
 Then start the development server:
@@ -33,6 +39,7 @@ bun dev
 
 1. Import the repository into Vercel.
 2. Add `MARK_ACCENT_API_KEY` as an environment variable in the Vercel project settings.
-3. Deploy with the default Vite build settings.
+3. Optionally add `MARK_ACCENT_UPSTREAM_URL` if the upstream public API host changes.
+4. Deploy with the default Vite build settings.
 
-The frontend calls `/api/mark-accent`, and Vercel forwards the request server-side so the API key is not exposed to the browser.
+In production, the frontend calls `/api/mark-accent`, and Vercel forwards the request server-side so the API key is not exposed to the browser.

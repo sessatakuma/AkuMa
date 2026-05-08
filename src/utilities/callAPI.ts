@@ -23,9 +23,24 @@ interface ProcessedWord {
     accent: AccentEntry[];
 }
 
+const DEFAULT_DEV_MARK_ACCENT_API_URL = 'https://accent-marker.hsichen.dev/api/mark-accent';
+
+function getMarkAccentApiUrl(): string {
+    const configuredApiUrl = import.meta.env.VITE_MARK_ACCENT_API_URL?.trim();
+    if (configuredApiUrl) {
+        return configuredApiUrl;
+    }
+
+    if (import.meta.env.DEV) {
+        return DEFAULT_DEV_MARK_ACCENT_API_URL;
+    }
+
+    return '/api/mark-accent';
+}
+
 export async function fetchFuriganaFromAPI(text: string): Promise<ProcessedWord[]> {
     try {
-        const response = await fetch('/api/mark-accent', {
+        const response = await fetch(getMarkAccentApiUrl(), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
