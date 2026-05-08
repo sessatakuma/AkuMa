@@ -44,6 +44,13 @@ interface ResultProps {
 
 type FeedbackType = 'success' | 'warning';
 const EXPORT_PADDING_PX = 32;
+type FocusPlacement = 'start' | 'end';
+
+interface PendingFocusTarget {
+    wordIndex: number;
+    textIndex: number;
+    placement: FocusPlacement;
+}
 
 function getSurfaceSegments(word: Word): string[] {
     return isKana(word.surface) && Array.isArray(word.accent)
@@ -109,6 +116,7 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
         const [showAccent, setShowAccent] = useState(true);
 
         const resultRef = useRef<HTMLParagraphElement>(null);
+        const pendingFocusRef = useRef<PendingFocusTarget | null>(null);
         const isEmpty = !words || words.length === 0;
 
         const showFeedback = (message: string, type: FeedbackType): void => {
@@ -227,6 +235,92 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
             });
         };
 
+        const focusEditableKana = (
+            wordIndex: number,
+            textIndex: number,
+            placement: FocusPlacement,
+        ): void => {
+            pendingFocusRef.current = { wordIndex, textIndex, placement };
+        };
+
+        const setCaretPosition = (element: HTMLElement, placement: FocusPlacement): void => {
+            const selection = window.getSelection();
+            if (!selection) return;
+
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            range.collapse(placement === 'start');
+            selection.removeAllRanges();
+            selection.addRange(range);
+            element.focus();
+        };
+
+        const deleteBackwardAcrossFurigana = (wordIndex: number, textIndex: number, currentText: string): boolean => {
+            if (textIndex <= 0) {
+                return false;
+            }
+
+            let handled = false;
+
+            updateWords(currentWords => {
+                const nextWords = cloneWords(currentWords);
+                const word = nextWords[wordIndex];
+                if (!word || !word.furigana[textIndex - 1] || !word.furigana[textIndex]) {
+                    return currentWords;
+                }
+
+                const isCurrentEmpty = currentText.length === 0;
+                if (isCurrentEmpty && word.furigana.length <= 1) {
+                    return currentWords;
+                }
+
+                const previousIndex = textIndex - 1;
+                const previousItem = word.furigana[previousIndex];
+                const previousUnits = splitKanaSyllables(previousItem.text.replaceAll(placeholder, '').trim());
+                if (previousUnits.length === 0) {
+                    return currentWords;
+                }
+
+                handled = true;
+
+                const nextPreviousText = previousUnits.slice(0, -1).join('');
+                if (nextPreviousText.length === 0) {
+                    if (word.furigana.length - (isCurrentEmpty ? 1 : 0) <= 1) {
+                        previousItem.text = placeholder;
+                        previousItem.accent = AccentValue.None;
+                    } else {
+                        word.furigana.splice(previousIndex, 1);
+                    }
+                } else {
+                    previousItem.text = nextPreviousText;
+                }
+
+                let focusIndex = textIndex;
+                if (isCurrentEmpty) {
+                    const currentIndex = word.furigana[previousIndex] === previousItem ? textIndex : textIndex - 1;
+                    if (word.furigana[currentIndex]) {
+                        word.furigana.splice(currentIndex, 1);
+                    }
+                    focusIndex = Math.max(0, currentIndex - 1);
+                } else if (!word.furigana[previousIndex] || word.furigana[previousIndex] !== previousItem) {
+                    focusIndex = textIndex - 1;
+                }
+
+                const boundedFocusIndex = Math.min(focusIndex, word.furigana.length - 1);
+                if (word.furigana[boundedFocusIndex]) {
+                    focusEditableKana(
+                        wordIndex,
+                        boundedFocusIndex,
+                        isCurrentEmpty ? 'end' : 'start',
+                    );
+                }
+
+                return nextWords;
+            });
+
+            return handled;
+        };
+
         const copyPlainText = (): void => {
             if (isEmpty) return;
 
@@ -267,6 +361,21 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                 preloadExportModules();
             }
         }, [isEmpty]);
+
+        useEffect(() => {
+            const pendingFocus = pendingFocusRef.current;
+            if (!pendingFocus) return;
+
+            pendingFocusRef.current = null;
+            window.requestAnimationFrame(() => {
+                const target = resultRef.current?.querySelector<HTMLElement>(
+                    `.kana-text[data-word-index="${pendingFocus.wordIndex}"][data-text-index="${pendingFocus.textIndex}"]`,
+                );
+                if (target) {
+                    setCaretPosition(target, pendingFocus.placement);
+                }
+            });
+        }, [words]);
 
         useEffect(() => {
             if (!isMenuOpen) return;
@@ -353,6 +462,15 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                             editable
                                             text={char.text === placeholder ? '' : char.text}
                                             accent={char.accent}
+                                            textIndex={charIndex}
+                                            wordIndex={wordIndex}
+                                            onBackspaceAtStart={currentText =>
+                                                deleteBackwardAcrossFurigana(
+                                                    wordIndex,
+                                                    charIndex,
+                                                    currentText,
+                                                )
+                                            }
                                             onUpdate={(newText, newAccent) =>
                                                 updateFurigana(
                                                     wordIndex,

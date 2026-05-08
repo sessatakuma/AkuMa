@@ -14,9 +14,12 @@ interface KanaProps {
     text: string;
     accent: AccentValueType;
     onUpdate?: (text: string, accent: AccentValueType) => void;
+    onBackspaceAtStart?: (currentText: string) => boolean;
     editable?: boolean;
     ghost?: boolean;
     onFocusChange?: (isFocused: boolean) => void;
+    textIndex?: number;
+    wordIndex?: number;
 }
 
 const accentName = ['none', 'flat', 'drop'] as const;
@@ -25,9 +28,12 @@ export default function Kana({
     text,
     accent,
     onUpdate,
+    onBackspaceAtStart,
     editable = false,
     ghost = false,
     onFocusChange,
+    textIndex,
+    wordIndex,
 }: KanaProps) {
     const textRef = useRef<HTMLSpanElement>(null);
     const isComposingRef = useRef(false);
@@ -45,6 +51,21 @@ export default function Kana({
     const commitText = (nextText: string): void => {
         onUpdate?.(nextText, accent);
         onFocusChange?.(false);
+    };
+
+    const getSanitizedText = (): string =>
+        (textRef.current?.innerText ?? text).replaceAll(placeholder, '').trim();
+
+    const isCaretAtStart = (element: HTMLSpanElement): boolean => {
+        const selection = window.getSelection();
+        if (!selection || !selection.isCollapsed || selection.rangeCount === 0) {
+            return false;
+        }
+
+        const range = selection.getRangeAt(0).cloneRange();
+        range.selectNodeContents(element);
+        range.setEnd(selection.anchorNode!, selection.anchorOffset);
+        return range.toString().length === 0;
     };
 
     const changeAccent = (event: MouseEvent<HTMLButtonElement>): void => {
@@ -81,6 +102,14 @@ export default function Kana({
 
         if ((event.metaKey || event.ctrlKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
             return;
+        }
+
+        if (event.key === 'Backspace') {
+            const currentText = getSanitizedText();
+            if ((currentText.length === 0 || isCaretAtStart(target)) && onBackspaceAtStart?.(currentText)) {
+                event.preventDefault();
+                return;
+            }
         }
 
         if (event.key === 'Backspace' && target.innerText.length <= 1) {
@@ -143,6 +172,8 @@ export default function Kana({
                 autoCorrect='off'
                 inputMode='text'
                 spellCheck={false}
+                data-text-index={editable ? textIndex : undefined}
+                data-word-index={editable ? wordIndex : undefined}
             >
                 {text}
             </span>
