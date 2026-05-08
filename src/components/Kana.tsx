@@ -71,13 +71,14 @@ export default function Kana({
         }
     };
 
-    if (!editable) {
-        return (
-            <span
-                ref={textRef}
-                className={`kana kana-surface-control ${accent ? `accent-${accentName[accent]}` : ''}`}
-            >
-                {text}
+    return (
+        <span
+            className='kana-shell'
+            data-accent={accentName[accent]}
+            data-editable={editable || undefined}
+            data-empty={text.length === 0 || undefined}
+        >
+            <span className='kana-accent-lane' aria-hidden='true'>
                 <button
                     type='button'
                     className='kana-accent-hitbox'
@@ -87,25 +88,10 @@ export default function Kana({
                     title='アクセントを切り替え'
                 />
             </span>
-        );
-    }
-
-    return (
-        <span className='kana-shell kana-shell-editable'>
-            <span className='kana-accent-lane' aria-hidden='true'>
-                <button
-                    type='button'
-                    className='kana-accent-hitbox kana-accent-hitbox-ruby'
-                    onClick={changeAccent}
-                    onMouseDown={handleAccentMouseDown}
-                    aria-label='アクセントを切り替え'
-                    title='アクセントを切り替え'
-                />
-            </span>
             <span
                 ref={textRef}
-                className={`kana ${accent ? `accent-${accentName[accent]}` : ''} furigana`}
-                contentEditable
+                className={`kana-text ${editable ? 'furigana' : ''}`}
+                contentEditable={editable || undefined}
                 suppressContentEditableWarning
                 onBlur={finishEditing}
                 onFocus={handleFocus}

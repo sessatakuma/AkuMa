@@ -1,77 +1,41 @@
 :root {
     --accent-color: var(--color-accent-red);
     --accent-width: 2px;
+    --kana-accent-lane-height: 1em;
+    --kana-accent-hitbox-height: 0.5rem;
+    --kana-accent-hitbox-overlap: 0.125rem;
+    --kana-drop-height: 0.4rem;
     --kana-edit-hover-bg: color-mix(in srgb, var(--color-accent-red) 8%, transparent);
     --kana-edit-focus-bg: color-mix(in srgb, var(--color-accent-red) 12%, transparent);
-    --kana-accent-hitbox-top: -0.35rem;
-    --kana-accent-hitbox-height: 0.5rem;
-    --kana-accent-hitbox-top-ruby: -0.28rem;
-    --kana-accent-hitbox-height-ruby: 0.16rem;
-    --kana-accent-hitbox-overlap-ruby: 0.08rem;
 }
 
 ruby > rt {
-    height: 1em;
-}
-
-.kana.accent-flat,
-.kana.accent-drop {
-    border: none;
-    border-top: solid var(--accent-color) var(--accent-width);
-    padding-top: calc(0.5em + 0.25rem) !important;
-
-    &:is(.main-content ruby > rt .kana.accent-flat, .main-content ruby > rt .kana.accent-drop) {
-        padding-top: calc(0em + 0.25rem) !important;
-    }
-}
-
-.accent-drop {
-    position: relative;
-}
-
-.accent-drop::after {
-    content: '';
-    position: absolute;
-    display: block;
-    right: 0;
-    top: 0;
-    height: 0.4rem;
-    border-left: solid var(--accent-color) var(--accent-width);
-}
-
-.accent-drop:last-child {
-    margin-right: 1px;
+    min-height: 1em;
 }
 
 .kana-shell {
     position: relative;
-    display: inline-block;
+    display: inline-grid;
+    grid-template-rows: var(--kana-accent-lane-height) auto;
+    align-items: start;
+    min-width: max-content;
+}
+
+.kana-shell[data-empty='true'] {
+    min-width: 1em;
 }
 
 .kana-accent-lane {
-    position: absolute;
-    left: -1px;
-    right: -1px;
-    bottom: 100%;
-    height: 1em;
-    pointer-events: none;
-}
-
-.kana-shell::before {
-    content: '';
-    position: absolute;
-    inset: 0 -1px;
-    border-radius: var(--radius-sm);
-    background-color: transparent;
-    transition: background-color 0.2s ease;
+    position: relative;
+    inset-inline: auto;
+    height: var(--kana-accent-lane-height);
     pointer-events: none;
 }
 
 .kana-accent-hitbox {
     position: absolute;
-    left: -1px;
-    right: -1px;
-    top: var(--kana-accent-hitbox-top);
+    inset-inline: 0;
+    bottom: calc(var(--kana-accent-hitbox-overlap) * -1);
     height: var(--kana-accent-hitbox-height);
     margin: 0;
     padding: 0;
@@ -82,54 +46,70 @@ ruby > rt {
     box-shadow: none;
     background: transparent;
     border-radius: var(--radius-sm);
-    z-index: 2;
-}
-
-.kana-accent-hitbox-ruby {
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: calc(var(--kana-accent-hitbox-overlap-ruby) * -1);
-    height: var(--kana-accent-hitbox-height-ruby);
     pointer-events: auto;
-}
-
-.kana-shell:focus-within::before,
-.kana-accent-hitbox:focus-visible {
-    background-color: var(--kana-edit-focus-bg);
+    z-index: 2;
 }
 
 .kana-accent-hitbox:hover {
     background-color: var(--kana-edit-hover-bg);
 }
 
-.kana-shell > .kana {
+.kana-accent-hitbox:focus-visible {
+    background-color: var(--kana-edit-focus-bg);
+}
+
+.kana-shell[data-accent='flat'] > .kana-accent-lane::before,
+.kana-shell[data-accent='drop'] > .kana-accent-lane::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    border-top: var(--accent-width) solid var(--accent-color);
+    pointer-events: none;
+}
+
+.kana-shell[data-accent='drop'] > .kana-accent-lane::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: calc(-1 * var(--kana-drop-height) + var(--accent-width));
+    height: var(--kana-drop-height);
+    border-left: var(--accent-width) solid var(--accent-color);
+    pointer-events: none;
+}
+
+.kana-text {
     position: relative;
     z-index: 1;
 }
 
-.kana-shell-editable > .kana::before {
+.kana-shell[data-empty='true']:not([data-editable='true']) > .kana-text {
+    display: block;
+    block-size: 0;
+    line-height: 0;
+    overflow: hidden;
+}
+
+.kana-shell[data-editable='true'] > .kana-text::before {
     content: '';
     position: absolute;
-    left: -1px;
-    right: -1px;
-    top: 0.1em;
-    bottom: 0;
+    inset: 0.1em -1px 0;
     border-radius: var(--radius-sm);
     background-color: transparent;
-    pointer-events: none;
     transition: background-color 0.2s ease;
+    pointer-events: none;
     z-index: -1;
 }
 
-.kana-shell-editable > .kana:hover::before {
+.kana-shell[data-editable='true'] > .kana-text:hover::before {
     background-color: var(--kana-edit-hover-bg);
 }
 
-.kana-shell-editable:has(.kana-accent-hitbox:hover) > .kana::before {
-    background-color: transparent;
+.kana-shell[data-editable='true']:focus-within > .kana-text::before {
+    background-color: var(--kana-edit-focus-bg);
 }
 
-.kana-surface-control {
-    position: relative;
+.kana-shell[data-editable='true']:has(.kana-accent-hitbox:hover) > .kana-text::before,
+.kana-shell[data-editable='true']:has(.kana-accent-hitbox:focus-visible) > .kana-text::before {
+    background-color: transparent;
 }

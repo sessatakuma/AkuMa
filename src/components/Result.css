@@ -56,7 +56,7 @@
 .menu-item:focus-visible,
 .switch input:focus-visible + .slider,
 .kana-accent-hitbox:focus-visible,
-.kana:focus-visible {
+.kana-text:focus-visible {
     outline: 2px solid var(--color-accent-green);
     outline-offset: 2px;
 }
