@@ -60,6 +60,11 @@
     cursor: pointer;
 }
 
+.generate-button-icon {
+    display: inline-flex;
+    transition: transform 0.2s ease;
+}
+
 .generate-button:hover,
 .paste-button:hover {
     background-color: var(--color-bg-secondary-hover);
@@ -72,7 +77,7 @@
     outline-offset: 2px;
 }
 
-.generate-button:hover {
+.generate-button:hover .generate-button-icon {
     transform: rotate(15deg);
 }
 

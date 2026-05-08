@@ -87,7 +87,9 @@ export default function Input({ paragraph, setParagraph, isLoading }: InputProps
                     aria-label='サンプル文を生成'
                     type='button'
                 >
-                    <Dices size={20} />
+                    <span className='generate-button-icon' aria-hidden='true'>
+                        <Dices size={20} />
+                    </span>
                 </button>
             </div>
         </div>
