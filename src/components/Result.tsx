@@ -590,9 +590,9 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                                 }に切り替え`}
                                             >
                                                 {isDarkResult ? (
-                                                    <Moon size={14} />
+                                                    <Moon size={18} />
                                                 ) : (
-                                                    <Sun size={14} />
+                                                    <Sun size={18} />
                                                 )}
                                             </button>
                                         </div>
