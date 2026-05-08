@@ -66,7 +66,7 @@ function renderMarkdownSyllable(text: string, accent: AccentValueType): string {
     return escapedText;
 }
 
-function buildMarkdownExport(words: Word[]): string {
+function buildMarkdownExport(words: Word[], showAccent: boolean): string {
     const rubyMarkup = words
         .map(word => {
             const surfaceSegments = getSurfaceSegments(word);
@@ -75,13 +75,20 @@ function buildMarkdownExport(words: Word[]): string {
 
             const readingMarkup = (kanaAccents
                 ? surfaceSegments.map((segment, index) =>
-                      renderMarkdownSyllable(segment, kanaAccents[index] ?? AccentValue.None),
+                      showAccent
+                          ? renderMarkdownSyllable(
+                                segment,
+                                kanaAccents[index] ?? AccentValue.None,
+                            )
+                          : escapeHtml(segment),
                   )
                 : word.furigana.map(item =>
-                      renderMarkdownSyllable(
-                          item.text === placeholder ? '' : item.text,
-                          item.accent,
-                      ),
+                      showAccent
+                          ? renderMarkdownSyllable(
+                                item.text === placeholder ? '' : item.text,
+                                item.accent,
+                            )
+                          : escapeHtml(item.text === placeholder ? '' : item.text),
                   )
             ).join('');
 
@@ -114,7 +121,7 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
         const downloadMarkdown = (): void => {
             if (isEmpty) return;
 
-            const markdownDocument = buildMarkdownExport(words);
+            const markdownDocument = buildMarkdownExport(words, showAccent);
             const blob = new Blob([markdownDocument], { type: 'text/markdown;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -228,6 +235,14 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                     const reading = getReadingFromFurigana(word.furigana)
                         .replaceAll(placeholder, '')
                         .trim();
+
+                    if (!showAccent) {
+                        if (reading.length > 0 && word.surface !== reading) {
+                            return `${word.surface}（${reading}）`;
+                        }
+
+                        return word.surface;
+                    }
 
                     if (reading.length > 0 && word.surface !== reading) {
                         return `${word.surface}（${reading}｜${accentIndex}）`;
