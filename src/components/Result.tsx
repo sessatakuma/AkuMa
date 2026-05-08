@@ -2,7 +2,7 @@ import { useState, useEffect, forwardRef, useRef } from 'react';
 
 import Kana from 'components/Kana';
 import SkeletonLoader from 'components/SkeletonLoader';
-import { Copy, Image as ImageIcon, FileText, ArrowDownToLine, CodeXml, Moon } from 'lucide-react';
+import { Copy, Image as ImageIcon, ArrowDownToLine, CodeXml, Moon } from 'lucide-react';
 import {
     cloneWords,
     getAccentArray,
@@ -20,14 +20,12 @@ import markdownExportStyles from '../../hackMD.css?raw';
 const preloadExportModules = (() => {
     type ExportModules = {
         toPng: typeof import('html-to-image').toPng;
-        jsPDF: typeof import('jspdf').default;
     };
     let cache: Promise<ExportModules> | null = null;
     return () =>
-        (cache ??= Promise.all([import('html-to-image'), import('jspdf')]).then(
-            ([htmlToImage, jspdf]) => ({
+        (cache ??= Promise.all([import('html-to-image')]).then(
+            ([htmlToImage]) => ({
                 toPng: htmlToImage.toPng,
-                jsPDF: jspdf.default,
             }),
         ));
 })();
@@ -155,41 +153,6 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                 })
                 .catch(err => {
                     console.error('画像の生成に失敗しました', err);
-                });
-        };
-
-        const downloadPDF = async (): Promise<void> => {
-            if (resultRef.current === null || isEmpty) return;
-
-            const bgColor = isDarkResult ? '#1F2937' : '#FFFFFF';
-            const element = resultRef.current;
-            const width = element.offsetWidth + EXPORT_PADDING_PX * 2;
-            const height = element.offsetHeight + EXPORT_PADDING_PX * 2;
-            const { toPng, jsPDF } = await preloadExportModules();
-
-            toPng(element, {
-                backgroundColor: bgColor,
-                pixelRatio: 2,
-                width,
-                height,
-                style: {
-                    boxSizing: 'border-box',
-                    margin: '0',
-                    padding: `${EXPORT_PADDING_PX}px`,
-                },
-            })
-                .then(imgData => {
-                    const orientation = width > height ? 'landscape' : 'portrait';
-                    const pdf = new jsPDF({
-                        orientation,
-                        unit: 'px',
-                        format: [width, height],
-                    });
-                    pdf.addImage(imgData, 'PNG', 0, 0, width, height);
-                    pdf.save('accented-text.pdf');
-                })
-                .catch(err => {
-                    console.error('PDFの生成に失敗しました', err);
                 });
         };
 
@@ -437,16 +400,6 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                     >
                                         <ImageIcon size={16} />
                                         <span>画像</span>
-                                    </button>
-                                    <button
-                                        className='menu-item'
-                                        onClick={() => {
-                                            downloadPDF();
-                                            setIsMenuOpen(false);
-                                        }}
-                                    >
-                                        <FileText size={16} />
-                                        <span>PDF</span>
                                     </button>
                                     <button
                                         className='menu-item'
