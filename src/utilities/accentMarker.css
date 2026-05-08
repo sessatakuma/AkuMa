@@ -49,7 +49,7 @@ ruby > rt {
 .kana-accent-hitbox {
     position: absolute;
     inset-inline: 0;
-    bottom: calc(var(--kana-accent-hitbox-overlap) * -1);
+    top: 50%;
     height: var(--kana-accent-hitbox-height);
     margin: 0;
     padding: 0;
@@ -59,8 +59,9 @@ ruby > rt {
     appearance: none;
     box-shadow: none;
     background: transparent;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     pointer-events: auto;
+    transform: translateY(-50%);
     z-index: 2;
 }
 
