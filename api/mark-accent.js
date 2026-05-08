@@ -1,4 +1,5 @@
-const DEFAULT_UPSTREAM_URL = 'https://accent-marker.hsichen.dev/api/mark-accent';
+const DEFAULT_UPSTREAM_URL = 'https://api.sessatakuma.dev/api/MarkAccent/';
+const PROXY_PATH = '/api/mark-accent';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -13,6 +14,22 @@ export default async function handler(request, response) {
 
     try {
         const upstreamUrl = process.env.MARK_ACCENT_UPSTREAM_URL || DEFAULT_UPSTREAM_URL;
+        const requestHost = request.headers.host;
+
+        if (requestHost) {
+            const currentUrl = new URL(`https://${requestHost}${PROXY_PATH}`);
+            const parsedUpstreamUrl = new URL(upstreamUrl);
+
+            if (
+                parsedUpstreamUrl.host === currentUrl.host &&
+                parsedUpstreamUrl.pathname.replace(/\/$/, '') === PROXY_PATH
+            ) {
+                return response.status(500).json({
+                    error: 'MARK_ACCENT_UPSTREAM_URL points to this proxy route and causes a loop',
+                });
+            }
+        }
+
         const upstreamResponse = await fetch(upstreamUrl, {
             method: 'POST',
             headers: {
@@ -22,7 +39,27 @@ export default async function handler(request, response) {
             body: JSON.stringify(request.body ?? {}),
         });
 
-        const data = await upstreamResponse.json();
+        const rawBody = await upstreamResponse.text();
+        const contentType = upstreamResponse.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/json')) {
+            const snippet = rawBody.slice(0, 160);
+
+            console.error('MarkAccent proxy received non-JSON upstream response:', {
+                contentType,
+                snippet,
+                status: upstreamResponse.status,
+                upstreamUrl,
+            });
+
+            return response.status(502).json({
+                error: 'Upstream returned a non-JSON response',
+                snippet,
+                status: upstreamResponse.status,
+            });
+        }
+
+        const data = JSON.parse(rawBody);
         return response.status(upstreamResponse.status).json(data);
     } catch (error) {
         console.error('MarkAccent proxy failed:', error);
