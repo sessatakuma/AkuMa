@@ -13,6 +13,12 @@
     padding: 2rem;
 }
 
+.panel-title {
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+}
+
 .two-col-layout {
     display: grid;
     grid-template-columns: 1fr;

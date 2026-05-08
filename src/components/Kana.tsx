@@ -100,6 +100,9 @@ export default function Kana({
                 onBlur={finishEditing}
                 onFocus={handleFocus}
                 onKeyDown={handleKeyDown}
+                role={editable ? 'textbox' : undefined}
+                aria-label={editable ? 'ふりがなを編集' : undefined}
+                aria-multiline={editable || undefined}
             >
                 {text}
             </span>

@@ -5,10 +5,15 @@
     flex: 1; /* Take up available space in panel */
 }
 
+.input-header {
+    padding: 24px 24px 0;
+}
+
 .input-description {
     font-size: 1rem;
     color: var(--color-text-secondary);
     font-weight: 500;
+    margin-top: 4px;
     margin-bottom: 0.5rem;
 }
 
@@ -16,7 +21,7 @@
     width: 100%;
     flex: 1;
     min-height: 0;
-    padding: 1.5rem;
+    padding: 24px;
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);
@@ -27,6 +32,11 @@
     transition: all 0.2s ease;
     resize: none;
     font-family: inherit; /* Ensure font matches */
+}
+
+.input-area:focus-visible {
+    outline: 2px solid var(--color-accent-green);
+    outline-offset: -2px;
 }
 
 .input-area::placeholder {
@@ -40,13 +50,15 @@
     gap: 0.75rem;
     align-items: center;
     margin-top: auto;
-    padding: 0 1.5rem 1.5rem;
+    padding: 0 24px 24px;
 }
 
-.generate-button {
+.generate-button,
+.paste-button {
     width: 2.5rem;
     height: 2.5rem;
     background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 50%;
     color: var(--color-text-secondary);
     display: flex;
@@ -56,9 +68,19 @@
     cursor: pointer;
 }
 
-.generate-button:hover {
+.generate-button:hover,
+.paste-button:hover {
     background-color: var(--color-bg-secondary-hover);
     color: var(--color-text-primary);
+}
+
+.generate-button:focus-visible,
+.paste-button:focus-visible {
+    outline: 2px solid var(--color-accent-green);
+    outline-offset: 2px;
+}
+
+.generate-button:hover {
     transform: rotate(15deg);
 }
 
@@ -69,17 +91,7 @@
 
 @media (max-width: 768px) {
     .paste-button {
-        /* Styles matched to generate-button */
         display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 50%;
-        background-color: var(--color-bg-secondary);
-        color: var(--color-text-secondary);
-        transition: all 0.2s ease;
-        cursor: pointer;
     }
 
     .paste-button:active {

@@ -7,9 +7,10 @@ import 'components/Input.css';
 interface InputProps {
     paragraph: string;
     setParagraph: Dispatch<SetStateAction<string>>;
+    isLoading: boolean;
 }
 
-export default function Input({ paragraph, setParagraph }: InputProps) {
+export default function Input({ paragraph, setParagraph, isLoading }: InputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
@@ -45,18 +46,44 @@ export default function Input({ paragraph, setParagraph }: InputProps) {
     };
 
     return (
-        <section className='input-section'>
+        <div className='input-section'>
+            <div className='input-header'>
+                <h2 id='input-panel-title' className='panel-title'>
+                    入力
+                </h2>
+                <p id='input-panel-description' className='input-description'>
+                    日本語の文章を入力すると、ふりがなとアクセント候補を下に反映します。
+                </p>
+            </div>
+
+            <label className='visually-hidden' htmlFor='accent-input'>
+                解析する日本語テキスト
+            </label>
             <textarea
+                id='accent-input'
                 ref={textareaRef}
                 className='input-area'
                 value={paragraph}
                 onChange={e => setParagraph(e.target.value)}
                 placeholder='文章を入力...'
+                aria-describedby='input-panel-description input-shortcuts'
+                aria-controls='accent-result-output'
+                aria-busy={isLoading}
+                lang='ja'
             />
+            <p id='input-shortcuts' className='visually-hidden'>
+                解析結果は右側の結果領域に表示されます。編集中はアクセントを切り替えたり、ふりがなを直接修正できます。
+            </p>
 
-            <div className='input-actions'>
+            <div className='input-actions' aria-label='入力補助'>
                 {!paragraph && (
-                    <button className='paste-button' onClick={handlePaste} title='ペースト'>
+                    <button
+                        className='paste-button'
+                        onClick={handlePaste}
+                        title='クリップボードから貼り付け'
+                        aria-label='クリップボードから貼り付け'
+                        type='button'
+                    >
                         <Clipboard size={20} />
                     </button>
                 )}
@@ -65,10 +92,12 @@ export default function Input({ paragraph, setParagraph }: InputProps) {
                     className='generate-button'
                     onClick={generateRandomParagraph}
                     title='ランダムな文章を生成'
+                    aria-label='サンプル文を生成'
+                    type='button'
                 >
                     <Dices size={20} />
                 </button>
             </div>
-        </section>
+        </div>
     );
 }

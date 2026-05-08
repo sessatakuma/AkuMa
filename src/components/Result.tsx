@@ -39,6 +39,7 @@ interface ResultProps {
     onUndo: () => void;
     onRedo: () => void;
     onEditingChange: (isEditing: boolean) => void;
+    statusMessage: string;
 }
 
 type FeedbackType = 'success' | 'warning';
@@ -100,7 +101,7 @@ function buildMarkdownExport(words: Word[], showAccent: boolean): string {
 }
 
 const Result = forwardRef<HTMLDivElement, ResultProps>(
-    ({ words, updateWords, isLoading, onEditingChange }, ref) => {
+    ({ words, updateWords, isLoading, onEditingChange, statusMessage }, ref) => {
         const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
         const [feedbackType, setFeedbackType] = useState<FeedbackType>('success');
         const [isDarkResult, setIsDarkResult] = useState(false);
@@ -275,8 +276,17 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                     setIsMenuOpen(false);
                 }
             };
+            const handleKeyDown = (event: KeyboardEvent): void => {
+                if (event.key === 'Escape') {
+                    setIsMenuOpen(false);
+                }
+            };
             document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+                document.removeEventListener('keydown', handleKeyDown);
+            };
         }, [isMenuOpen]);
 
         let content: React.ReactNode;
@@ -284,15 +294,20 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
             content = <SkeletonLoader lines={5} />;
         } else if (isEmpty) {
             content = (
-                <div className='empty-state'>
+                <div className='empty-state' role='status' aria-live='polite'>
                     <p>結果</p>
                 </div>
             );
         } else {
             content = (
-                <p
+                <div
+                    id='accent-result-output'
                     className={`result-area ${showAccent ? '' : 'result-area-hide-accent'}`.trim()}
                     ref={resultRef}
+                    role='region'
+                    aria-live='polite'
+                    aria-label='アクセント解析結果'
+                    lang='ja'
                 >
                     {words.map((word, wordIndex) => {
                         const surfaceSegments = getSurfaceSegments(word);
@@ -353,7 +368,7 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                             </ruby>
                         );
                     })}
-                </p>
+                </div>
             );
         }
 
@@ -364,13 +379,25 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                 }`}
                 ref={ref}
             >
+                <div className='result-header'>
+                    <h2 id='result-panel-title' className='panel-title'>
+                        結果
+                    </h2>
+                    <p className='visually-hidden' id='result-panel-description' aria-live='polite'>
+                        {statusMessage}
+                    </p>
+                </div>
                 <div className='result-content'>{content}</div>
 
                 {!isEmpty && (
-                    <div className='result-actions'>
+                    <div className='result-actions' aria-label='結果の操作'>
                         <div className='action-group-left'>
                             {copyFeedback && (
-                                <div className={`toast-notification toast-${feedbackType}`}>
+                                <div
+                                    className={`toast-notification toast-${feedbackType}`}
+                                    role='status'
+                                    aria-live='polite'
+                                >
                                     {copyFeedback}
                                 </div>
                             )}
@@ -382,34 +409,48 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                         type='checkbox'
                                         checked={showAccent}
                                         onChange={() => setShowAccent(prev => !prev)}
+                                        aria-controls='accent-result-output'
                                     />
                                     <span className='slider'></span>
                                 </span>
                             </label>
                         </div>
 
-                        <div className='action-group-right'>
+                        <div className='action-group-right' aria-label='書き出しとコピー'>
                             <button
                                 className='action-button'
                                 onClick={copyPlainText}
                                 title='テキスト形式でコピー'
+                                aria-label='テキスト形式でコピー'
+                                type='button'
                             >
                                 <Copy size={18} />
                             </button>
 
                             <div className='save-menu-container'>
                                 <button
+                                    id='save-menu-trigger'
                                     className={`action-button save-menu-trigger ${
                                         isMenuOpen ? 'active' : ''
                                     }`}
                                     onClick={() => setIsMenuOpen(prev => !prev)}
                                     title='保存オプション'
+                                    aria-label='保存オプションを開く'
+                                    aria-haspopup='menu'
+                                    aria-expanded={isMenuOpen}
+                                    aria-controls='save-menu'
+                                    type='button'
                                 >
                                     <ArrowDownToLine size={18} />
                                 </button>
 
                                 {isMenuOpen && (
-                                    <div className='save-menu-dropdown'>
+                                    <div
+                                        id='save-menu'
+                                        className='save-menu-dropdown'
+                                        role='menu'
+                                        aria-labelledby='save-menu-trigger'
+                                    >
                                         <div className='theme-switch-container'>
                                             <Moon size={16} className='theme-switch-label' />
                                             <label className='switch'>
@@ -417,6 +458,7 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                                     type='checkbox'
                                                     checked={isDarkResult}
                                                     onChange={() => setIsDarkResult(prev => !prev)}
+                                                    aria-label='結果プレビューをダークテーマに切り替え'
                                                 />
                                                 <span className='slider'></span>
                                             </label>
@@ -428,6 +470,8 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                                 downloadImage();
                                                 setIsMenuOpen(false);
                                             }}
+                                            role='menuitem'
+                                            type='button'
                                         >
                                             <ImageIcon size={16} />
                                             <span>画像</span>
@@ -438,6 +482,8 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                                 downloadMarkdown();
                                                 setIsMenuOpen(false);
                                             }}
+                                            role='menuitem'
+                                            type='button'
                                         >
                                             <CodeXml size={16} />
                                             <span>Markdown</span>

@@ -20,6 +20,7 @@ export default function Main() {
     const [pastWords, setPastWords] = useState<Word[][]>([]);
     const [futureWords, setFutureWords] = useState<Word[][]>([]);
     const [isEditing, setIsEditing] = useState(false);
+    const [statusMessage, setStatusMessage] = useState<string>('');
 
     const debouncedParagraph = useDebounce(paragraph, 800);
     const resultRef = useRef<HTMLDivElement>(null);
@@ -83,6 +84,7 @@ export default function Main() {
     const handleRun = useCallback(
         async (text: string): Promise<void> => {
             if (!text || text.trim() === '') {
+                setStatusMessage('');
                 replaceWords([]);
                 return;
             }
@@ -115,7 +117,7 @@ export default function Main() {
                     }),
                 );
             } else {
-                alert('サーバーからの応答がありませんでした。');
+                setStatusMessage('サーバーからの応答がないため、簡易解析結果を表示しています。');
                 const segmenter = new Intl.Segmenter('ja', { granularity: 'word' });
                 replaceWords(
                     [...segmenter.segment(text)].map(s => ({
@@ -128,6 +130,11 @@ export default function Main() {
                 );
             }
 
+            if (result.length > 0) {
+                setStatusMessage(`解析結果を更新しました。${result.length}件の語を表示しています。`);
+            } else {
+                setStatusMessage('サーバーからの応答がないため、簡易解析結果を表示しています。');
+            }
             setIsLoading(false);
         },
         [replaceWords],
@@ -166,13 +173,29 @@ export default function Main() {
         <div className='app-container'>
             <Nav />
 
-            <main className='main-content'>
-                <div className='two-col-layout'>
-                    <section className='input-panel'>
-                        <Input paragraph={paragraph} setParagraph={setParagraph} />
+            <main id='main-content' className='main-content'>
+                <h1 className='visually-hidden'>日本語アクセントマーカー</h1>
+                <p className='visually-hidden' aria-live='polite'>
+                    {statusMessage}
+                </p>
+                <div className='two-col-layout' aria-label='入力と解析結果'>
+                    <section
+                        className='input-panel'
+                        aria-labelledby='input-panel-title'
+                        aria-describedby='input-panel-description'
+                    >
+                        <Input
+                            paragraph={paragraph}
+                            setParagraph={setParagraph}
+                            isLoading={isLoading}
+                        />
                     </section>
 
-                    <section className='result-panel'>
+                    <section
+                        className='result-panel'
+                        aria-labelledby='result-panel-title'
+                        aria-busy={isLoading}
+                    >
                         <Result
                             words={words}
                             updateWords={updateWords}
@@ -183,6 +206,7 @@ export default function Main() {
                             onUndo={undoWords}
                             onRedo={redoWords}
                             onEditingChange={setIsEditing}
+                            statusMessage={statusMessage}
                         />
                     </section>
                 </div>
