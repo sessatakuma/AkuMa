@@ -577,34 +577,24 @@ const Result = forwardRef<HTMLDivElement, ResultProps>(
                                                 <ImageIcon size={16} />
                                                 <span>画像</span>
                                             </button>
-                                            <div
-                                                className='theme-pill'
-                                                role='group'
-                                                aria-label='画像テーマ'
+                                            <button
+                                                type='button'
+                                                className='theme-pill-button theme-pill-button-single'
+                                                onClick={() => setIsDarkResult(prev => !prev)}
+                                                aria-pressed={isDarkResult}
+                                                aria-label={`画像テーマを${
+                                                    isDarkResult ? 'ライト' : 'ダーク'
+                                                }に切り替え`}
+                                                title={`画像テーマを${
+                                                    isDarkResult ? 'ライト' : 'ダーク'
+                                                }に切り替え`}
                                             >
-                                                <button
-                                                    type='button'
-                                                    className={`theme-pill-button ${
-                                                        !isDarkResult ? 'active' : ''
-                                                    }`}
-                                                    onClick={() => setIsDarkResult(false)}
-                                                    aria-pressed={!isDarkResult}
-                                                    aria-label='画像テーマをライトに切り替え'
-                                                >
-                                                    <Sun size={14} />
-                                                </button>
-                                                <button
-                                                    type='button'
-                                                    className={`theme-pill-button ${
-                                                        isDarkResult ? 'active' : ''
-                                                    }`}
-                                                    onClick={() => setIsDarkResult(true)}
-                                                    aria-pressed={isDarkResult}
-                                                    aria-label='画像テーマをダークに切り替え'
-                                                >
+                                                {isDarkResult ? (
                                                     <Moon size={14} />
-                                                </button>
-                                            </div>
+                                                ) : (
+                                                    <Sun size={14} />
+                                                )}
+                                            </button>
                                         </div>
                                         <div className='menu-divider'></div>
                                         <button
