@@ -4,6 +4,26 @@ const LOADING_CHARACTER_INTERVAL_MS = 22;
 const FURIGANA_REVEAL_INTERVAL_MS = 40;
 const ACCENT_REVEAL_INTERVAL_MS = 36;
 const PHASE_GAP_MS = 80;
+const REVEAL_ACCELERATION_START = 0.8;
+const REVEAL_MIN_INTERVAL_MULTIPLIER = 0.4;
+
+function getRevealStepDelay(totalUnits: number, stepIndex: number, baseIntervalMs: number) {
+    if (totalUnits <= 1) {
+        return baseIntervalMs;
+    }
+
+    const progress = stepIndex / totalUnits;
+    if (progress <= REVEAL_ACCELERATION_START) {
+        return baseIntervalMs;
+    }
+
+    const tailProgress =
+        (progress - REVEAL_ACCELERATION_START) / (1 - REVEAL_ACCELERATION_START);
+    const intervalMultiplier =
+        1 - (1 - REVEAL_MIN_INTERVAL_MULTIPLIER) * tailProgress;
+
+    return Math.max(12, Math.round(baseIntervalMs * intervalMultiplier));
+}
 
 export function useResultReveal({
     analysisVersion,
@@ -90,7 +110,7 @@ export function useResultReveal({
         const timeoutIds: number[] = [];
 
         for (let index = 1; index <= furiganaUnits; index += 1) {
-            elapsedMs += FURIGANA_REVEAL_INTERVAL_MS;
+            elapsedMs += getRevealStepDelay(furiganaUnits, index, FURIGANA_REVEAL_INTERVAL_MS);
             timeoutIds.push(window.setTimeout(() => setRevealedFuriganaUnits(index), elapsedMs));
         }
 
@@ -99,7 +119,7 @@ export function useResultReveal({
         }
 
         for (let index = 1; index <= accentUnits; index += 1) {
-            elapsedMs += ACCENT_REVEAL_INTERVAL_MS;
+            elapsedMs += getRevealStepDelay(accentUnits, index, ACCENT_REVEAL_INTERVAL_MS);
             timeoutIds.push(window.setTimeout(() => setRevealedAccentUnits(index), elapsedMs));
         }
 
