@@ -25,6 +25,24 @@ function getRevealStepDelay(totalUnits: number, stepIndex: number, baseIntervalM
     return Math.max(12, Math.round(baseIntervalMs * intervalMultiplier));
 }
 
+function getRevealTotals(
+    words: Array<{
+        accent: number | number[];
+        furigana: Array<unknown>;
+    }>,
+) {
+    const furiganaUnits = words.reduce((count, word) => count + word.furigana.length, 0);
+    const accentUnits = words.reduce((count, word) => {
+        if (Array.isArray(word.accent)) {
+            return count + word.accent.length;
+        }
+
+        return count + word.furigana.length;
+    }, 0);
+
+    return { accentUnits, furiganaUnits };
+}
+
 export function useResultReveal({
     analysisVersion,
     isLoading,
@@ -40,10 +58,12 @@ export function useResultReveal({
     }>;
 }) {
     const preparedAnalysisVersionRef = useRef(analysisVersion);
+    const animatedAnalysisVersionRef = useRef(analysisVersion);
     const [revealedLoadingCharacters, setRevealedLoadingCharacters] = useState(0);
     const [revealedFuriganaUnits, setRevealedFuriganaUnits] = useState(0);
     const [revealedAccentUnits, setRevealedAccentUnits] = useState(0);
     const [isPresenting, setIsPresenting] = useState(false);
+    const { accentUnits, furiganaUnits } = getRevealTotals(words);
     const shouldMaskNewAnalysis =
         !isLoading && words.length > 0 && analysisVersion !== preparedAnalysisVersionRef.current;
 
@@ -84,16 +104,11 @@ export function useResultReveal({
             return;
         }
 
+        if (analysisVersion === animatedAnalysisVersionRef.current) {
+            return;
+        }
+
         preparedAnalysisVersionRef.current = analysisVersion;
-
-        const furiganaUnits = words.reduce((count, word) => count + word.furigana.length, 0);
-        const accentUnits = words.reduce((count, word) => {
-            if (Array.isArray(word.accent)) {
-                return count + word.accent.length;
-            }
-
-            return count + word.furigana.length;
-        }, 0);
 
         if (furiganaUnits === 0 && accentUnits === 0) {
             return;
@@ -102,7 +117,7 @@ export function useResultReveal({
         setIsPresenting(true);
         setRevealedFuriganaUnits(0);
         setRevealedAccentUnits(0);
-    }, [analysisVersion, isLoading, words]);
+    }, [accentUnits, analysisVersion, furiganaUnits, isLoading, words.length]);
 
     useEffect(() => {
         if (isLoading || words.length === 0) {
@@ -114,15 +129,6 @@ export function useResultReveal({
             return;
         }
 
-        const furiganaUnits = words.reduce((count, word) => count + word.furigana.length, 0);
-        const accentUnits = words.reduce((count, word) => {
-            if (Array.isArray(word.accent)) {
-                return count + word.accent.length;
-            }
-
-            return count + word.furigana.length;
-        }, 0);
-
         if (furiganaUnits === 0 && accentUnits === 0) {
             setIsPresenting(false);
             setRevealedFuriganaUnits(0);
@@ -130,6 +136,11 @@ export function useResultReveal({
             return;
         }
 
+        if (analysisVersion === animatedAnalysisVersionRef.current) {
+            return;
+        }
+
+        animatedAnalysisVersionRef.current = analysisVersion;
         setIsPresenting(true);
         setRevealedFuriganaUnits(0);
         setRevealedAccentUnits(0);
@@ -160,7 +171,16 @@ export function useResultReveal({
         );
 
         return () => timeoutIds.forEach(timeoutId => window.clearTimeout(timeoutId));
-    }, [analysisVersion, isLoading, words]);
+    }, [accentUnits, analysisVersion, furiganaUnits, isLoading, words.length]);
+
+    useEffect(() => {
+        if (isLoading || isPresenting) {
+            return;
+        }
+
+        setRevealedFuriganaUnits(furiganaUnits);
+        setRevealedAccentUnits(accentUnits);
+    }, [accentUnits, furiganaUnits, isLoading, isPresenting]);
 
     return {
         isPresenting: shouldMaskNewAnalysis || isPresenting,
