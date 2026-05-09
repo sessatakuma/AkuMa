@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { type Word } from '../core/word/accentTypes';
 import { useResultControls } from '../hooks/useResultControls';
@@ -34,6 +34,9 @@ export default function Result({
     onEditingChange,
     statusMessage,
 }: ResultProps) {
+    const [overlayPhase, setOverlayPhase] = useState<'hidden' | 'loading' | 'done'>('hidden');
+    const doneTimeoutRef = useRef<number | null>(null);
+    const previousBusyRef = useRef(false);
     const resultRef = useRef<HTMLParagraphElement>(null);
     const {
         copyFeedback,
@@ -67,6 +70,44 @@ export default function Result({
             updateWords,
             words,
         });
+    const isBusy = isLoading || isPresenting;
+    const hasOverlayTarget = paragraph.trim().length > 0 || words.length > 0;
+
+    useEffect(() => {
+        if (doneTimeoutRef.current !== null) {
+            window.clearTimeout(doneTimeoutRef.current);
+            doneTimeoutRef.current = null;
+        }
+
+        if (isBusy && hasOverlayTarget) {
+            setOverlayPhase('loading');
+            previousBusyRef.current = true;
+            return;
+        }
+
+        if (!isBusy && previousBusyRef.current && words.length > 0) {
+            setOverlayPhase('done');
+            previousBusyRef.current = false;
+            doneTimeoutRef.current = window.setTimeout(() => {
+                setOverlayPhase('hidden');
+                doneTimeoutRef.current = null;
+            }, 300);
+            return;
+        }
+
+        previousBusyRef.current = false;
+        setOverlayPhase('hidden');
+    }, [hasOverlayTarget, isBusy, words.length]);
+
+    useEffect(
+        () => () => {
+            if (doneTimeoutRef.current !== null) {
+                window.clearTimeout(doneTimeoutRef.current);
+                doneTimeoutRef.current = null;
+            }
+        },
+        [],
+    );
 
     return (
         <div
@@ -78,6 +119,23 @@ export default function Result({
                 {statusMessage}
             </p>
             <div className='result-content'>
+                {overlayPhase !== 'hidden' && (
+                    <div
+                        className={`result-status-overlay result-status-overlay-${overlayPhase}`}
+                        aria-hidden='true'
+                    >
+                        <span className='result-status-label'>
+                            {overlayPhase === 'done' ? '分析完了！' : '分析中'}
+                        </span>
+                        {overlayPhase === 'loading' && (
+                            <span className='result-status-dots'>
+                                <span className='result-status-dot'></span>
+                                <span className='result-status-dot'></span>
+                                <span className='result-status-dot'></span>
+                            </span>
+                        )}
+                    </div>
+                )}
                 <ResultContent
                     deleteBackwardAcrossFurigana={deleteBackwardAcrossFurigana}
                     deleteForwardAcrossFurigana={deleteForwardAcrossFurigana}

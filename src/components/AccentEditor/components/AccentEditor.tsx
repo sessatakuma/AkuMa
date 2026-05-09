@@ -38,6 +38,7 @@ export default function AccentEditor() {
         paragraph,
         words,
     });
+    const isBusy = isLoading || isPresenting;
     useHistoryKeyboardShortcuts({
         onRedo: redoWords,
         onUndo: undoWords,
@@ -55,7 +56,7 @@ export default function AccentEditor() {
                 </section>
 
                 <div className='result-panel-stack' style={{ minHeight: `${minHeight}px` }}>
-                    <section className='result-panel' aria-label='結果' aria-busy={isLoading}>
+                    <section className='result-panel' aria-label='結果' aria-busy={isBusy}>
                         <Result
                             isPresenting={isPresenting}
                             paragraph={paragraph}
@@ -69,7 +70,7 @@ export default function AccentEditor() {
                             statusMessage={statusMessage}
                         />
                     </section>
-                    {!isLoading && words.length > 0 && (
+                    {!isBusy && words.length > 0 && (
                         <p className='result-panel-hint' aria-hidden='true'>
                             ふりがな・アクセントをクリックして編集
                         </p>
