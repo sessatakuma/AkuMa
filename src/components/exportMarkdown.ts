@@ -1,10 +1,9 @@
-import isKana from 'utilities/isKana';
-import { placeholder } from 'utilities/placeholder';
-import { splitKanaSyllables } from 'utilities/kanaUtils';
+import markdownExportStyles from '../../hackMD.css?raw';
 
-import markdownExportStyles from '../../../../hackMD.css?raw';
-
-import { AccentValue, type AccentValueType, type Word } from '../domain/types';
+import { AccentValue, type AccentValueType, type Word } from './accentTypes';
+import isKana from './isKana';
+import { splitKanaSyllables } from './kanaUtils';
+import { placeholder } from './placeholder';
 
 function getSurfaceSegments(word: Word): string[] {
     return isKana(word.surface) && Array.isArray(word.accent)

@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, Dispatch, SetStateAction } from 'react';
 
 import { Dices, Clipboard } from 'lucide-react';
 
-import 'components/Input.css';
+import './Input.css';
 
 interface InputProps {
     paragraph: string;

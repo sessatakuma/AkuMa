@@ -1,4 +1,3 @@
-// utilities/kanaUtils.ts
 export function splitKanaSyllables(kana: string): string[] {
     const smallKana = 'ゃゅょァィゥェォャュョヮぁぃぅぇぉ';
     const result: string[] = [];
@@ -8,8 +7,8 @@ export function splitKanaSyllables(kana: string): string[] {
         const next = kana[i + 1];
 
         if (next && smallKana.includes(next)) {
-            result.push(char + next); // 合併音節
-            i++; // skip next
+            result.push(char + next);
+            i++;
         } else {
             result.push(char);
         }

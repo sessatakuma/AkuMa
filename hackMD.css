@@ -1,0 +1,22 @@
+.accent-marker {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1.5rem;
+    line-height: 2.5;
+    color: #1f2937;
+}
+
+.accent-marker ruby {
+    ruby-position: over;
+}
+
+.accent-marker rt {
+    font-size: 0.6em;
+    line-height: 1.2;
+    color: #6b7280;
+}
+
+.accent-marker i,
+.accent-marker b {
+    font-style: normal;
+    font-weight: 700;
+}

@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 
-import { cloneWords } from 'utilities/accent';
+import type { Word } from 'components/accentTypes';
 
-import type { Word } from '../domain/types';
+import { cloneWords } from './accent';
 
 const HISTORY_LIMIT = 50;
 

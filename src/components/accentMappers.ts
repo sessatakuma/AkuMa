@@ -1,11 +1,6 @@
-import isKana from 'utilities/isKana';
-import { splitKanaSyllables } from 'utilities/kanaUtils';
-
-import {
-    AccentValue,
-    type MarkAccentApiResultEntry,
-    type Word,
-} from '../domain/types';
+import { AccentValue, type MarkAccentApiResultEntry, type Word } from './accentTypes';
+import isKana from './isKana';
+import { splitKanaSyllables } from './kanaUtils';
 
 export function mapApiResultToWords(result: MarkAccentApiResultEntry[]): Word[] {
     return result.map(word => {

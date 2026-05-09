@@ -1,9 +1,4 @@
-import {
-    AccentValue,
-    type AccentValueType,
-    type FuriganaItem,
-    type Word,
-} from 'features/accent-editor/domain/types';
+import { AccentValue, type AccentValueType, type FuriganaItem, type Word } from 'components/accentTypes';
 
 export function cloneWords(words: Word[]): Word[] {
     return words.map(word => ({

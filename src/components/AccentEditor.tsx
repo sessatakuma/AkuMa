@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
-import Input from 'components/Input';
-import Result from 'components/Result';
+import { useAccentAnalysis } from 'hooks/useAccentAnalysis';
+import { useSyncedPanelHeight } from 'hooks/useSyncedPanelHeight';
+import { useWordHistory } from 'hooks/useWordHistory';
 
-import { useAccentAnalysis } from '../hooks/useAccentAnalysis';
-import { useSyncedPanelHeight } from '../hooks/useSyncedPanelHeight';
-import { useWordHistory } from '../hooks/useWordHistory';
+import Input from './Input';
+import Result from './Result';
 
-import 'components/Main.css';
-import 'utilities/accentMarker.css';
+import './Main.css';
+import './accentMarker.css';
 
 export default function AccentEditor() {
     const [paragraph, setParagraph] = useState('');

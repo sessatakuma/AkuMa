@@ -1,16 +1,15 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 
-import ResultActions from 'features/accent-editor/components/ResultActions';
-import ResultContent from 'features/accent-editor/components/ResultContent';
-import { buildMarkdownExport } from 'features/accent-editor/export/markdown';
-import { exportResultAsImage, preloadImageExport } from 'features/accent-editor/export/image';
-import { buildPlainTextExport } from 'features/accent-editor/export/plainText';
-import { useResultEditing } from 'features/accent-editor/hooks/useResultEditing';
-import {
-    type Word,
-} from 'features/accent-editor/domain/types';
+import { useResultEditing } from 'hooks/useResultEditing';
 
-import 'components/Result.css';
+import { type Word } from './accentTypes';
+import { exportResultAsImage, preloadImageExport } from './exportImage';
+import { buildMarkdownExport } from './exportMarkdown';
+import { buildPlainTextExport } from './exportPlainText';
+import ResultActions from './ResultActions';
+import ResultContent from './ResultContent';
+
+import './Result.css';
 
 interface ResultProps {
     words: Word[];

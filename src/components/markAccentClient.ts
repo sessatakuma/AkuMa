@@ -1,4 +1,4 @@
-import type { MarkAccentApiResponse, MarkAccentApiResultEntry } from '../domain/types';
+import type { MarkAccentApiResponse, MarkAccentApiResultEntry } from './accentTypes';
 
 export async function fetchMarkAccent(text: string): Promise<MarkAccentApiResultEntry[]> {
     try {

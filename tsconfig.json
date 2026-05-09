@@ -15,11 +15,8 @@
         "isolatedModules": true,
         "baseUrl": ".",
         "paths": {
-            "app/*": ["./src/app/*"],
             "components/*": ["./src/components/*"],
-            "features/*": ["./src/features/*"],
-            "shared/*": ["./src/shared/*"],
-            "utilities/*": ["./src/utilities/*"]
+            "hooks/*": ["./src/hooks/*"]
         }
     },
     "include": ["src/**/*"],

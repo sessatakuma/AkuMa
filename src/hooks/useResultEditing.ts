@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import { cloneWords } from 'utilities/accent';
-import { placeholder } from 'utilities/placeholder';
-import { isKanaReading, splitKanaSyllables } from 'utilities/kanaUtils';
+import { AccentValue, type AccentValueType, type Word } from 'components/accentTypes';
+import { isKanaReading, splitKanaSyllables } from 'components/kanaUtils';
+import { placeholder } from 'components/placeholder';
 
-import { AccentValue, type AccentValueType, type Word } from '../domain/types';
+import { cloneWords } from './accent';
 
 type FocusPlacement = 'start' | 'end';
 
