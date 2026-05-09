@@ -1,6 +1,6 @@
 .skeleton-container {
     --skeleton-padding-block: 16px;
-    --skeleton-padding-inline: 16px;
+    --skeleton-padding-inline: 0;
     --skeleton-radius: 16px;
     --skeleton-line-gap: 8px;
     --skeleton-ink: var(--color-text-primary);
