@@ -73,6 +73,7 @@ export default function ResultContent({
 
     const totalFuriganaUnits = words.reduce((count, word) => count + word.furigana.length, 0);
     const canRevealAccent = revealedFuriganaUnits >= totalFuriganaUnits;
+    const isAccentRevealActive = revealedAccentUnits > 0 || (canRevealAccent && !isPresenting);
     let furiganaRevealIndex = 0;
     let accentRevealIndex = 0;
 
@@ -104,7 +105,7 @@ export default function ResultContent({
                                         <span className='kana-only-base'>{segment}</span>
                                         <rt>
                                             <Kana
-                                                accentPhaseActive={canRevealAccent}
+                                                accentPhaseActive={isAccentRevealActive}
                                                 text={segment}
                                                 ghost
                                                 accent={kanaAccents[charIndex] ?? AccentValue.None}
@@ -141,7 +142,7 @@ export default function ResultContent({
                                         <Kana
                                             key={`${wordIndex}-${charIndex}`}
                                             accent={char.accent}
-                                            accentPhaseActive={canRevealAccent}
+                                            accentPhaseActive={isAccentRevealActive}
                                             accentVisible={isAccentVisible}
                                             editable
                                             interactive={!isPresenting}
