@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
-import { exportResultAsImage, preloadImageExport } from '../core/exportImage';
-import { buildMarkdownExport } from '../core/exportMarkdown';
-import { buildPlainTextExport } from '../core/exportPlainText';
+import { exportResultAsImage, preloadImageExport } from '../core/export/exportImage';
+import { buildMarkdownExport } from '../core/export/exportMarkdown';
+import { buildPlainTextExport } from '../core/export/exportPlainText';
 
-import type { Word } from '../core/accentTypes';
+import type { Word } from '../core/word/accentTypes';
 
 type FeedbackType = 'success' | 'warning';
 

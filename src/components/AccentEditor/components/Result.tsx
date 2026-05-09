@@ -1,6 +1,6 @@
 import { forwardRef, useRef } from 'react';
 
-import { type Word } from '../core/accentTypes';
+import { type Word } from '../core/word/accentTypes';
 import { useResultControls } from '../hooks/useResultControls';
 import { useResultEditing } from '../hooks/useResultEditing';
 

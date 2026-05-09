@@ -1,8 +1,8 @@
 import { useCallback, useReducer } from 'react';
 
-import { cloneWords } from '../core/accent';
+import { cloneWords } from '../core/word/accent';
 
-import type { Word } from '../core/accentTypes';
+import type { Word } from '../core/word/accentTypes';
 
 const HISTORY_LIMIT = 50;
 

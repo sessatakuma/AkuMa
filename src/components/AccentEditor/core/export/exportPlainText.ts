@@ -1,8 +1,7 @@
-import { placeholder } from '../constant/placeholder';
+import { getAccentArray, getAccentNumberFromArray, getReadingFromFurigana } from '../word/accent';
+import { placeholder } from '../../constant/placeholder';
 
-import { getAccentArray, getAccentNumberFromArray, getReadingFromFurigana } from './accent';
-
-import type { Word } from './accentTypes';
+import type { Word } from '../word/accentTypes';
 
 export function buildPlainTextExport(words: Word[], showAccent: boolean): string {
     return words

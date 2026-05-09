@@ -1,7 +1,8 @@
 import { placeholder } from '../constant/placeholder';
-import { AccentValue, type AccentValueType, type Word } from '../core/accentTypes';
-import isKana from '../core/isKana';
-import { splitKanaSyllables } from '../core/kanaUtils';
+import isKana from '../core/kana/isKana';
+import { splitKanaSyllables } from '../core/kana/kanaUtils';
+
+import { AccentValue, type AccentValueType, type Word } from '../core/word/accentTypes';
 
 import Kana from './Kana';
 import SkeletonLoader from './SkeletonLoader';

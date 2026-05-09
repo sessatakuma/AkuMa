@@ -9,7 +9,7 @@ import {
 
 import { placeholder } from '../constant/placeholder';
 
-import type { AccentValueType } from '../core/accentTypes';
+import type { AccentValueType } from '../core/word/accentTypes';
 
 import './Kana.css';
 

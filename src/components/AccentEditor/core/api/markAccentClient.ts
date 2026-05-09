@@ -1,4 +1,4 @@
-import type { MarkAccentApiResponse, MarkAccentApiResultEntry } from './accentTypes';
+import type { MarkAccentApiResponse, MarkAccentApiResultEntry } from '../word/accentTypes';
 
 export type FetchMarkAccentResult =
     | {
