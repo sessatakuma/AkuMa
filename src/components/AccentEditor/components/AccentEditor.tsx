@@ -14,8 +14,8 @@ import './AccentEditor.css';
 export default function AccentEditor() {
     const [paragraph, setParagraph] = useState('');
     const [isEditing, setIsEditing] = useState(false);
-    const [hintPhase, setHintPhase] = useState<'hidden' | 'loading' | 'done' | 'edit'>('hidden');
-    const doneTimeoutRef = useRef<number | null>(null);
+    const [showCompletionToast, setShowCompletionToast] = useState(false);
+    const toastTimeoutRef = useRef<number | null>(null);
     const previousBusyRef = useRef(false);
     const { minHeight, panelRef } = useSyncedPanelHeight<HTMLElement>();
     const {
@@ -44,36 +44,36 @@ export default function AccentEditor() {
     const isBusy = isLoading || isPresenting;
 
     useEffect(() => {
-        if (doneTimeoutRef.current !== null) {
-            window.clearTimeout(doneTimeoutRef.current);
-            doneTimeoutRef.current = null;
+        if (toastTimeoutRef.current !== null) {
+            window.clearTimeout(toastTimeoutRef.current);
+            toastTimeoutRef.current = null;
         }
 
         if (isBusy && paragraph.trim().length > 0) {
-            setHintPhase('loading');
+            setShowCompletionToast(false);
             previousBusyRef.current = true;
             return;
         }
 
         if (!isBusy && previousBusyRef.current && words.length > 0) {
-            setHintPhase('done');
+            setShowCompletionToast(true);
             previousBusyRef.current = false;
-            doneTimeoutRef.current = window.setTimeout(() => {
-                setHintPhase('edit');
-                doneTimeoutRef.current = null;
-            }, 300);
+            toastTimeoutRef.current = window.setTimeout(() => {
+                setShowCompletionToast(false);
+                toastTimeoutRef.current = null;
+            }, 900);
             return;
         }
 
         previousBusyRef.current = false;
-        setHintPhase(words.length > 0 ? 'edit' : 'hidden');
+        setShowCompletionToast(false);
     }, [isBusy, paragraph, words.length]);
 
     useEffect(
         () => () => {
-            if (doneTimeoutRef.current !== null) {
-                window.clearTimeout(doneTimeoutRef.current);
-                doneTimeoutRef.current = null;
+            if (toastTimeoutRef.current !== null) {
+                window.clearTimeout(toastTimeoutRef.current);
+                toastTimeoutRef.current = null;
             }
         },
         [],
@@ -110,23 +110,14 @@ export default function AccentEditor() {
                             statusMessage={statusMessage}
                         />
                     </section>
-                    {hintPhase !== 'hidden' && (
-                        <p
-                            className={`result-panel-hint result-panel-hint-${hintPhase}`}
-                            aria-hidden='true'
-                        >
-                            {hintPhase === 'loading' && (
-                                <>
-                                    <span>分析中</span>
-                                    <span className='result-panel-hint-dots'>
-                                        <span className='result-panel-hint-dot'></span>
-                                        <span className='result-panel-hint-dot'></span>
-                                        <span className='result-panel-hint-dot'></span>
-                                    </span>
-                                </>
-                            )}
-                            {hintPhase === 'done' && '分析完了！'}
-                            {hintPhase === 'edit' && 'ふりがな・アクセントをクリックして編集'}
+                    {words.length > 0 && (
+                        <p className='result-panel-hint' aria-hidden='true'>
+                            ふりがな・アクセントをクリックして編集
+                        </p>
+                    )}
+                    {showCompletionToast && (
+                        <p className='result-panel-toast' aria-hidden='true'>
+                            分析完了！
                         </p>
                     )}
                 </div>
