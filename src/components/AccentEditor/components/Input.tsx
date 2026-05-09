@@ -1,8 +1,9 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from 'react';
 
+import { Dices, Clipboard } from 'lucide-react';
+
 import { useAutoResizeTextarea } from '../../../hooks/useAutoResizeTextarea';
 import { useInputModality } from '../../../hooks/useInputModality';
-import { Dices, Clipboard } from 'lucide-react';
 
 import './Input.css';
 
