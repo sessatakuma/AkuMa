@@ -87,7 +87,7 @@ export function useResultEditing({
                     );
 
                     if (target) {
-                        setCaretPosition(target, direction === 'next' ? 'start' : 'end');
+                        setCaretPosition(target, direction === 'next' ? 'end' : 'start');
                         return true;
                     }
                 }
@@ -165,6 +165,53 @@ export function useResultEditing({
             });
         },
         [showFeedback, updateWords],
+    );
+
+    const deleteForwardAcrossFurigana = useCallback(
+        (wordIndex: number, textIndex: number, currentText: string): boolean => {
+            let handled = false;
+
+            updateWords(currentWords => {
+                const nextWords = cloneWords(currentWords);
+                const word = nextWords[wordIndex];
+                const currentItem = word?.furigana[textIndex];
+                if (!word || !currentItem) {
+                    return currentWords;
+                }
+
+                const isCurrentEmpty = currentText.length === 0;
+                const currentUnits = splitKanaSyllables(currentItem.text.replaceAll(placeholder, '').trim());
+
+                if (isCurrentEmpty && word.furigana.length <= 1) {
+                    return currentWords;
+                }
+
+                handled = true;
+
+                if (isCurrentEmpty || currentUnits.length <= 1) {
+                    if (word.furigana.length <= 1) {
+                        currentItem.text = placeholder;
+                        currentItem.accent = AccentValue.None;
+                    } else {
+                        word.furigana.splice(textIndex, 1);
+                    }
+
+                    const nextFocusIndex = Math.min(textIndex, word.furigana.length - 1);
+                    if (word.furigana[nextFocusIndex]) {
+                        focusEditableKana(wordIndex, nextFocusIndex, 'start');
+                    }
+
+                    return nextWords;
+                }
+
+                currentItem.text = currentUnits.slice(1).join('');
+                focusEditableKana(wordIndex, textIndex, 'start');
+                return nextWords;
+            });
+
+            return handled;
+        },
+        [focusEditableKana, updateWords],
     );
 
     const deleteBackwardAcrossFurigana = useCallback(
@@ -249,6 +296,7 @@ export function useResultEditing({
 
     return {
         deleteBackwardAcrossFurigana,
+        deleteForwardAcrossFurigana,
         moveFocusAcrossFurigana,
         registerEditableKana,
         updateFurigana,
