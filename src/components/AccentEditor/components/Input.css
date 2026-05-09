@@ -6,10 +6,12 @@
 }
 
 .input-area {
+    --input-result-baseline-offset: calc((1em * var(--kana-ruby-font-scale, 0.6)) + var(--kana-accent-gap, 2px));
+
     width: 100%;
     flex: none;
     min-height: 432px;
-    padding: 24px;
+    padding: calc(24px + var(--input-result-baseline-offset)) 24px 24px;
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);
