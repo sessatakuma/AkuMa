@@ -77,6 +77,10 @@ ruby > rt {
     pointer-events: none;
 }
 
+.kana-shell:not([data-accent-phase-active='true']) .kana-accent-hitbox {
+    pointer-events: none;
+}
+
 .kana-accent-hitbox:hover {
     background-color: var(--kana-edit-hover-bg);
 }
@@ -85,8 +89,8 @@ ruby > rt {
     background-color: var(--kana-edit-focus-bg);
 }
 
-.kana-shell[data-accent-visible='true'][data-accent='flat'] > .kana-accent-lane::before,
-.kana-shell[data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane::before {
+.kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='flat'] > .kana-accent-lane::before,
+.kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane::before {
     content: '';
     position: absolute;
     inset-inline: 0;
@@ -95,7 +99,7 @@ ruby > rt {
     pointer-events: none;
 }
 
-.kana-shell[data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane::after {
+.kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane::after {
     content: '';
     position: absolute;
     right: 0;
@@ -120,7 +124,7 @@ ruby > rt {
     animation: kanaRevealFade 0.22s ease both;
 }
 
-.kana-shell[data-accent-visible='true'] > .kana-accent-lane {
+.kana-shell[data-accent-phase-active='true'][data-accent-visible='true'] > .kana-accent-lane {
     opacity: 1;
     visibility: visible;
     animation: kanaRevealFade 0.22s ease both;

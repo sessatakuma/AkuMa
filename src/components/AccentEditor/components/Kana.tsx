@@ -225,19 +225,17 @@ function Kana({
             data-ghost={ghost || undefined}
             data-interactive={interactive || undefined}
         >
-            {accentPhaseActive ? (
-                <span className='kana-accent-lane' aria-hidden='true'>
-                    <button
-                        type='button'
-                        className='kana-accent-hitbox'
-                        disabled={!interactive}
-                        onClick={changeAccent}
-                        onMouseDown={handleAccentMouseDown}
-                        aria-label='アクセントを切り替え'
-                        title='アクセントを切り替え'
-                    />
-                </span>
-            ) : null}
+            <span className='kana-accent-lane' aria-hidden='true'>
+                <button
+                    type='button'
+                    className='kana-accent-hitbox'
+                    disabled={!interactive || !accentPhaseActive}
+                    onClick={changeAccent}
+                    onMouseDown={handleAccentMouseDown}
+                    aria-label='アクセントを切り替え'
+                    title='アクセントを切り替え'
+                />
+            </span>
             <span
                 ref={setTextNodeRef}
                 className={`kana-text ${editable ? 'furigana' : ''}`}
