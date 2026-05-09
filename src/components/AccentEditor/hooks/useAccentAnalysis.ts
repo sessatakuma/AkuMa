@@ -6,7 +6,7 @@ import { mapApiResultToWords, mapFallbackTextToWords } from '../core/word/accent
 
 import type { Word } from '../core/word/accentTypes';
 
-const VISIBLE_LOADING_DELAY_MS = 300;
+const VISIBLE_LOADING_DELAY_MS = 500;
 
 interface UseAccentAnalysisOptions {
     isEditing: boolean;
