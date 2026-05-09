@@ -21,17 +21,25 @@ export function useAccentAnalysis({
     const [statusMessage, setStatusMessage] = useState('');
     const debouncedParagraph = useDebounce(paragraph, 800);
     const lastAnalyzedParagraphRef = useRef<string | null>(null);
+    const activeRequestIdRef = useRef(0);
 
     const runAnalysis = useCallback(
         async (text: string): Promise<void> => {
             if (text.trim() === '') {
+                activeRequestIdRef.current += 1;
                 setStatusMessage('');
+                setIsLoading(false);
                 replaceWords([]);
                 return;
             }
 
+            const requestId = activeRequestIdRef.current + 1;
+            activeRequestIdRef.current = requestId;
             setIsLoading(true);
             const result = await fetchMarkAccent(text);
+            if (activeRequestIdRef.current !== requestId) {
+                return;
+            }
 
             if (result.length > 0) {
                 replaceWords(mapApiResultToWords(result));
