@@ -39,15 +39,6 @@ export default function ResultActions({
     return (
         <div className='result-actions' aria-label='結果の操作'>
             <div className='action-group-left'>
-                {copyFeedback && (
-                    <div
-                        className={`toast-notification toast-${feedbackType}`}
-                        role='status'
-                        aria-live='polite'
-                    >
-                        {copyFeedback}
-                    </div>
-                )}
                 <label className='accent-toggle' htmlFor='show-accent-toggle'>
                     <span className='accent-toggle-label'>アクセント</span>
                     <span className='switch'>
@@ -64,15 +55,26 @@ export default function ResultActions({
             </div>
 
             <div className='action-group-right' aria-label='書き出しとコピー'>
-                <button
-                    className='action-button'
-                    onClick={copyPlainText}
-                    title='テキスト形式でコピー'
-                    aria-label='テキスト形式でコピー'
-                    type='button'
-                >
-                    <Copy size={18} />
-                </button>
+                <div className='copy-action-container'>
+                    {copyFeedback && (
+                        <div
+                            className={`toast-notification toast-${feedbackType}`}
+                            role='status'
+                            aria-live='polite'
+                        >
+                            {copyFeedback}
+                        </div>
+                    )}
+                    <button
+                        className='action-button'
+                        onClick={copyPlainText}
+                        title='テキスト形式でコピー'
+                        aria-label='テキスト形式でコピー'
+                        type='button'
+                    >
+                        <Copy size={18} />
+                    </button>
+                </div>
 
                 <div className='save-menu-container'>
                     <button
