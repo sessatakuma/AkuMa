@@ -43,6 +43,13 @@ function getRevealTotals(
     return { accentUnits, furiganaUnits };
 }
 
+interface RevealState {
+    analysisVersion: number;
+    isPresenting: boolean;
+    revealedAccentUnits: number;
+    revealedFuriganaUnits: number;
+}
+
 export function useResultReveal({
     analysisVersion,
     isLoading,
@@ -57,15 +64,15 @@ export function useResultReveal({
         furigana: Array<unknown>;
     }>;
 }) {
-    const preparedAnalysisVersionRef = useRef(analysisVersion);
     const animatedAnalysisVersionRef = useRef(analysisVersion);
     const [revealedLoadingCharacters, setRevealedLoadingCharacters] = useState(0);
-    const [revealedFuriganaUnits, setRevealedFuriganaUnits] = useState(0);
-    const [revealedAccentUnits, setRevealedAccentUnits] = useState(0);
-    const [isPresenting, setIsPresenting] = useState(false);
+    const [revealState, setRevealState] = useState<RevealState>({
+        analysisVersion,
+        isPresenting: false,
+        revealedAccentUnits: 0,
+        revealedFuriganaUnits: 0,
+    });
     const { accentUnits, furiganaUnits } = getRevealTotals(words);
-    const shouldMaskNewAnalysis =
-        !isLoading && words.length > 0 && analysisVersion !== preparedAnalysisVersionRef.current;
 
     useEffect(() => {
         if (paragraph.trim() === '') {
@@ -104,35 +111,42 @@ export function useResultReveal({
             return;
         }
 
-        if (analysisVersion === animatedAnalysisVersionRef.current) {
+        if (analysisVersion === revealState.analysisVersion) {
             return;
         }
-
-        preparedAnalysisVersionRef.current = analysisVersion;
 
         if (furiganaUnits === 0 && accentUnits === 0) {
             return;
         }
 
-        setIsPresenting(true);
-        setRevealedFuriganaUnits(0);
-        setRevealedAccentUnits(0);
-    }, [accentUnits, analysisVersion, furiganaUnits, isLoading, words.length]);
+        setRevealState({
+            analysisVersion,
+            isPresenting: true,
+            revealedAccentUnits: 0,
+            revealedFuriganaUnits: 0,
+        });
+    }, [accentUnits, analysisVersion, furiganaUnits, isLoading, revealState.analysisVersion, words.length]);
 
     useEffect(() => {
         if (isLoading || words.length === 0) {
             if (!isLoading && words.length === 0) {
-                setIsPresenting(false);
-                setRevealedFuriganaUnits(0);
-                setRevealedAccentUnits(0);
+                setRevealState(currentState => ({
+                    ...currentState,
+                    isPresenting: false,
+                    revealedAccentUnits: 0,
+                    revealedFuriganaUnits: 0,
+                }));
             }
             return;
         }
 
         if (furiganaUnits === 0 && accentUnits === 0) {
-            setIsPresenting(false);
-            setRevealedFuriganaUnits(0);
-            setRevealedAccentUnits(0);
+            setRevealState(currentState => ({
+                ...currentState,
+                isPresenting: false,
+                revealedAccentUnits: 0,
+                revealedFuriganaUnits: 0,
+            }));
             return;
         }
 
@@ -141,16 +155,34 @@ export function useResultReveal({
         }
 
         animatedAnalysisVersionRef.current = analysisVersion;
-        setIsPresenting(true);
-        setRevealedFuriganaUnits(0);
-        setRevealedAccentUnits(0);
+        setRevealState(currentState =>
+            currentState.analysisVersion !== analysisVersion
+                ? currentState
+                : {
+                      ...currentState,
+                      isPresenting: true,
+                      revealedAccentUnits: 0,
+                      revealedFuriganaUnits: 0,
+                  },
+        );
 
         let elapsedMs = 0;
         const timeoutIds: number[] = [];
 
         for (let index = 1; index <= furiganaUnits; index += 1) {
             elapsedMs += getRevealStepDelay(furiganaUnits, index, FURIGANA_REVEAL_INTERVAL_MS);
-            timeoutIds.push(window.setTimeout(() => setRevealedFuriganaUnits(index), elapsedMs));
+            timeoutIds.push(
+                window.setTimeout(() => {
+                    setRevealState(currentState =>
+                        currentState.analysisVersion !== analysisVersion
+                            ? currentState
+                            : {
+                                  ...currentState,
+                                  revealedFuriganaUnits: index,
+                              },
+                    );
+                }, elapsedMs),
+            );
         }
 
         if (accentUnits > 0) {
@@ -159,14 +191,32 @@ export function useResultReveal({
 
         for (let index = 1; index <= accentUnits; index += 1) {
             elapsedMs += getRevealStepDelay(accentUnits, index, ACCENT_REVEAL_INTERVAL_MS);
-            timeoutIds.push(window.setTimeout(() => setRevealedAccentUnits(index), elapsedMs));
+            timeoutIds.push(
+                window.setTimeout(() => {
+                    setRevealState(currentState =>
+                        currentState.analysisVersion !== analysisVersion
+                            ? currentState
+                            : {
+                                  ...currentState,
+                                  revealedAccentUnits: index,
+                              },
+                    );
+                }, elapsedMs),
+            );
         }
 
         timeoutIds.push(
             window.setTimeout(() => {
-                setIsPresenting(false);
-                setRevealedFuriganaUnits(furiganaUnits);
-                setRevealedAccentUnits(accentUnits);
+                setRevealState(currentState =>
+                    currentState.analysisVersion !== analysisVersion
+                        ? currentState
+                        : {
+                              ...currentState,
+                              isPresenting: false,
+                              revealedAccentUnits: accentUnits,
+                              revealedFuriganaUnits: furiganaUnits,
+                          },
+                );
             }, elapsedMs + PHASE_GAP_MS),
         );
 
@@ -174,18 +224,31 @@ export function useResultReveal({
     }, [accentUnits, analysisVersion, furiganaUnits, isLoading, words.length]);
 
     useEffect(() => {
-        if (isLoading || isPresenting) {
+        if (isLoading || revealState.isPresenting) {
             return;
         }
 
-        setRevealedFuriganaUnits(furiganaUnits);
-        setRevealedAccentUnits(accentUnits);
-    }, [accentUnits, furiganaUnits, isLoading, isPresenting]);
+        setRevealState(currentState => {
+            if (
+                currentState.analysisVersion !== analysisVersion ||
+                (currentState.revealedAccentUnits === accentUnits &&
+                    currentState.revealedFuriganaUnits === furiganaUnits)
+            ) {
+                return currentState;
+            }
+
+            return {
+                ...currentState,
+                revealedAccentUnits: accentUnits,
+                revealedFuriganaUnits: furiganaUnits,
+            };
+        });
+    }, [accentUnits, analysisVersion, furiganaUnits, isLoading, revealState.isPresenting]);
 
     return {
-        isPresenting: shouldMaskNewAnalysis || isPresenting,
-        revealedAccentUnits: shouldMaskNewAnalysis ? 0 : revealedAccentUnits,
-        revealedFuriganaUnits: shouldMaskNewAnalysis ? 0 : revealedFuriganaUnits,
+        isPresenting: revealState.isPresenting,
+        revealedAccentUnits: revealState.revealedAccentUnits,
+        revealedFuriganaUnits: revealState.revealedFuriganaUnits,
         revealedLoadingCharacters,
     };
 }

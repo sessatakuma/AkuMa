@@ -47,7 +47,7 @@ ruby > rt {
     inset-inline: auto;
     height: var(--kana-accent-lane-height);
     pointer-events: none;
-    transition: opacity 0.22s ease;
+    opacity: 0;
 }
 
 .kana-accent-hitbox {
@@ -107,20 +107,21 @@ ruby > rt {
 .kana-text {
     position: relative;
     z-index: 1;
-    transition: opacity 0.22s ease;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .kana-text[data-text-visible] {
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    animation: kanaRevealFade 0.22s ease both;
 }
 
-.kana-text:not([data-text-visible]) {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.kana-shell:not([data-accent-visible='true']) > .kana-accent-lane {
-    opacity: 0;
+.kana-shell[data-accent-visible='true'] > .kana-accent-lane {
+    opacity: 1;
+    animation: kanaRevealFade 0.22s ease both;
 }
 
 .kana-shell[data-ghost='true'] > .kana-text {
@@ -143,4 +144,13 @@ ruby > rt {
 
 .result-area-hide-accent .kana-accent-lane {
     display: none;
+}
+
+@keyframes kanaRevealFade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
