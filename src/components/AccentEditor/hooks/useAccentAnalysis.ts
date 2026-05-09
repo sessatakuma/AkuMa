@@ -6,6 +6,8 @@ import { mapApiResultToWords, mapFallbackTextToWords } from '../core/word/accent
 
 import type { Word } from '../core/word/accentTypes';
 
+const VISIBLE_LOADING_DELAY_MS = 300;
+
 interface UseAccentAnalysisOptions {
     isEditing: boolean;
     paragraph: string;
@@ -23,11 +25,20 @@ export function useAccentAnalysis({
     const throttledParagraph = useThrottle(paragraph, 800);
     const lastAnalyzedParagraphRef = useRef<string | null>(null);
     const activeRequestIdRef = useRef(0);
+    const visibleLoadingTimeoutRef = useRef<number | null>(null);
+
+    const clearVisibleLoadingTimeout = useCallback((): void => {
+        if (visibleLoadingTimeoutRef.current !== null) {
+            window.clearTimeout(visibleLoadingTimeoutRef.current);
+            visibleLoadingTimeoutRef.current = null;
+        }
+    }, []);
 
     const runAnalysis = useCallback(
         async (text: string): Promise<void> => {
             if (text.trim() === '') {
                 activeRequestIdRef.current += 1;
+                clearVisibleLoadingTimeout();
                 setStatusMessage('');
                 setIsLoading(false);
                 setAnalysisVersion(0);
@@ -37,12 +48,19 @@ export function useAccentAnalysis({
 
             const requestId = activeRequestIdRef.current + 1;
             activeRequestIdRef.current = requestId;
-            setIsLoading(true);
+            clearVisibleLoadingTimeout();
+            setIsLoading(false);
+            visibleLoadingTimeoutRef.current = window.setTimeout(() => {
+                if (activeRequestIdRef.current === requestId) {
+                    setIsLoading(true);
+                }
+            }, VISIBLE_LOADING_DELAY_MS);
             const response = await fetchMarkAccent(text);
             if (activeRequestIdRef.current !== requestId) {
                 return;
             }
 
+            clearVisibleLoadingTimeout();
             if (!response.ok) {
                 replaceWords(mapFallbackTextToWords(text));
                 setAnalysisVersion(currentVersion => currentVersion + 1);
@@ -57,7 +75,7 @@ export function useAccentAnalysis({
 
             setIsLoading(false);
         },
-        [replaceWords],
+        [clearVisibleLoadingTimeout, replaceWords],
     );
 
     useEffect(() => {
@@ -67,6 +85,13 @@ export function useAccentAnalysis({
         lastAnalyzedParagraphRef.current = throttledParagraph;
         runAnalysis(throttledParagraph);
     }, [isEditing, runAnalysis, throttledParagraph]);
+
+    useEffect(
+        () => () => {
+            clearVisibleLoadingTimeout();
+        },
+        [clearVisibleLoadingTimeout],
+    );
 
     return {
         analysisVersion,
