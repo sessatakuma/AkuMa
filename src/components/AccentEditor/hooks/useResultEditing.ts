@@ -16,14 +16,12 @@ interface PendingFocusTarget {
 type EditableKanaKey = `${number}:${number}`;
 
 interface UseResultEditingOptions {
-    resultRef: React.RefObject<HTMLParagraphElement | null>;
     showFeedback: (message: string, type: 'success' | 'warning') => void;
     updateWords: (updater: Word[] | ((current: Word[]) => Word[])) => void;
     words: Word[];
 }
 
 export function useResultEditing({
-    resultRef,
     showFeedback,
     updateWords,
     words,
@@ -205,7 +203,7 @@ export function useResultEditing({
                 setCaretPosition(target, pendingFocus.placement);
             }
         });
-    }, [resultRef, setCaretPosition, words]);
+    }, [setCaretPosition, words]);
 
     return {
         deleteBackwardAcrossFurigana,

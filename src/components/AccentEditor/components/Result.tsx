@@ -46,7 +46,6 @@ export default function Result({
 
     const { deleteBackwardAcrossFurigana, registerEditableKana, updateFurigana, updateKana } =
         useResultEditing({
-            resultRef,
             showFeedback,
             updateWords,
             words,
