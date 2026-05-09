@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import useDebounce from '../../../hooks/useDebounce';
 
+import useDebounce from '../../../hooks/useDebounce';
 import { mapApiResultToWords, mapFallbackTextToWords } from '../core/accentMappers';
 import { fetchMarkAccent } from '../core/markAccentClient';
 
