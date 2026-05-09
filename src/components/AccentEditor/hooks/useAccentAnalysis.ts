@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import useDebounce from '../../../hooks/useDebounce';
+import useThrottle from '../../../hooks/useThrottle';
 import { fetchMarkAccent } from '../core/api/markAccentClient';
 import { mapApiResultToWords, mapFallbackTextToWords } from '../core/word/accentMappers';
 
@@ -20,7 +20,7 @@ export function useAccentAnalysis({
     const [analysisVersion, setAnalysisVersion] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
-    const debouncedParagraph = useDebounce(paragraph, 800);
+    const throttledParagraph = useThrottle(paragraph, 800);
     const lastAnalyzedParagraphRef = useRef<string | null>(null);
     const activeRequestIdRef = useRef(0);
 
@@ -62,11 +62,11 @@ export function useAccentAnalysis({
 
     useEffect(() => {
         if (isEditing) return;
-        if (lastAnalyzedParagraphRef.current === debouncedParagraph) return;
+        if (lastAnalyzedParagraphRef.current === throttledParagraph) return;
 
-        lastAnalyzedParagraphRef.current = debouncedParagraph;
-        runAnalysis(debouncedParagraph);
-    }, [debouncedParagraph, isEditing, runAnalysis]);
+        lastAnalyzedParagraphRef.current = throttledParagraph;
+        runAnalysis(throttledParagraph);
+    }, [isEditing, runAnalysis, throttledParagraph]);
 
     return {
         analysisVersion,
