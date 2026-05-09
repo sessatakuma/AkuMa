@@ -71,6 +71,8 @@ export default function ResultContent({
         );
     }
 
+    const totalFuriganaUnits = words.reduce((count, word) => count + word.furigana.length, 0);
+    const canRevealAccent = revealedFuriganaUnits >= totalFuriganaUnits;
     let furiganaRevealIndex = 0;
     let accentRevealIndex = 0;
 
@@ -93,7 +95,8 @@ export default function ResultContent({
                     return (
                         <span key={`${wordIndex}-${word.surface}`}>
                             {surfaceSegments.map((segment, charIndex) => {
-                                const isAccentVisible = accentRevealIndex < revealedAccentUnits;
+                                const isAccentVisible =
+                                    canRevealAccent && accentRevealIndex < revealedAccentUnits;
                                 accentRevealIndex += 1;
 
                                 return (
@@ -127,7 +130,8 @@ export default function ResultContent({
                             <span className='furigana-group'>
                                 {word.furigana.map((char, charIndex) => {
                                     const isFuriganaVisible = furiganaRevealIndex < revealedFuriganaUnits;
-                                    const isAccentVisible = accentRevealIndex < revealedAccentUnits;
+                                    const isAccentVisible =
+                                        canRevealAccent && accentRevealIndex < revealedAccentUnits;
 
                                     furiganaRevealIndex += 1;
                                     accentRevealIndex += 1;
