@@ -141,7 +141,10 @@ rt {
 .furigana-group::before {
     content: '';
     position: absolute;
-    inset: -0.125rem -0.125rem -0.0625rem;
+    top: calc(var(--kana-accent-lane-height) + var(--kana-accent-gap) - 0.125rem);
+    right: -0.125rem;
+    bottom: -0.0625rem;
+    left: -0.125rem;
     border-radius: calc(var(--radius-sm) + 2px);
     background-color: transparent;
     transition: background-color 0.2s ease;
