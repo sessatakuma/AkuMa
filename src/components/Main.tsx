@@ -1,5 +1,5 @@
-import Nav from './Nav';
 import AccentEditor from './AccentEditor';
+import Nav from './Nav';
 
 export default function Main() {
     return (

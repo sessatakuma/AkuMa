@@ -1,7 +1,8 @@
 import { getAccentArray, getAccentNumberFromArray, getReadingFromFurigana } from 'hooks/accent';
 
-import type { Word } from './accentTypes';
 import { placeholder } from './placeholder';
+
+import type { Word } from './accentTypes';
 
 export function buildPlainTextExport(words: Word[], showAccent: boolean): string {
     return words
