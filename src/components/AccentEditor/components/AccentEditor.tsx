@@ -22,24 +22,15 @@ export default function AccentEditor() {
         updateWords,
         words,
     } = useWordHistory();
-    const { analysisVersion, isLoading, statusMessage } = useAccentAnalysis({
+    const { isLoading, statusMessage } = useAccentAnalysis({
         isEditing,
         paragraph,
         replaceWords,
     });
-    const {
-        isPresenting,
-        revealedAccentUnits,
-        revealedFuriganaUnits,
-        revealedLoadingCharacters,
-        revealedSurfaceUnits,
-    } = useResultReveal({
-        analysisVersion,
+    const { revealedLoadingCharacters } = useResultReveal({
         isLoading,
         paragraph,
-        words,
     });
-    const isBusy = isLoading || isPresenting;
     useHistoryKeyboardShortcuts({
         onRedo: redoWords,
         onUndo: undoWords,
@@ -57,14 +48,10 @@ export default function AccentEditor() {
                 </section>
 
                 <div className='result-panel-stack' style={{ minHeight: `${minHeight}px` }}>
-                    <section className='result-panel' aria-label='結果' aria-busy={isBusy}>
+                    <section className='result-panel' aria-label='結果' aria-busy={isLoading}>
                         <Result
-                            isPresenting={isPresenting}
                             paragraph={paragraph}
-                            revealedAccentUnits={revealedAccentUnits}
-                            revealedFuriganaUnits={revealedFuriganaUnits}
                             revealedLoadingCharacters={revealedLoadingCharacters}
-                            revealedSurfaceUnits={revealedSurfaceUnits}
                             words={words}
                             updateWords={updateWords}
                             isLoading={isLoading}
@@ -72,7 +59,7 @@ export default function AccentEditor() {
                             statusMessage={statusMessage}
                         />
                     </section>
-                    {!isBusy && words.length > 0 && (
+                    {!isLoading && words.length > 0 && (
                         <p className='result-panel-hint' aria-hidden='true'>
                             ふりがな・アクセントをクリックして編集
                         </p>

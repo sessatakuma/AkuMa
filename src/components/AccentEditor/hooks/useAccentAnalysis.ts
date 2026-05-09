@@ -17,7 +17,6 @@ export function useAccentAnalysis({
     paragraph,
     replaceWords,
 }: UseAccentAnalysisOptions) {
-    const [analysisVersion, setAnalysisVersion] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
     const debouncedParagraph = useDebounce(paragraph, 800);
@@ -30,7 +29,6 @@ export function useAccentAnalysis({
                 activeRequestIdRef.current += 1;
                 setStatusMessage('');
                 setIsLoading(false);
-                setAnalysisVersion(0);
                 replaceWords([]);
                 return;
             }
@@ -45,14 +43,12 @@ export function useAccentAnalysis({
 
             if (!response.ok) {
                 replaceWords(mapFallbackTextToWords(text));
-                setAnalysisVersion(currentVersion => currentVersion + 1);
                 setStatusMessage('サーバーからの応答がないため、簡易解析結果を表示しています。');
                 setIsLoading(false);
                 return;
             }
 
             replaceWords(mapApiResultToWords(response.result));
-            setAnalysisVersion(currentVersion => currentVersion + 1);
             setStatusMessage(`解析結果を更新しました。${response.result.length}件の語を表示しています。`);
 
             setIsLoading(false);
@@ -69,7 +65,6 @@ export function useAccentAnalysis({
     }, [debouncedParagraph, isEditing, runAnalysis]);
 
     return {
-        analysisVersion,
         isLoading,
         statusMessage,
     };

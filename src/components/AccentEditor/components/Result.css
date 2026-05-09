@@ -1,8 +1,4 @@
 .result-container-inner {
-    --result-reveal-distance: 8px;
-    --result-reveal-blur: 6px;
-    --result-presenting-glow: color-mix(in srgb, var(--color-accent-red) 8%, transparent);
-
     display: flex;
     flex-direction: column;
     min-height: 100%;
@@ -114,12 +110,7 @@
     border-radius: var(--radius-md);
     transition:
         background-color 0.2s ease,
-        color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-.result-area-presenting {
-    box-shadow: inset 0 1px 0 var(--result-presenting-glow);
+        color 0.2s ease;
 }
 
 .result-container-inner.dark-result .result-area {
@@ -138,48 +129,6 @@ rt {
     user-select: none;
     text-align: center;
     color: var(--color-text-secondary);
-}
-
-.result-segment {
-    display: inline-block;
-    transition:
-        opacity 0.28s ease,
-        transform 0.28s ease,
-        filter 0.28s ease;
-}
-
-.result-segment-visible {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-}
-
-.result-segment-pending {
-    opacity: 0;
-    transform: translateY(var(--result-reveal-distance));
-    filter: blur(var(--result-reveal-blur));
-}
-
-.result-rt-visible {
-    display: inline-flex;
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-    transition:
-        opacity 0.28s ease,
-        transform 0.28s ease,
-        filter 0.28s ease;
-}
-
-.result-rt-pending {
-    display: inline-flex;
-    opacity: 0;
-    transform: translateY(calc(var(--result-reveal-distance) / 2));
-    filter: blur(calc(var(--result-reveal-blur) / 2));
-    transition:
-        opacity 0.28s ease,
-        transform 0.28s ease,
-        filter 0.28s ease;
 }
 
 .furigana-group {

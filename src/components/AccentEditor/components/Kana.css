@@ -47,9 +47,6 @@ ruby > rt {
     inset-inline: auto;
     height: var(--kana-accent-lane-height);
     pointer-events: none;
-    transition:
-        opacity 0.24s ease,
-        transform 0.24s ease;
 }
 
 .kana-accent-hitbox {
@@ -68,14 +65,6 @@ ruby > rt {
     border-radius: 0;
     pointer-events: auto;
     z-index: 2;
-}
-
-.kana-shell[data-interactive='true'] .kana-accent-hitbox:disabled {
-    cursor: default;
-}
-
-.kana-shell:not([data-interactive='true']) .kana-accent-hitbox {
-    pointer-events: none;
 }
 
 .kana-accent-hitbox:hover {
@@ -109,28 +98,6 @@ ruby > rt {
 .kana-text {
     position: relative;
     z-index: 1;
-    transition:
-        opacity 0.28s ease,
-        transform 0.28s ease,
-        filter 0.28s ease;
-}
-
-.kana-text[data-text-visible] {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-}
-
-.kana-text:not([data-text-visible]) {
-    opacity: 0;
-    transform: translateY(0.25rem);
-    filter: blur(0.2rem);
-    pointer-events: none;
-}
-
-.kana-shell:not([data-accent-visible='true']) > .kana-accent-lane {
-    opacity: 0;
-    transform: translateY(-0.125rem);
 }
 
 .kana-shell[data-ghost='true'] > .kana-text {
