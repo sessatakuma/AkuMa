@@ -1,6 +1,7 @@
 :root {
     --accent-color: var(--color-accent-red);
     --accent-width: 2px;
+    --kana-ruby-font-scale: 0.6;
     --kana-accent-lane-height: 1em;
     --kana-accent-gap: 2px;
     --kana-accent-hitbox-height: 0.5rem;
@@ -15,8 +16,8 @@ ruby > rt {
 }
 
 .kana-only-ruby > rt {
-    width: 1em;
-    min-width: 1em;
+    width: calc(1em / var(--kana-ruby-font-scale));
+    min-width: calc(1em / var(--kana-ruby-font-scale));
 }
 
 .kana-only-base {
@@ -37,8 +38,8 @@ ruby > rt {
 }
 
 .kana-only-ruby > rt > .kana-shell {
-    width: 1em;
-    min-width: 1em;
+    width: calc(1em / var(--kana-ruby-font-scale));
+    min-width: calc(1em / var(--kana-ruby-font-scale));
 }
 
 .kana-accent-lane {
@@ -100,11 +101,7 @@ ruby > rt {
 }
 
 .kana-shell[data-ghost='true'] > .kana-text {
-    display: block;
     visibility: hidden;
-    block-size: 0;
-    line-height: 0;
-    overflow: hidden;
     white-space: pre;
 }
 
