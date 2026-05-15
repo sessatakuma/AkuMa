@@ -3,6 +3,8 @@ import { buildWordAnnotationModel, getLineBreakCount, rubyScale } from '../word/
 
 import markdownExportStyles from './markdownExport.css?raw';
 
+const accentName = ['none', 'flat', 'drop'] as const;
+
 function escapeHtml(value: string): string {
     return value
         .replaceAll('&', '&amp;')
@@ -12,22 +14,15 @@ function escapeHtml(value: string): string {
         .replaceAll("'", '&#39;');
 }
 
-function renderAccentText(text: string, accent: AccentValueType, showAccent: boolean): string {
-    const escapedText = escapeHtml(text);
+function renderKanaShell(text: string, accent: AccentValueType, showAccent: boolean): string {
+    const accentVisibleAttribute = showAccent ? ' data-accent-visible="true"' : '';
 
-    if (!showAccent) {
-        return escapedText;
-    }
-
-    if (accent === AccentValue.High) {
-        return `<i>${escapedText}</i>`;
-    }
-
-    if (accent === AccentValue.Drop) {
-        return `<b>${escapedText}</b>`;
-    }
-
-    return escapedText;
+    return [
+        `            <span class="kana-shell" data-accent="${accentName[accent]}" data-accent-phase-active="true"${accentVisibleAttribute}>`,
+        '              <span class="kana-accent-lane" aria-hidden="true"></span>',
+        `              <span class="kana-text" data-text-visible="true">${escapeHtml(text)}</span>`,
+        '            </span>',
+    ].join('\n');
 }
 
 function renderLineBreaks(word: Word, wordIndex: number): string | null {
@@ -66,33 +61,21 @@ function renderKanaWord(word: Word, showAccent: boolean): string {
     const readingCells = model.annotatedReading
         .map(
             (segment, charIndex) =>
-                `          <span class="word-reading-cell" style="width:${
-                    model.readingCellWidthsEm[charIndex] / rubyScale
-                }em">${renderAccentText(
-                    segment,
-                    model.kanaAccents?.[charIndex] ?? AccentValue.None,
-                    showAccent,
-                )}</span>`,
-        )
-        .join('\n');
-
-    const baseCells = model.annotatedSurface
-        .map(
-            (segment, charIndex) =>
-                `          <span class="word-base-cell" style="width:${model.baseCellWidthsEm[charIndex]}em">${escapeHtml(
-                    segment,
-                )}</span>`,
+                [
+                    `        <span class="word-reading-cell" style="width:${model.baseCellWidthsEm[charIndex]}em">`,
+                    renderKanaShell(
+                        segment,
+                        model.kanaAccents?.[charIndex] ?? AccentValue.None,
+                        showAccent,
+                    ),
+                    '        </span>',
+                ].join('\n'),
         )
         .join('\n');
 
     return [
-        `      <span class="word-group word-group-kana" style="width:${model.groupWidthEm}em">`,
-        '        <span class="word-reading-row">',
+        `      <span class="word-inline-cluster word-group-kana" style="width:${model.groupWidthEm}em">`,
         readingCells,
-        '        </span>',
-        '        <span class="word-base-row">',
-        baseCells,
-        '        </span>',
         '      </span>',
     ].join('\n');
 }
@@ -109,13 +92,17 @@ function renderAnnotatedWord(word: Word, showAccent: boolean): string {
     const readingCells = model.annotatedReading
         .map((segment, annotatedIndex) => {
             const charIndex = model.annotatedStartIndex + annotatedIndex;
-            return `            <span class="word-reading-cell" style="width:${
-                model.readingCellWidthsEm[annotatedIndex] / rubyScale
-            }em">${renderAccentText(
-                segment,
-                showAccent ? word.furigana[charIndex]?.accent ?? AccentValue.None : AccentValue.None,
-                showAccent,
-            )}</span>`;
+            return [
+                `            <span class="word-reading-cell" style="width:${
+                    model.readingCellWidthsEm[annotatedIndex] / rubyScale
+                }em">`,
+                renderKanaShell(
+                    segment,
+                    showAccent ? word.furigana[charIndex]?.accent ?? AccentValue.None : AccentValue.None,
+                    showAccent,
+                ),
+                '            </span>',
+            ].join('\n');
         })
         .join('\n');
     const baseCells = model.annotatedSurface

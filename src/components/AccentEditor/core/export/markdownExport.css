@@ -1,9 +1,17 @@
 .accent-marker {
+    --accent-color: #cc3344;
+    --accent-width: 2px;
     --kana-ruby-font-scale: 0.6;
+    --kana-accent-lane-height: 1em;
+    --kana-accent-gap: 2px;
+    --kana-drop-height: 0.4rem;
     --result-ruby-font-size: calc(1em * var(--kana-ruby-font-scale));
     --result-ruby-line-height: 1.2;
     --result-reading-text-height: calc(var(--result-ruby-font-size) * var(--result-ruby-line-height));
-    --result-reading-track-height: var(--result-reading-text-height);
+    --result-kana-shell-gap: var(--kana-accent-gap);
+    --result-kana-shell-rows: var(--kana-accent-lane-height) auto;
+    --result-accent-track-height: calc(var(--kana-accent-lane-height) + var(--result-kana-shell-gap));
+    --result-reading-track-height: calc(var(--result-accent-track-height) + var(--result-reading-text-height));
 
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 1.5rem;
@@ -23,6 +31,10 @@
     display: inline-flex;
     align-items: flex-start;
     vertical-align: top;
+}
+
+.accent-marker .word-group-kana {
+    align-items: stretch;
 }
 
 .accent-marker .word-reading-row,
@@ -76,8 +88,57 @@
     text-align: center;
 }
 
-.accent-marker i,
-.accent-marker b {
-    font-style: normal;
-    font-weight: 700;
+.accent-marker .word-reading-cell > .kana-shell {
+    min-width: 0;
+    width: 100%;
+    display: inline-grid;
+    grid-template-rows: var(--result-kana-shell-rows);
+    justify-items: stretch;
+    row-gap: var(--result-kana-shell-gap);
+}
+
+.accent-marker .word-reading-cell > .kana-shell > .kana-text,
+.accent-marker .word-reading-cell > .kana-shell > .kana-accent-lane {
+    display: block;
+    width: 100%;
+}
+
+.accent-marker .kana-shell {
+    position: relative;
+    align-items: start;
+}
+
+.accent-marker .kana-accent-lane {
+    position: relative;
+    height: var(--kana-accent-lane-height);
+    opacity: 0;
+    visibility: hidden;
+}
+
+.accent-marker .kana-text {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.accent-marker .kana-shell[data-accent-phase-active='true'][data-accent-visible='true'] > .kana-accent-lane {
+    opacity: 1;
+    visibility: visible;
+}
+
+.accent-marker .kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='flat'] > .kana-accent-lane::before,
+.accent-marker .kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    border-top: var(--accent-width) solid var(--accent-color);
+}
+
+.accent-marker .kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: calc(-1 * var(--kana-drop-height) + var(--accent-width));
+    height: var(--kana-drop-height);
+    border-left: var(--accent-width) solid var(--accent-color);
 }
