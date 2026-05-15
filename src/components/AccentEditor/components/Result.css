@@ -135,11 +135,20 @@ rt {
     color: var(--color-text-secondary);
 }
 
+.result-area:not(.result-area-hide-accent) rt {
+    min-height: var(--kana-ruby-stack-height);
+}
+
 .furigana-group {
     position: relative;
     display: inline-flex;
     align-items: flex-end;
     isolation: isolate;
+}
+
+.result-area:not(.result-area-hide-accent) .furigana-group,
+.result-area:not(.result-area-hide-accent) .kana-only-ruby > rt > .kana-shell {
+    min-height: var(--kana-ruby-stack-height);
 }
 
 .furigana-group::before {

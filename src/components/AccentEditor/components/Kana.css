@@ -4,6 +4,7 @@
     --kana-ruby-font-scale: 0.6;
     --kana-accent-lane-height: 1em;
     --kana-accent-gap: 2px;
+    --kana-ruby-stack-height: calc(var(--kana-accent-lane-height) + var(--kana-accent-gap) + 1em);
     --kana-accent-hitbox-height: 0.5rem;
     --kana-accent-hitbox-overlap: 0.125rem;
     --kana-drop-height: 0.4rem;
