@@ -17,6 +17,54 @@ function getSurfaceSegments(word: Word): string[] {
         : [...word.surface];
 }
 
+function splitAnnotatedWord(surfaceSegments: string[], readingSegments: string[]) {
+    let prefixCount = 0;
+
+    while (
+        prefixCount < surfaceSegments.length &&
+        prefixCount < readingSegments.length &&
+        isKana(surfaceSegments[prefixCount]) &&
+        surfaceSegments[prefixCount] === readingSegments[prefixCount]
+    ) {
+        prefixCount += 1;
+    }
+
+    let suffixCount = 0;
+
+    while (
+        suffixCount < surfaceSegments.length - prefixCount &&
+        suffixCount < readingSegments.length - prefixCount &&
+        isKana(surfaceSegments[surfaceSegments.length - 1 - suffixCount]) &&
+        surfaceSegments[surfaceSegments.length - 1 - suffixCount] ===
+            readingSegments[readingSegments.length - 1 - suffixCount]
+    ) {
+        suffixCount += 1;
+    }
+
+    const annotatedSurface = surfaceSegments.slice(prefixCount, surfaceSegments.length - suffixCount);
+    const annotatedReading = readingSegments.slice(prefixCount, readingSegments.length - suffixCount);
+
+    if (annotatedSurface.length === 0 || annotatedReading.length === 0) {
+        return {
+            annotatedReading: readingSegments,
+            annotatedStartIndex: 0,
+            annotatedSurface: surfaceSegments,
+            prefixSurface: [] as string[],
+            suffixSurface: [] as string[],
+            trailingHiddenReadingCount: 0,
+        };
+    }
+
+    return {
+        annotatedReading,
+        annotatedStartIndex: prefixCount,
+        annotatedSurface,
+        prefixSurface: surfaceSegments.slice(0, prefixCount),
+        suffixSurface: surfaceSegments.slice(surfaceSegments.length - suffixCount),
+        trailingHiddenReadingCount: suffixCount,
+    };
+}
+
 function getTextWeight(text: string): number {
     const glyphs = [...text];
 
@@ -137,16 +185,14 @@ export default function ResultContent({
                 const surfaceSegments = getSurfaceSegments(word);
                 const kanaWord = isKana(word.surface);
                 const kanaAccents = Array.isArray(word.accent) ? word.accent : null;
-                const readingSegments = kanaWord
-                    ? surfaceSegments
-                    : word.furigana.map(char => (char.text === placeholder ? '' : char.text));
-                const { baseCellWidthsEm, groupWidthEm, readingCellWidthsEm } = getWordLayoutMetrics(
-                    surfaceSegments,
-                    readingSegments,
-                );
-                const groupStyle = createWidthStyle(groupWidthEm);
 
                 if (kanaWord && kanaAccents) {
+                    const { baseCellWidthsEm, groupWidthEm, readingCellWidthsEm } = getWordLayoutMetrics(
+                        surfaceSegments,
+                        surfaceSegments,
+                    );
+                    const groupStyle = createWidthStyle(groupWidthEm);
+
                     return (
                         <span
                             key={`${wordIndex}-${word.surface}`}
@@ -195,73 +241,106 @@ export default function ResultContent({
                     );
                 }
 
-                return (
-                    <span
-                        key={`${wordIndex}-${word.surface}`}
-                        className='word-group'
-                        style={groupStyle}
-                    >
-                        <span className='word-reading-row'>
-                            <span className='furigana-group'>
-                                {word.furigana.map((char, charIndex) => {
-                                    const isFuriganaVisible = furiganaRevealIndex < revealedFuriganaUnits;
-                                    const isAccentVisible =
-                                        accentPhaseActive && accentRevealIndex < revealedAccentUnits;
+                const readingSegments = word.furigana.map(char => (char.text === placeholder ? '' : char.text));
+                const {
+                    annotatedReading,
+                    annotatedStartIndex,
+                    annotatedSurface,
+                    prefixSurface,
+                    suffixSurface,
+                    trailingHiddenReadingCount,
+                } = splitAnnotatedWord(surfaceSegments, readingSegments);
+                const { baseCellWidthsEm, groupWidthEm, readingCellWidthsEm } = getWordLayoutMetrics(
+                    annotatedSurface,
+                    annotatedReading,
+                );
+                const groupStyle = createWidthStyle(groupWidthEm);
 
-                                    furiganaRevealIndex += 1;
-                                    accentRevealIndex += 1;
+                furiganaRevealIndex += annotatedStartIndex;
+                accentRevealIndex += annotatedStartIndex;
 
-                                    return (
-                                        <span
-                                            key={`${wordIndex}-${charIndex}`}
-                                            className='word-reading-cell'
-                                            style={createWidthStyle(readingCellWidthsEm[charIndex] / rubyScale)}
-                                        >
-                                            <Kana
-                                                accent={char.accent}
-                                                accentPhaseActive={accentPhaseActive}
-                                                accentVisible={isAccentVisible}
-                                                editable
-                                                interactive={!isPresenting}
-                                                text={char.text === placeholder ? '' : char.text}
-                                                textIndex={charIndex}
-                                                textVisible={isFuriganaVisible}
-                                                wordIndex={wordIndex}
-                                                onBackspaceAtStart={currentText =>
-                                                    deleteBackwardAcrossFurigana(wordIndex, charIndex, currentText)
-                                                }
-                                                onDeleteAtStart={currentText =>
-                                                    deleteForwardAcrossFurigana(wordIndex, charIndex, currentText)
-                                                }
-                                                onArrowAtEdge={direction =>
-                                                    moveFocusAcrossFurigana(wordIndex, charIndex, direction)
-                                                }
-                                                onUpdate={(newText, newAccent) =>
-                                                    updateFurigana(wordIndex, charIndex, newText, newAccent)
-                                                }
-                                                onFocusChange={onEditingChange}
-                                                registerTextRef={node =>
-                                                    registerEditableKana(wordIndex, charIndex, node)
-                                                }
-                                            />
-                                        </span>
-                                    );
-                                })}
+                const mixedWordContent = (
+                    <span key={`${wordIndex}-${word.surface}`} className='word-inline-cluster'>
+                        {prefixSurface.map((segment, segmentIndex) => (
+                            <span key={`prefix-${wordIndex}-${segmentIndex}`} className='word-plain-segment'>
+                                {segment}
+                            </span>
+                        ))}
+                        <span className='word-group' style={groupStyle}>
+                            <span className='word-reading-row'>
+                                <span className='furigana-group'>
+                                    {annotatedReading.map((segment, annotatedIndex) => {
+                                        const charIndex = annotatedStartIndex + annotatedIndex;
+                                        const char = word.furigana[charIndex];
+                                        const isFuriganaVisible = furiganaRevealIndex < revealedFuriganaUnits;
+                                        const isAccentVisible =
+                                            accentPhaseActive && accentRevealIndex < revealedAccentUnits;
+
+                                        furiganaRevealIndex += 1;
+                                        accentRevealIndex += 1;
+
+                                        return (
+                                            <span
+                                                key={`${wordIndex}-${charIndex}`}
+                                                className='word-reading-cell'
+                                                style={createWidthStyle(readingCellWidthsEm[annotatedIndex] / rubyScale)}
+                                            >
+                                                <Kana
+                                                    accent={char.accent}
+                                                    accentPhaseActive={accentPhaseActive}
+                                                    accentVisible={isAccentVisible}
+                                                    editable
+                                                    interactive={!isPresenting}
+                                                    text={segment}
+                                                    textIndex={charIndex}
+                                                    textVisible={isFuriganaVisible}
+                                                    wordIndex={wordIndex}
+                                                    onBackspaceAtStart={currentText =>
+                                                        deleteBackwardAcrossFurigana(wordIndex, charIndex, currentText)
+                                                    }
+                                                    onDeleteAtStart={currentText =>
+                                                        deleteForwardAcrossFurigana(wordIndex, charIndex, currentText)
+                                                    }
+                                                    onArrowAtEdge={direction =>
+                                                        moveFocusAcrossFurigana(wordIndex, charIndex, direction)
+                                                    }
+                                                    onUpdate={(newText, newAccent) =>
+                                                        updateFurigana(wordIndex, charIndex, newText, newAccent)
+                                                    }
+                                                    onFocusChange={onEditingChange}
+                                                    registerTextRef={node =>
+                                                        registerEditableKana(wordIndex, charIndex, node)
+                                                    }
+                                                />
+                                            </span>
+                                        );
+                                    })}
+                                </span>
+                            </span>
+                            <span className='word-base-row' aria-hidden='true'>
+                                {annotatedSurface.map((segment, annotatedIndex) => (
+                                    <span
+                                        key={`${wordIndex}-${annotatedIndex}`}
+                                        className='word-base-cell'
+                                        style={createWidthStyle(baseCellWidthsEm[annotatedIndex])}
+                                    >
+                                        {segment}
+                                    </span>
+                                ))}
                             </span>
                         </span>
-                        <span className='word-base-row' aria-hidden='true'>
-                            {surfaceSegments.map((segment, charIndex) => (
-                                <span
-                                    key={`${wordIndex}-${charIndex}`}
-                                    className='word-base-cell'
-                                    style={createWidthStyle(baseCellWidthsEm[charIndex])}
-                                >
-                                    {segment}
-                                </span>
-                            ))}
-                        </span>
+                        {suffixSurface.map((segment, segmentIndex) => (
+                            <span key={`suffix-${wordIndex}-${segmentIndex}`} className='word-plain-segment'>
+                                {segment}
+                            </span>
+                        ))}
                     </span>
                 );
+
+                furiganaRevealIndex += trailingHiddenReadingCount;
+                accentRevealIndex += trailingHiddenReadingCount;
+
+                return mixedWordContent;
             })}
         </div>
     );

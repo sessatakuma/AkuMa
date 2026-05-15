@@ -129,6 +129,12 @@
     justify-items: stretch;
 }
 
+.word-inline-cluster {
+    display: inline-flex;
+    align-items: flex-end;
+    vertical-align: top;
+}
+
 .word-reading-row,
 .word-base-row {
     display: flex;
@@ -165,6 +171,13 @@
 
 .word-base-cell {
     align-items: flex-end;
+}
+
+.word-plain-segment {
+    display: inline-flex;
+    align-items: flex-end;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 .furigana-group {
