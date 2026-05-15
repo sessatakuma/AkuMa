@@ -193,6 +193,15 @@
     min-width: 0;
 }
 
+.word-group-kana .word-reading-cell > .kana-shell {
+    width: 100%;
+}
+
+.word-group-kana .word-reading-cell > .kana-shell > .kana-text,
+.word-group-kana .word-reading-cell > .kana-shell > .kana-accent-lane {
+    width: 100%;
+}
+
 .result-area:not(.result-area-hide-accent) .furigana-group,
 .result-area:not(.result-area-hide-accent) .word-reading-cell > .kana-shell {
     min-height: var(--kana-ruby-stack-height);
