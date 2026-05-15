@@ -10,6 +10,11 @@ function createWidthStyle(widthEm: number): CSSProperties {
     return { width: `${widthEm}em` };
 }
 
+function getLineBreakCount(surface: string): number {
+    const matches = surface.match(/\r?\n/g);
+    return matches ? matches.length : 0;
+}
+
 interface ResultContentProps {
     accentPhaseActive: boolean;
     deleteBackwardAcrossFurigana: (wordIndex: number, textIndex: number, currentText: string) => boolean;
@@ -85,6 +90,17 @@ export default function ResultContent({
             lang='ja'
         >
             {words.map((word, wordIndex) => {
+                const lineBreakCount = getLineBreakCount(word.surface);
+                if (lineBreakCount > 0) {
+                    return (
+                        <span key={`${wordIndex}-${word.surface}`} aria-hidden='true'>
+                            {Array.from({ length: lineBreakCount }, (_, breakIndex) => (
+                                <br key={`${wordIndex}-break-${breakIndex}`} />
+                            ))}
+                        </span>
+                    );
+                }
+
                 const model = buildWordAnnotationModel(word);
 
                 if (model.isKanaWord && model.kanaAccents) {
