@@ -130,12 +130,6 @@
     color: var(--color-text-dark-primary);
 }
 
-.result-area-hide-accent {
-    --result-kana-shell-gap: 0;
-    --result-kana-shell-rows: 0 auto;
-    --result-accent-track-height: 0;
-}
-
 .word-stack {
     display: inline-grid;
     grid-template-rows: var(--result-reading-track-height) auto;
@@ -219,7 +213,9 @@
 }
 
 .result-area-hide-accent .word-reading-cell > .kana-shell > .kana-accent-lane {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    animation: none;
 }
 
 .result-area-hide-accent .word-reading-cell > .kana-shell .kana-accent-hitbox {
