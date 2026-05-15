@@ -6,26 +6,6 @@ import type { AccentValueType, Word } from './accentTypes';
 
 export const rubyScale = 0.6;
 
-const smallKana = new Set([
-    'ゃ',
-    'ゅ',
-    'ょ',
-    'ャ',
-    'ュ',
-    'ョ',
-    'ァ',
-    'ィ',
-    'ゥ',
-    'ェ',
-    'ォ',
-    'ヮ',
-    'ぁ',
-    'ぃ',
-    'ぅ',
-    'ぇ',
-    'ぉ',
-]);
-
 interface LayoutMetrics {
     baseCellWidthsEm: number[];
     groupWidthEm: number;
@@ -116,7 +96,7 @@ function getTextWeight(text: string): number {
         return 1;
     }
 
-    return glyphs.reduce((sum, glyph) => sum + (smallKana.has(glyph) ? 0.65 : 1), 0);
+    return glyphs.length;
 }
 
 function distributeWidths(weights: number[], totalWidthEm: number): number[] {
