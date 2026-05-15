@@ -156,6 +156,10 @@
     min-height: var(--kana-ruby-stack-height);
 }
 
+.result-area-hide-accent .word-reading-row {
+    min-height: calc((1em * var(--kana-ruby-font-scale, 0.6)) * 1.2);
+}
+
 .word-base-row {
     line-height: 1;
     white-space: nowrap;
@@ -213,6 +217,11 @@
 .result-area:not(.result-area-hide-accent) .furigana-group,
 .result-area:not(.result-area-hide-accent) .word-reading-cell > .kana-shell {
     min-height: var(--kana-ruby-stack-height);
+}
+
+.result-area-hide-accent .furigana-group,
+.result-area-hide-accent .word-reading-cell > .kana-shell {
+    min-height: calc((1em * var(--kana-ruby-font-scale, 0.6)) * 1.2);
 }
 
 .furigana-group::before {
