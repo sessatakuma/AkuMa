@@ -8,22 +8,50 @@ import { AccentValue, type AccentValueType, type Word } from '../core/word/accen
 import Kana from './Kana';
 import SkeletonLoader from './SkeletonLoader';
 
+const rubyScale = 0.6;
+const smallKana = new Set(['ゃ', 'ゅ', 'ょ', 'ャ', 'ュ', 'ョ', 'ァ', 'ィ', 'ゥ', 'ェ', 'ォ', 'ヮ', 'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ']);
+
 function getSurfaceSegments(word: Word): string[] {
     return isKana(word.surface) && Array.isArray(word.accent)
         ? splitKanaSyllables(word.surface)
         : [...word.surface];
 }
 
-function getWordLayoutMetrics(baseCount: number, readingCount: number) {
-    const rubyScale = 0.6;
-    const safeBaseCount = Math.max(baseCount, 1);
-    const safeReadingCount = Math.max(readingCount, 1);
-    const groupWidthEm = Math.max(baseCount, readingCount * rubyScale, 1);
+function getTextWeight(text: string): number {
+    const glyphs = [...text];
+
+    if (glyphs.length === 0) {
+        return 1;
+    }
+
+    return glyphs.reduce((sum, glyph) => sum + (smallKana.has(glyph) ? 0.65 : 1), 0);
+}
+
+function distributeWidths(weights: number[], totalWidthEm: number): number[] {
+    const safeWeights = weights.length > 0 ? weights : [1];
+    const totalWeight = safeWeights.reduce((sum, weight) => sum + weight, 0) || 1;
+
+    return safeWeights.map(weight => (totalWidthEm * weight) / totalWeight);
+}
+
+function getWordLayoutMetrics(baseSegments: string[], readingSegments: string[]) {
+    const safeBaseSegments = baseSegments.length > 0 ? baseSegments : [''];
+    const safeReadingSegments = readingSegments.length > 0 ? readingSegments : [''];
+    const baseWeights = safeBaseSegments.map(getTextWeight);
+    const readingWeights = safeReadingSegments.map(getTextWeight);
+    const baseWidthEm = baseWeights.reduce((sum, weight) => sum + weight, 0);
+    const readingWidthEm = readingWeights.reduce((sum, weight) => sum + weight, 0) * rubyScale;
+    const groupWidthEm = Math.max(baseWidthEm, readingWidthEm, 1);
+    const readingIsLonger = readingWidthEm > baseWidthEm;
 
     return {
-        baseSlotWidthEm: groupWidthEm / safeBaseCount,
+        baseCellWidthsEm: readingIsLonger
+            ? Array.from({ length: safeBaseSegments.length }, () => groupWidthEm / safeBaseSegments.length)
+            : distributeWidths(baseWeights, groupWidthEm),
         groupWidthEm,
-        readingSlotWidthEm: groupWidthEm / (safeReadingCount * rubyScale),
+        readingCellWidthsEm: readingIsLonger
+            ? distributeWidths(readingWeights, groupWidthEm)
+            : Array.from({ length: safeReadingSegments.length }, () => groupWidthEm / safeReadingSegments.length),
     };
 }
 
@@ -109,14 +137,14 @@ export default function ResultContent({
                 const surfaceSegments = getSurfaceSegments(word);
                 const kanaWord = isKana(word.surface);
                 const kanaAccents = Array.isArray(word.accent) ? word.accent : null;
-                const readingCount = kanaWord ? surfaceSegments.length : word.furigana.length;
-                const { baseSlotWidthEm, groupWidthEm, readingSlotWidthEm } = getWordLayoutMetrics(
-                    surfaceSegments.length,
-                    readingCount,
+                const readingSegments = kanaWord
+                    ? surfaceSegments
+                    : word.furigana.map(char => (char.text === placeholder ? '' : char.text));
+                const { baseCellWidthsEm, groupWidthEm, readingCellWidthsEm } = getWordLayoutMetrics(
+                    surfaceSegments,
+                    readingSegments,
                 );
                 const groupStyle = createWidthStyle(groupWidthEm);
-                const baseCellStyle = createWidthStyle(baseSlotWidthEm);
-                const readingCellStyle = createWidthStyle(readingSlotWidthEm);
 
                 if (kanaWord && kanaAccents) {
                     return (
@@ -135,7 +163,7 @@ export default function ResultContent({
                                         <span
                                             key={`${wordIndex}-${charIndex}`}
                                             className='word-reading-cell'
-                                            style={readingCellStyle}
+                                            style={createWidthStyle(readingCellWidthsEm[charIndex] / rubyScale)}
                                         >
                                             <Kana
                                                 accentPhaseActive={accentPhaseActive}
@@ -157,7 +185,7 @@ export default function ResultContent({
                                     <span
                                         key={`${wordIndex}-${charIndex}`}
                                         className='word-base-cell kana-only-base'
-                                        style={baseCellStyle}
+                                        style={createWidthStyle(baseCellWidthsEm[charIndex])}
                                     >
                                         {segment}
                                     </span>
@@ -187,7 +215,7 @@ export default function ResultContent({
                                         <span
                                             key={`${wordIndex}-${charIndex}`}
                                             className='word-reading-cell'
-                                            style={readingCellStyle}
+                                            style={createWidthStyle(readingCellWidthsEm[charIndex] / rubyScale)}
                                         >
                                             <Kana
                                                 accent={char.accent}
@@ -226,7 +254,7 @@ export default function ResultContent({
                                 <span
                                     key={`${wordIndex}-${charIndex}`}
                                     className='word-base-cell'
-                                    style={baseCellStyle}
+                                    style={createWidthStyle(baseCellWidthsEm[charIndex])}
                                 >
                                     {segment}
                                 </span>
