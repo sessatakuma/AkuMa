@@ -4,6 +4,7 @@ import {
 } from '../proxy.config.js';
 
 const ALLOWED_SITE_ORIGIN = 'https://accent-marker.sessatakuma.dev';
+const ALLOWED_DEV_ORIGINS = new Set(['http://localhost:3000', 'http://127.0.0.1:3000']);
 
 function extractRequestOrigin(request) {
     const originHeader = request.headers.origin;
@@ -30,7 +31,11 @@ export default async function handler(request, response) {
     }
 
     const requestOrigin = extractRequestOrigin(request);
-    if (requestOrigin !== ALLOWED_SITE_ORIGIN) {
+    const isAllowedOrigin =
+        requestOrigin === ALLOWED_SITE_ORIGIN ||
+        (process.env.NODE_ENV !== 'production' && ALLOWED_DEV_ORIGINS.has(requestOrigin));
+
+    if (!isAllowedOrigin) {
         return response.status(403).json({ error: 'Forbidden' });
     }
 
