@@ -2,7 +2,7 @@
     --accent-color: #cc3344;
     --accent-width: 2px;
     --kana-ruby-font-scale: 0.6;
-    --kana-accent-lane-height: 1em;
+    --kana-accent-lane-height: 0.5em;
     --kana-accent-gap: 2px;
     --kana-drop-height: 0.4rem;
     --result-ruby-font-size: calc(1em * var(--kana-ruby-font-scale));

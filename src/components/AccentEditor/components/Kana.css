@@ -2,7 +2,7 @@
     --accent-color: var(--color-accent-red);
     --accent-width: 2px;
     --kana-ruby-font-scale: 0.6;
-    --kana-accent-lane-height: 1em;
+    --kana-accent-lane-height: 0.5em;
     --kana-accent-gap: 2px;
     --kana-ruby-stack-height: calc(var(--kana-accent-lane-height) + var(--kana-accent-gap) + 1em);
     --kana-accent-hitbox-height: 0.5rem;
