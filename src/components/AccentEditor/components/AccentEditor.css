@@ -22,8 +22,10 @@
 
 .input-panel-stack,
 .result-panel-stack {
-    --result-panel-callout-gap: var(--space-3);
-    --result-panel-callout-space: calc((0.875rem * 1.5) + var(--result-panel-callout-gap));
+    --result-panel-callout-edge-space: 1em;
+    --result-panel-callout-space: calc(
+        (0.875rem * 1.5) + (var(--result-panel-callout-edge-space) * 2)
+    );
 
     position: relative;
     display: flex;
@@ -159,10 +161,6 @@
     .input-panel-stack {
         padding-block: 0;
     }
-
-    .result-panel-stack {
-        --result-panel-callout-space: calc((0.875rem * 1.5) + 2em);
-    }
 }
 
 @media (max-width: 768px) {
@@ -179,7 +177,6 @@
     }
 
     .result-panel-stack {
-        --result-panel-callout-space: calc((0.875rem * 1.5) + 2em);
         padding-inline: var(--space-4);
     }
 
