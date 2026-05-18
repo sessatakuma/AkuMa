@@ -152,9 +152,16 @@
 }
 
 @media (max-width: 1023px) {
-    .input-panel-stack,
+    .two-col-layout {
+        gap: var(--space-2);
+    }
+
+    .input-panel-stack {
+        padding-block: 0;
+    }
+
     .result-panel-stack {
-        --result-panel-callout-space: calc((0.875rem * 1.5) + var(--space-4));
+        --result-panel-callout-space: calc((0.875rem * 1.5) + 2em);
     }
 }
 
@@ -167,9 +174,12 @@
         gap: 0;
     }
 
-    .input-panel-stack,
+    .input-panel-stack {
+        padding-inline: var(--space-4);
+    }
+
     .result-panel-stack {
-        --result-panel-callout-space: calc((0.875rem * 1.5) + var(--space-3));
+        --result-panel-callout-space: calc((0.875rem * 1.5) + 2em);
         padding-inline: var(--space-4);
     }
 
