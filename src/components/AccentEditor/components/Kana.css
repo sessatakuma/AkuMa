@@ -55,7 +55,9 @@ ruby > rt {
 .kana-accent-line,
 .kana-accent-drop {
     position: absolute;
+    opacity: 0;
     pointer-events: none;
+    visibility: hidden;
 }
 
 .kana-accent-line {
@@ -107,6 +109,13 @@ ruby > rt {
 
 .kana-accent-hitbox:focus-visible {
     background-color: var(--kana-edit-focus-bg);
+}
+
+.kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='flat'] > .kana-accent-lane > .kana-accent-line,
+.kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane > .kana-accent-line,
+.kana-shell[data-accent-phase-active='true'][data-accent-visible='true'][data-accent='drop'] > .kana-accent-lane > .kana-accent-drop {
+    opacity: 1;
+    visibility: visible;
 }
 
 .kana-text {
