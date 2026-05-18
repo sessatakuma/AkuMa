@@ -1,8 +1,11 @@
 import {
     memo,
+    useCallback,
+    useLayoutEffect,
     useRef,
     type CompositionEvent,
     type FocusEvent,
+    type FormEvent,
     type KeyboardEvent,
     type MouseEvent,
 } from 'react';
@@ -57,6 +60,60 @@ function Kana({
     const textRef = useRef<HTMLSpanElement>(null);
     const isComposingRef = useRef(false);
     const shouldCommitAfterCompositionRef = useRef(false);
+    const isFocusedRef = useRef(false);
+
+    const clearLiveLayoutStyles = useCallback((): void => {
+        const textNode = textRef.current;
+        if (!textNode) return;
+
+        const readingCell = textNode.closest('.word-reading-cell') as HTMLSpanElement | null;
+        const wordStack = textNode.closest('.word-stack-annotated') as HTMLSpanElement | null;
+
+        readingCell?.style.removeProperty('min-width');
+        wordStack?.style.removeProperty('min-width');
+
+        if (!readingCell?.parentElement || !wordStack) {
+            return;
+        }
+
+        const readingCells = Array.from(readingCell.parentElement.children);
+        const readingIndex = readingCells.indexOf(readingCell);
+        const baseCells = Array.from(wordStack.querySelectorAll('.word-base-row > .word-base-cell'));
+        const baseCell = baseCells[readingIndex] as HTMLSpanElement | undefined;
+
+        baseCell?.style.removeProperty('min-width');
+    }, []);
+
+    const syncLiveLayoutWidth = useCallback((): void => {
+        const textNode = textRef.current;
+        if (!editable || !textNode || !isFocusedRef.current) {
+            return;
+        }
+
+        const readingCell = textNode.closest('.word-reading-cell') as HTMLSpanElement | null;
+        const furiganaGroup = textNode.closest('.furigana-group') as HTMLSpanElement | null;
+        const wordStack = textNode.closest('.word-stack-annotated') as HTMLSpanElement | null;
+        const baseRow = wordStack?.querySelector('.word-base-row') as HTMLSpanElement | null;
+
+        if (!readingCell || !furiganaGroup || !wordStack || !baseRow) {
+            return;
+        }
+
+        const nextReadingMinWidth = Math.max(textNode.scrollWidth, readingCell.clientWidth);
+        readingCell.style.minWidth = `${nextReadingMinWidth}px`;
+
+        const readingCells = Array.from(readingCell.parentElement?.children ?? []);
+        const readingIndex = readingCells.indexOf(readingCell);
+        const baseCells = Array.from(baseRow.querySelectorAll('.word-base-cell'));
+
+        if (readingCells.length === baseCells.length && readingIndex >= 0) {
+            const baseCell = baseCells[readingIndex] as HTMLSpanElement | undefined;
+            baseCell?.style.setProperty('min-width', `${Math.max(nextReadingMinWidth, baseCell.clientWidth)}px`);
+        }
+
+        const nextGroupMinWidth = Math.max(furiganaGroup.scrollWidth, baseRow.scrollWidth, wordStack.clientWidth);
+        wordStack.style.minWidth = `${nextGroupMinWidth}px`;
+    }, [editable]);
 
     const getCurrentText = (): string => {
         const currentText = textRef.current?.innerText ?? text;
@@ -125,16 +182,24 @@ function Kana({
 
     const finishEditing = (event: FocusEvent<HTMLSpanElement>): void => {
         if (!editable) return;
+        isFocusedRef.current = false;
         if (isComposingRef.current) {
             shouldCommitAfterCompositionRef.current = true;
             return;
         }
 
         commitText((event.target as HTMLSpanElement).innerText);
+        window.requestAnimationFrame(() => {
+            clearLiveLayoutStyles();
+        });
     };
 
     const handleFocus = (): void => {
+        isFocusedRef.current = true;
         onFocusChange?.(true);
+        window.requestAnimationFrame(() => {
+            syncLiveLayoutWidth();
+        });
     };
 
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>): void => {
@@ -204,6 +269,7 @@ function Kana({
 
     const handleCompositionEnd = (event: CompositionEvent<HTMLSpanElement>): void => {
         isComposingRef.current = false;
+        syncLiveLayoutWidth();
 
         if (shouldCommitAfterCompositionRef.current) {
             shouldCommitAfterCompositionRef.current = false;
@@ -211,10 +277,23 @@ function Kana({
         }
     };
 
+    const handleInput = (_event: FormEvent<HTMLSpanElement>): void => {
+        syncLiveLayoutWidth();
+    };
+
     const setTextNodeRef = (node: HTMLSpanElement | null): void => {
         textRef.current = node;
         registerTextRef?.(node);
     };
+
+    useLayoutEffect(() => {
+        if (editable && isFocusedRef.current) {
+            syncLiveLayoutWidth();
+            return;
+        }
+
+        clearLiveLayoutStyles();
+    }, [clearLiveLayoutStyles, editable, syncLiveLayoutWidth, text]);
 
     return (
         <span
@@ -249,6 +328,7 @@ function Kana({
                 onCompositionEnd={handleCompositionEnd}
                 onCompositionStart={handleCompositionStart}
                 onFocus={handleFocus}
+                onInput={handleInput}
                 onKeyDown={handleKeyDown}
                 onMouseDown={handleMouseDown}
                 role={editable ? 'textbox' : undefined}
