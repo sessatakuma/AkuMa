@@ -88,14 +88,16 @@ export default function AccentEditor() {
                 className={`two-col-layout ${isResultExpanded ? 'two-col-layout-expanded' : ''}`}
                 aria-label={t.resultsAndInput}
             >
-                <section className='input-panel' aria-label={t.inputPanelLabel} ref={panelRef}>
-                    <Input
-                        paragraph={paragraph}
-                        setParagraph={setParagraph}
-                        isLoading={isLoading}
-                        actionsRef={footerRef}
-                    />
-                </section>
+                <div className='input-panel-stack'>
+                    <section className='input-panel' aria-label={t.inputPanelLabel} ref={panelRef}>
+                        <Input
+                            paragraph={paragraph}
+                            setParagraph={setParagraph}
+                            isLoading={isLoading}
+                            actionsRef={footerRef}
+                        />
+                    </section>
+                </div>
 
                 <div
                     className={`result-panel-stack ${isResultExpanded ? 'result-panel-stack-expanded' : ''}`}
