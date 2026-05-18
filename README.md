@@ -33,12 +33,12 @@ bun dev
 
 ## Local API Setup (Internal Development)
 
-Local development and `vite preview` use a same-origin proxy for `/api/mark-accent` that calls the upstream API directly from the Vite server.
+Production on Vercel manages the upstream API key server-side.
 
-Add the API key to `.env` so local requests can be proxied server-side:
+If you run the app locally with `bun dev` or `vite preview`, the local Vite proxy for `/api/mark-accent` still needs an API key in `.env`:
 
 ```bash
 MARK_ACCENT_API_KEY=<your_api_key>
 ```
 
-For local backward compatibility, `VITE_X_API_KEY` is also accepted, but `MARK_ACCENT_API_KEY` is the preferred variable name.
+`VITE_X_API_KEY` is still accepted for backward compatibility, but `MARK_ACCENT_API_KEY` is the preferred variable name.
