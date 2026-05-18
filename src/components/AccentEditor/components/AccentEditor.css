@@ -16,6 +16,7 @@
 .two-col-layout {
     display: grid;
     grid-template-columns: 1fr;
+    align-items: start;
     gap: 2rem;
     min-height: 60vh;
 }
