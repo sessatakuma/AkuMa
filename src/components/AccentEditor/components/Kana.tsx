@@ -216,6 +216,9 @@ function Kana({
         registerTextRef?.(node);
     };
 
+    const showFlatAccent = accent !== 0;
+    const showDropAccent = accent === 2;
+
     return (
         <span
             className='kana-shell'
@@ -228,6 +231,8 @@ function Kana({
             data-interactive={interactive || undefined}
         >
             <span className='kana-accent-lane' aria-hidden='true'>
+                {showFlatAccent ? <span className='kana-accent-line' /> : null}
+                {showDropAccent ? <span className='kana-accent-drop' /> : null}
                 <button
                     type='button'
                     className='kana-accent-hitbox'
