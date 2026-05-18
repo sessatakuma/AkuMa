@@ -84,7 +84,7 @@
 }
 
 .result-panel-status {
-    top: calc((0.75rem + 100%) * -1);
+    bottom: calc(100% + 0.75rem);
 }
 
 .result-panel-hint {
