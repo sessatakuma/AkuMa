@@ -94,11 +94,11 @@
 }
 
 .result-panel-status {
-    top: 0;
+    top: var(--result-panel-callout-edge-space);
 }
 
 .result-panel-hint {
-    bottom: 0;
+    bottom: var(--result-panel-callout-edge-space);
 }
 
 .result-panel-status-label,
