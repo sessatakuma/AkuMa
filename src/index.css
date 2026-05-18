@@ -37,6 +37,10 @@
     --color-text-menu-fixed: #374151;
     --color-switch-track: #d1d5db;
     --color-switch-thumb: #ffffff;
+    --color-overlay-panel: color-mix(in srgb, var(--color-bg-secondary) 72%, transparent);
+    --color-overlay-panel-dark: color-mix(in srgb, var(--color-bg-dark-panel) 68%, transparent);
+    --color-overlay-ink: color-mix(in srgb, var(--color-text-primary) 78%, white);
+    --color-overlay-ink-dark: color-mix(in srgb, var(--color-text-dark-primary) 86%, white);
 
     --color-feedback-success: var(--color-accent-green);
     --color-feedback-warning: var(--color-accent-red);
@@ -51,6 +55,9 @@
     --radius-md: 0.5rem;
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
+
+    --duration-overlay-dot-wave: 900ms;
+    --overlay-blur-panel: 6px;
 }
 
 * {

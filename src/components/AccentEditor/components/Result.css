@@ -1,9 +1,12 @@
 .result-container-inner {
+    --result-overlay-background: var(--color-overlay-panel);
+    --result-overlay-foreground: var(--color-overlay-ink);
+
     position: relative;
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    padding: 1.5rem;
+    padding: var(--space-5);
     border-radius: var(--radius-lg);
     overflow: hidden;
     transition:
@@ -15,7 +18,67 @@
     --accent-color: color-mix(in srgb, var(--color-accent-red) 72%, white);
     --kana-edit-hover-bg: color-mix(in srgb, var(--color-accent-red) 14%, transparent);
     --kana-edit-focus-bg: color-mix(in srgb, var(--color-accent-red) 20%, transparent);
+    --result-overlay-background: var(--color-overlay-panel-dark);
+    --result-overlay-foreground: var(--color-overlay-ink-dark);
     background-color: var(--color-bg-dark-panel);
+}
+
+.result-status-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    background: var(--result-overlay-background);
+    backdrop-filter: blur(var(--overlay-blur-panel));
+    pointer-events: auto;
+}
+
+.result-status-overlay-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    min-height: 48px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    color: var(--result-overlay-foreground);
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.result-status-overlay-label {
+    display: inline-flex;
+    align-items: center;
+}
+
+.result-status-overlay-dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 1.5em;
+}
+
+.result-status-overlay-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.5em;
+    opacity: 0.32;
+    animation: result-status-dot-wave var(--duration-overlay-dot-wave) ease-in-out infinite;
+}
+
+.result-status-overlay-dot:nth-child(2) {
+    animation-delay: 120ms;
+}
+
+.result-status-overlay-dot:nth-child(3) {
+    animation-delay: 240ms;
 }
 
 .result-actions {
@@ -317,6 +380,20 @@
 
 .toast-notification.toast-warning {
     background-color: var(--color-feedback-warning);
+}
+
+@keyframes result-status-dot-wave {
+    0%,
+    60%,
+    100% {
+        opacity: 0.24;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-0.1875rem);
+    }
 }
 
 @keyframes fadeInOut {

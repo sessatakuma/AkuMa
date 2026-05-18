@@ -73,6 +73,7 @@ export default function Result({
             updateWords,
             words,
         });
+    const showStatusOverlay = isLoading || isPresenting;
 
     return (
         <div
@@ -83,6 +84,18 @@ export default function Result({
             <p className='visually-hidden' aria-live='polite'>
                 {statusMessage}
             </p>
+            {showStatusOverlay && (
+                <div className='result-status-overlay' aria-hidden='true'>
+                    <div className='result-status-overlay-copy'>
+                        <span className='result-status-overlay-label'>分析中</span>
+                        <span className='result-status-overlay-dots'>
+                            <span className='result-status-overlay-dot'>.</span>
+                            <span className='result-status-overlay-dot'>.</span>
+                            <span className='result-status-overlay-dot'>.</span>
+                        </span>
+                    </div>
+                </div>
+            )}
             <div className='result-content'>
                 <ResultContent
                     accentPhaseActive={accentPhaseActive}
