@@ -11,12 +11,32 @@ function createWidthStyle(widthEm: number): CSSProperties {
     return { width: `${widthEm}em` };
 }
 
-function renderPlainSegment(segment: string, key: string) {
+function renderKanaSegment(
+    key: string,
+    segment: string,
+    accent: AccentValueType,
+    accentPhaseActive: boolean,
+    accentVisible: boolean,
+    isPresenting: boolean,
+    showAccent: boolean,
+    onUpdate: (_ignore: string, newAccent: AccentValueType) => void,
+) {
     return (
-        <span key={key} className='word-stack word-stack-plain'>
-            <span className='word-reading-row word-reading-row-empty' aria-hidden='true' />
-            <span className='word-base-row'>
-                <span className='word-base-cell word-base-cell-plain'>{segment}</span>
+        <span
+            key={key}
+            className='word-inline-cluster word-group-kana'
+            style={createWidthStyle(Math.max([...segment].length, 1))}
+        >
+            <span className='word-reading-cell' style={createWidthStyle(Math.max([...segment].length, 1))}>
+                <Kana
+                    accent={accent}
+                    accentPhaseActive={accentPhaseActive}
+                    accentVisible={showAccent && accentVisible}
+                    interactive={!isPresenting}
+                    text={segment}
+                    textVisible
+                    onUpdate={onUpdate}
+                />
             </span>
         </span>
     );
@@ -155,9 +175,27 @@ export default function ResultContent({
 
                 const mixedWordContent = (
                     <span key={`${wordIndex}-${word.surface}`} className='word-inline-cluster'>
-                        {model.prefixSurface.map((segment, segmentIndex) =>
-                            renderPlainSegment(segment, `prefix-${wordIndex}-${segmentIndex}`),
-                        )}
+                        {model.prefixSurface.map((segment, segmentIndex) => {
+                            const charIndex = segmentIndex;
+                            const accent =
+                                (Array.isArray(word.accent) ? word.accent[charIndex] : undefined) ??
+                                word.furigana[charIndex]?.accent ??
+                                AccentValue.None;
+                            const isAccentVisible =
+                                accentPhaseActive && accentRevealIndex < revealedAccentUnits;
+                            accentRevealIndex += 1;
+
+                            return renderKanaSegment(
+                                `prefix-${wordIndex}-${segmentIndex}`,
+                                segment,
+                                accent,
+                                accentPhaseActive,
+                                isAccentVisible,
+                                isPresenting,
+                                showAccent,
+                                (_ignore, newAccent) => updateKana(wordIndex, charIndex, newAccent),
+                            );
+                        })}
                         <span className='word-stack word-stack-annotated' style={createWidthStyle(model.groupWidthEm)}>
                             <span className='word-reading-row'>
                                 <span className='furigana-group'>
@@ -223,14 +261,34 @@ export default function ResultContent({
                                 ))}
                             </span>
                         </span>
-                        {model.suffixSurface.map((segment, segmentIndex) =>
-                            renderPlainSegment(segment, `suffix-${wordIndex}-${segmentIndex}`),
-                        )}
+                        {model.suffixSurface.map((segment, segmentIndex) => {
+                            const charIndex =
+                                model.annotatedStartIndex +
+                                model.annotatedReading.length +
+                                segmentIndex;
+                            const accent =
+                                (Array.isArray(word.accent) ? word.accent[charIndex] : undefined) ??
+                                word.furigana[charIndex]?.accent ??
+                                AccentValue.None;
+                            const isAccentVisible =
+                                accentPhaseActive && accentRevealIndex < revealedAccentUnits;
+                            accentRevealIndex += 1;
+
+                            return renderKanaSegment(
+                                `suffix-${wordIndex}-${segmentIndex}`,
+                                segment,
+                                accent,
+                                accentPhaseActive,
+                                isAccentVisible,
+                                isPresenting,
+                                showAccent,
+                                (_ignore, newAccent) => updateKana(wordIndex, charIndex, newAccent),
+                            );
+                        })}
                     </span>
                 );
 
                 furiganaRevealIndex += model.trailingHiddenReadingCount;
-                accentRevealIndex += model.trailingHiddenReadingCount;
 
                 return mixedWordContent;
             })}

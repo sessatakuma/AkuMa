@@ -119,6 +119,10 @@ export function useResultEditing({
                 const word = nextWords[wordIndex];
                 if (word && Array.isArray(word.accent)) {
                     word.accent[textIndex] = newAccent;
+
+                    if (word.furigana[textIndex]) {
+                        word.furigana[textIndex].accent = newAccent;
+                    }
                 }
                 return nextWords;
             });
