@@ -174,6 +174,24 @@ function Kana({
         onUpdate?.(getCurrentText(), ((accent + 1) % 3) as AccentValueType);
     };
 
+    const shiftAccent = (step: -1 | 1): void => {
+        const nextAccent = (((accent + step) % 3) + 3) % 3 as AccentValueType;
+        onUpdate?.(getCurrentText(), nextAccent);
+
+        if (!editable) {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            const node = textRef.current;
+            if (!node) {
+                return;
+            }
+
+            setCaretPosition(node, 'end');
+        });
+    };
+
     const handleAccentMouseDown = (event: MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault();
         event.stopPropagation();
@@ -251,6 +269,12 @@ function Kana({
 
         if (event.key === 'ArrowRight' && isCaretAtEnd(target) && onArrowAtEdge?.('next')) {
             event.preventDefault();
+            return;
+        }
+
+        if (isCaretAtEnd(target) && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+            event.preventDefault();
+            shiftAccent(event.key === 'ArrowUp' ? -1 : 1);
             return;
         }
 
