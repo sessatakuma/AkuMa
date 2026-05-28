@@ -129,12 +129,8 @@ export function useAccentAnalysis({
                     return;
                 }
 
-                if (!receivedAnyChunk) {
-                    replaceWords(mapFallbackTextToWords(text));
-                    setStatusMessage(t.fallbackStatus);
-                } else {
-                    setStatusMessage(t.fallbackStatus);
-                }
+                replaceWords(mapFallbackTextToWords(text));
+                setStatusMessage(t.fallbackStatus);
 
                 setIsLoading(false);
                 return;
