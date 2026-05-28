@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 import {
     buildMarkAccentStreamUrl,
@@ -9,24 +9,33 @@ import {
     normalizeMarkAccentUrl,
 } from './proxy.config.js';
 
+declare const process: {
+    cwd: () => string;
+};
+
 interface MarkAccentProxyOptions {
     apiKey?: string;
     upstreamUrl: string;
 }
 
-type ProxyRequest = NodeJS.ReadableStream & {
+type ProxyRequest = object & {
     method?: string;
-    headers: Record<string, string | string[] | undefined>;
+    headers?: Record<string, string | string[] | undefined>;
+    on?: {
+        (event: 'data', listener: (chunk: Uint8Array | string) => void): void;
+        (event: 'end', listener: () => void): void;
+        (event: 'error', listener: (error: Error) => void): void;
+    };
 };
 
-interface ProxyResponse {
+type ProxyResponse = object & {
     statusCode: number;
     setHeader: (name: string, value: string) => void;
     write: (chunk: Uint8Array | string) => boolean;
     end: (body?: string) => void;
-}
+};
 
-function createMarkAccentProxy(options: MarkAccentProxyOptions) {
+function createMarkAccentProxy(options: MarkAccentProxyOptions): Plugin {
     const normalizedUpstreamUrl = normalizeMarkAccentUrl(options.upstreamUrl);
     const streamUpstreamUrl = buildMarkAccentStreamUrl(options.upstreamUrl);
 
@@ -34,18 +43,24 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions) {
         new Promise((resolve, reject) => {
             let rawBody = '';
 
+            if (!req.on) {
+                reject(new Error('Request stream is unavailable'));
+                return;
+            }
+
             req.on('data', chunk => {
-                rawBody += chunk;
+                rawBody += chunk.toString();
             });
             req.on('end', () => resolve(rawBody));
             req.on('error', reject);
         });
 
     const buildUpstreamHeaders = (req: ProxyRequest): Record<string, string> => {
+        const contentType = req.headers?.['content-type'];
         const headers: Record<string, string> = {
-            'Content-Type': Array.isArray(req.headers['content-type'])
-                ? req.headers['content-type'][0]
-                : req.headers['content-type'] || 'application/json',
+            'Content-Type': Array.isArray(contentType)
+                ? contentType[0]
+                : contentType || 'application/json',
         };
 
         if (options.apiKey) {
@@ -55,12 +70,31 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions) {
         return headers;
     };
 
+    const rejectMissingApiKey = (res: ProxyResponse): boolean => {
+        if (options.apiKey) {
+            return false;
+        }
+
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(
+            JSON.stringify({
+                error: 'Missing MARK_ACCENT_API_KEY or VITE_X_API_KEY for local MarkAccent proxy',
+            }),
+        );
+        return true;
+    };
+
     const proxyRequest = async (req: ProxyRequest, res: ProxyResponse) => {
         if (req.method !== 'POST') {
             res.statusCode = 405;
             res.setHeader('Allow', 'POST');
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+            return;
+        }
+
+        if (rejectMissingApiKey(res)) {
             return;
         }
 
@@ -93,6 +127,10 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions) {
             res.setHeader('Allow', 'POST');
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+            return;
+        }
+
+        if (rejectMissingApiKey(res)) {
             return;
         }
 
@@ -141,15 +179,11 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions) {
 
     return {
         name: 'mark-accent-proxy',
-        configureServer(server: {
-            middlewares: { use: (path: string, handler: typeof proxyRequest) => void };
-        }) {
+        configureServer(server) {
             server.middlewares.use(MARK_ACCENT_STREAM_PROXY_PATH, proxyStreamRequest);
             server.middlewares.use(MARK_ACCENT_PROXY_PATH, proxyRequest);
         },
-        configurePreviewServer(server: {
-            middlewares: { use: (path: string, handler: typeof proxyRequest) => void };
-        }) {
+        configurePreviewServer(server) {
             server.middlewares.use(MARK_ACCENT_STREAM_PROXY_PATH, proxyStreamRequest);
             server.middlewares.use(MARK_ACCENT_PROXY_PATH, proxyRequest);
         },

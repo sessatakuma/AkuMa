@@ -140,11 +140,7 @@ export function useAccentAnalysis({
                 return;
             }
 
-            if (!receivedAnyChunk) {
-                replaceWords([]);
-            } else {
-                streamReplaceWords([...accumulated]);
-            }
+            replaceWords(receivedAnyChunk ? [...accumulated] : []);
 
             setStatusMessage(t.statusUpdated(accumulated.length));
             setIsStreaming(false);
