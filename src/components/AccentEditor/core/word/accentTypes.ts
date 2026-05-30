@@ -27,8 +27,3 @@ export interface MarkAccentApiResultEntry {
     furigana: string;
     accent: AccentEntry[];
 }
-
-export interface MarkAccentApiResponse {
-    status: number;
-    result: MarkAccentApiResultEntry[];
-}

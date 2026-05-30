@@ -4,9 +4,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 import {
     buildMarkAccentStreamUrl,
     DEFAULT_MARK_ACCENT_UPSTREAM_URL,
-    MARK_ACCENT_PROXY_PATH,
     MARK_ACCENT_STREAM_PROXY_PATH,
-    normalizeMarkAccentUrl,
 } from './proxy.config.js';
 
 declare const process: {
@@ -36,7 +34,6 @@ type ProxyResponse = object & {
 };
 
 function createMarkAccentProxy(options: MarkAccentProxyOptions): Plugin {
-    const normalizedUpstreamUrl = normalizeMarkAccentUrl(options.upstreamUrl);
     const streamUpstreamUrl = buildMarkAccentStreamUrl(options.upstreamUrl);
 
     const readRequestBody = (req: ProxyRequest): Promise<string> =>
@@ -83,42 +80,6 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions): Plugin {
             }),
         );
         return true;
-    };
-
-    const proxyRequest = async (req: ProxyRequest, res: ProxyResponse) => {
-        if (req.method !== 'POST') {
-            res.statusCode = 405;
-            res.setHeader('Allow', 'POST');
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-            return;
-        }
-
-        if (rejectMissingApiKey(res)) {
-            return;
-        }
-
-        try {
-            const body = await readRequestBody(req);
-
-            const upstreamResponse = await fetch(normalizedUpstreamUrl, {
-                method: 'POST',
-                headers: buildUpstreamHeaders(req),
-                body,
-            });
-
-            res.statusCode = upstreamResponse.status;
-            res.setHeader(
-                'Content-Type',
-                upstreamResponse.headers.get('content-type') || 'application/json',
-            );
-            res.end(await upstreamResponse.text());
-        } catch (error) {
-            console.error('Local MarkAccent proxy failed:', error);
-            res.statusCode = 502;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: 'Upstream request failed' }));
-        }
     };
 
     const proxyStreamRequest = async (req: ProxyRequest, res: ProxyResponse) => {
@@ -181,11 +142,9 @@ function createMarkAccentProxy(options: MarkAccentProxyOptions): Plugin {
         name: 'mark-accent-proxy',
         configureServer(server) {
             server.middlewares.use(MARK_ACCENT_STREAM_PROXY_PATH, proxyStreamRequest);
-            server.middlewares.use(MARK_ACCENT_PROXY_PATH, proxyRequest);
         },
         configurePreviewServer(server) {
             server.middlewares.use(MARK_ACCENT_STREAM_PROXY_PATH, proxyStreamRequest);
-            server.middlewares.use(MARK_ACCENT_PROXY_PATH, proxyRequest);
         },
     };
 }
