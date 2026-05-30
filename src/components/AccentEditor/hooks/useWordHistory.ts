@@ -22,6 +22,10 @@ type WordHistoryAction =
           words: Word[];
       }
     | {
+          type: 'streamReplace';
+          words: Word[];
+      }
+    | {
           type: 'undo';
       }
     | {
@@ -72,6 +76,13 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
                 futureWords: [],
                 pastWords: [],
                 replaceVersion: state.replaceVersion + 1,
+                words: action.words,
+            };
+        case 'streamReplace':
+            return {
+                futureWords: [],
+                pastWords: [],
+                replaceVersion: state.replaceVersion,
                 words: action.words,
             };
         case 'update': {
@@ -130,6 +141,16 @@ export function useWordHistory() {
         [],
     );
 
+    const streamReplaceWords = useCallback(
+        (nextWords: Word[]): void => {
+            dispatch({
+                type: 'streamReplace',
+                words: nextWords,
+            });
+        },
+        [],
+    );
+
     const updateWords = useCallback(
         (updater: Word[] | ((current: Word[]) => Word[])): void => {
             dispatch({
@@ -158,6 +179,7 @@ export function useWordHistory() {
         redoWords,
         replaceVersion: state.replaceVersion,
         replaceWords,
+        streamReplaceWords,
         undoWords,
         updateWords,
         words: state.words,

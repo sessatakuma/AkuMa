@@ -142,9 +142,14 @@ export default function ResultContent({
                             style={createWidthStyle(model.groupWidthEm)}
                         >
                             {model.annotatedReading.map((segment, charIndex) => {
+                                const hasApiAccent = charIndex < kanaAccents.length;
                                 const isAccentVisible =
-                                    accentPhaseActive && accentRevealIndex < revealedAccentUnits;
-                                accentRevealIndex += 1;
+                                    accentPhaseActive &&
+                                    hasApiAccent &&
+                                    accentRevealIndex < revealedAccentUnits;
+                                if (hasApiAccent) {
+                                    accentRevealIndex += 1;
+                                }
 
                                 return (
                                     <span
@@ -170,8 +175,8 @@ export default function ResultContent({
                     );
                 }
 
+                const accentLength = Array.isArray(word.accent) ? word.accent.length : 0;
                 furiganaRevealIndex += model.annotatedStartIndex;
-                accentRevealIndex += model.annotatedStartIndex;
 
                 const mixedWordContent = (
                     <span key={`${wordIndex}-${word.surface}`} className='word-inline-cluster'>
@@ -181,9 +186,14 @@ export default function ResultContent({
                                 (Array.isArray(word.accent) ? word.accent[charIndex] : undefined) ??
                                 word.furigana[charIndex]?.accent ??
                                 AccentValue.None;
+                            const hasApiAccent = charIndex < accentLength;
                             const isAccentVisible =
-                                accentPhaseActive && accentRevealIndex < revealedAccentUnits;
-                            accentRevealIndex += 1;
+                                accentPhaseActive &&
+                                hasApiAccent &&
+                                accentRevealIndex < revealedAccentUnits;
+                            if (hasApiAccent) {
+                                accentRevealIndex += 1;
+                            }
 
                             return renderKanaSegment(
                                 `prefix-${wordIndex}-${segmentIndex}`,
@@ -202,12 +212,17 @@ export default function ResultContent({
                                     {model.annotatedReading.map((segment, annotatedIndex) => {
                                         const charIndex = model.annotatedStartIndex + annotatedIndex;
                                         const char = word.furigana[charIndex];
+                                        const hasApiAccent = charIndex < accentLength;
                                         const isFuriganaVisible = furiganaRevealIndex < revealedFuriganaUnits;
                                         const isAccentVisible =
-                                            accentPhaseActive && accentRevealIndex < revealedAccentUnits;
+                                            accentPhaseActive &&
+                                            hasApiAccent &&
+                                            accentRevealIndex < revealedAccentUnits;
 
                                         furiganaRevealIndex += 1;
-                                        accentRevealIndex += 1;
+                                        if (hasApiAccent) {
+                                            accentRevealIndex += 1;
+                                        }
 
                                         return (
                                             <span
@@ -270,9 +285,14 @@ export default function ResultContent({
                                 (Array.isArray(word.accent) ? word.accent[charIndex] : undefined) ??
                                 word.furigana[charIndex]?.accent ??
                                 AccentValue.None;
+                            const hasApiAccent = charIndex < accentLength;
                             const isAccentVisible =
-                                accentPhaseActive && accentRevealIndex < revealedAccentUnits;
-                            accentRevealIndex += 1;
+                                accentPhaseActive &&
+                                hasApiAccent &&
+                                accentRevealIndex < revealedAccentUnits;
+                            if (hasApiAccent) {
+                                accentRevealIndex += 1;
+                            }
 
                             return renderKanaSegment(
                                 `suffix-${wordIndex}-${segmentIndex}`,

@@ -22,14 +22,16 @@ export default function AccentEditor() {
         redoWords,
         replaceVersion,
         replaceWords,
+        streamReplaceWords,
         undoWords,
         updateWords,
         words,
     } = useWordHistory();
-    const { isLoading, statusMessage } = useAccentAnalysis({
+    const { isLoading, isStreaming, statusMessage } = useAccentAnalysis({
         isEditing,
         paragraph,
         replaceWords,
+        streamReplaceWords,
     });
     const {
         accentPhaseActive,
@@ -40,10 +42,11 @@ export default function AccentEditor() {
     } = useResultReveal({
         analysisVersion: replaceVersion,
         isLoading,
+        isStreaming,
         paragraph,
         words,
     });
-    const isBusy = isLoading || isPresenting;
+    const isBusy = isLoading || isPresenting || isStreaming;
 
     useEffect(() => {
         if (!isResultExpanded) {

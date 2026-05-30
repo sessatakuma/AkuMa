@@ -35,7 +35,7 @@ bun dev
 
 Production on Vercel manages the upstream API key server-side.
 
-If you run the app locally with `bun dev` or `vite preview`, the local Vite proxy for `/api/mark-accent` still needs an API key in `.env`:
+If you run the app locally with `bun dev` or `vite preview`, the local Vite proxy for `/api/mark-accent/stream` needs an API key in `.env`:
 
 ```bash
 MARK_ACCENT_API_KEY=<your_api_key>

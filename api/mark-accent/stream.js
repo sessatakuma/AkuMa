@@ -1,7 +1,8 @@
 import {
+    buildMarkAccentStreamUrl,
     DEFAULT_MARK_ACCENT_UPSTREAM_URL,
     isMarkAccentProxyLoop,
-} from '../proxy.config.js';
+} from '../../proxy.config.js';
 
 const ALLOWED_SITE_ORIGIN = 'https://accent-marker.sessatakuma.dev';
 const ALLOWED_DEV_ORIGINS = new Set(['http://localhost:3000', 'http://127.0.0.1:3000']);
@@ -45,16 +46,18 @@ export default async function handler(request, response) {
     }
 
     try {
-        const upstreamUrl =
+        const baseUpstreamUrl =
             process.env.MARK_ACCENT_UPSTREAM_URL || DEFAULT_MARK_ACCENT_UPSTREAM_URL;
 
-        if (isMarkAccentProxyLoop(request.headers.host, upstreamUrl)) {
+        if (isMarkAccentProxyLoop(request.headers.host, baseUpstreamUrl)) {
             return response.status(500).json({
                 error: 'MARK_ACCENT_UPSTREAM_URL points to this proxy route and causes a loop',
             });
         }
 
-        const upstreamResponse = await fetch(upstreamUrl, {
+        const streamUpstreamUrl = buildMarkAccentStreamUrl(baseUpstreamUrl);
+
+        const upstreamResponse = await fetch(streamUpstreamUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -63,30 +66,33 @@ export default async function handler(request, response) {
             body: JSON.stringify(request.body ?? {}),
         });
 
-        const rawBody = await upstreamResponse.text();
-        const contentType = upstreamResponse.headers.get('content-type') || '';
+        response.status(upstreamResponse.status);
+        response.setHeader(
+            'Content-Type',
+            upstreamResponse.headers.get('content-type') ||
+                'application/x-ndjson; charset=utf-8',
+        );
+        response.setHeader('Cache-Control', 'no-cache, no-transform');
+        response.setHeader('X-Accel-Buffering', 'no');
 
-        if (!contentType.includes('application/json')) {
-            const snippet = rawBody.slice(0, 160);
-
-            console.error('MarkAccent proxy received non-JSON upstream response:', {
-                contentType,
-                snippet,
-                status: upstreamResponse.status,
-                upstreamUrl,
-            });
-
-            return response.status(502).json({
-                error: 'Upstream returned a non-JSON response',
-                snippet,
-                status: upstreamResponse.status,
-            });
+        if (!upstreamResponse.body) {
+            response.end(await upstreamResponse.text());
+            return;
         }
 
-        const data = JSON.parse(rawBody);
-        return response.status(upstreamResponse.status).json(data);
+        const reader = upstreamResponse.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            if (value && value.byteLength > 0) {
+                response.write(value);
+            }
+        }
+        response.end();
     } catch (error) {
-        console.error('MarkAccent proxy failed:', error);
+        console.error('MarkAccent stream proxy failed:', error);
         return response.status(502).json({ error: 'Upstream request failed' });
     }
 }

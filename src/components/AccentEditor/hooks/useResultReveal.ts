@@ -121,11 +121,13 @@ interface RevealState {
 export function useResultReveal({
     analysisVersion,
     isLoading,
+    isStreaming,
     paragraph,
     words,
 }: {
     analysisVersion: number;
     isLoading: boolean;
+    isStreaming: boolean;
     paragraph: string;
     words: Array<{
         accent: number | number[];
@@ -344,6 +346,16 @@ export function useResultReveal({
     ]);
 
     const revealPhase = isStaleRevealState ? 'revealing' : revealState.phase;
+
+    if (isStreaming) {
+        return {
+            accentPhaseActive: true,
+            isPresenting: true,
+            revealedAccentUnits: accentUnits,
+            revealedFuriganaUnits: furiganaUnits,
+            revealedLoadingCharacters,
+        };
+    }
 
     return {
         accentPhaseActive: revealPhase === 'revealing' || revealPhase === 'complete',
