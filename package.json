@@ -14,6 +14,7 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
+        "@vercel/analytics": "^2.0.1",
         "html-to-image": "^1.11.13",
         "jspdf": "^4.0.0",
         "lucide-react": "^0.562.0",
