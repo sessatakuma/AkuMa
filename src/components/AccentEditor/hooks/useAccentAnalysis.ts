@@ -23,12 +23,14 @@ const VISIBLE_LOADING_DELAY_MS = 500;
 interface UseAccentAnalysisOptions {
     isEditing: boolean;
     paragraph: string;
+    onTemporaryIssue: () => void;
     replaceWords: (words: Word[]) => void;
     streamReplaceWords: (words: Word[]) => void;
 }
 
 export function useAccentAnalysis({
     isEditing,
+    onTemporaryIssue,
     paragraph,
     replaceWords,
     streamReplaceWords,
@@ -131,18 +133,28 @@ export function useAccentAnalysis({
 
                 replaceWords(mapFallbackTextToWords(text));
                 setStatusMessage(t.fallbackStatus);
+                onTemporaryIssue();
 
                 setIsLoading(false);
                 return;
             }
 
-            replaceWords(receivedAnyChunk ? [...accumulated] : []);
+            if (!receivedAnyChunk || accumulated.length === 0) {
+                replaceWords(mapFallbackTextToWords(text));
+                setStatusMessage(t.fallbackStatus);
+                setIsStreaming(false);
+                setIsLoading(false);
+                onTemporaryIssue();
+                return;
+            }
+
+            replaceWords([...accumulated]);
 
             setStatusMessage(t.statusUpdated(accumulated.length));
             setIsStreaming(false);
             setIsLoading(false);
         },
-        [abortInFlightRequest, clearVisibleLoadingTimeout, replaceWords, streamReplaceWords, t],
+        [abortInFlightRequest, clearVisibleLoadingTimeout, onTemporaryIssue, replaceWords, streamReplaceWords, t],
     );
 
     useEffect(() => {

@@ -129,6 +129,82 @@
     animation-delay: 240ms;
 }
 
+.temporary-issues-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: color-mix(in srgb, var(--color-bg-primary) 68%, transparent);
+    backdrop-filter: blur(8px);
+}
+
+.temporary-issues-dialog {
+    width: min(100%, 28rem);
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+}
+
+.temporary-issues-dialog-icon {
+    width: 3rem;
+    height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    color: var(--color-accent-red);
+    background-color: var(--color-accent-red-light);
+}
+
+.temporary-issues-dialog-copy {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.temporary-issues-dialog-copy h2 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+}
+
+.temporary-issues-dialog-copy p {
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+}
+
+.temporary-issues-dialog-button {
+    min-height: 2.5rem;
+    justify-self: flex-end;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-accent-green);
+    color: var(--color-text-inverted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.temporary-issues-dialog-button:hover {
+    background-color: var(--color-accent-green-hover);
+}
+
+.temporary-issues-dialog-button:focus-visible {
+    outline: 2px solid var(--color-accent-green);
+    outline-offset: 2px;
+}
+
+.temporary-issues-dialog-button:active {
+    transform: translateY(1px);
+}
+
 @media (min-width: 1024px) {
     .two-col-layout {
         grid-template-columns: 1fr 1fr;
@@ -184,6 +260,10 @@
     .result-panel {
         border-radius: 0;
         border-inline: 0;
+    }
+
+    .temporary-issues-dialog {
+        padding: var(--space-5);
     }
 
 }

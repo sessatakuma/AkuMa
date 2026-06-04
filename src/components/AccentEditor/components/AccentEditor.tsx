@@ -9,6 +9,7 @@ import { useWordHistory } from '../hooks/useWordHistory';
 
 import Input from './Input';
 import Result from './Result';
+import TemporaryIssuesDialog from './TemporaryIssuesDialog';
 
 import './AccentEditor.css';
 
@@ -17,6 +18,7 @@ export default function AccentEditor() {
     const [paragraph, setParagraph] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [isResultExpanded, setIsResultExpanded] = useState(false);
+    const [isTemporaryIssuesDialogOpen, setIsTemporaryIssuesDialogOpen] = useState(false);
     const { footerRef, minHeight, panelRef } = useSyncedPanelHeight<HTMLElement>();
     const {
         redoWords,
@@ -29,6 +31,7 @@ export default function AccentEditor() {
     } = useWordHistory();
     const { isLoading, isStreaming, statusMessage } = useAccentAnalysis({
         isEditing,
+        onTemporaryIssue: () => setIsTemporaryIssuesDialogOpen(true),
         paragraph,
         replaceWords,
         streamReplaceWords,
@@ -144,6 +147,10 @@ export default function AccentEditor() {
                     )}
                 </div>
             </div>
+            <TemporaryIssuesDialog
+                isOpen={isTemporaryIssuesDialogOpen}
+                onClose={() => setIsTemporaryIssuesDialogOpen(false)}
+            />
         </main>
     );
 }

@@ -13,6 +13,9 @@ interface TranslationSet {
     accentMarkerLabel: string;
     accentResultLabel: string;
     accentToggle: string;
+    temporaryIssuesBody: string;
+    temporaryIssuesClose: string;
+    temporaryIssuesTitle: string;
     collapseResult: string;
     copyAsText: string;
     copyFailed: string;
@@ -68,6 +71,10 @@ const translations: Record<Locale, TranslationSet> = {
         accentMarkerLabel: 'Accent Marker',
         accentResultLabel: 'Pitch accent analysis result',
         accentToggle: 'Accent',
+        temporaryIssuesBody:
+            'The system is encountering temporary issues, so accent rendering could not be completed right now. Please try again shortly.',
+        temporaryIssuesClose: 'Close',
+        temporaryIssuesTitle: 'Temporary system issue',
         collapseResult: 'Collapse result',
         copyAsText: 'Copy as text',
         copyFailed: 'Copy failed',
@@ -116,6 +123,10 @@ const translations: Record<Locale, TranslationSet> = {
         accentMarkerLabel: 'アクセントマーカー',
         accentResultLabel: 'アクセント解析結果',
         accentToggle: 'アクセント',
+        temporaryIssuesBody:
+            '現在システムで一時的な問題が発生しており、アクセント表示を完了できませんでした。少し時間をおいて再度お試しください。',
+        temporaryIssuesClose: '閉じる',
+        temporaryIssuesTitle: '一時的なシステム障害',
         collapseResult: '結果の拡大表示を閉じる',
         copyAsText: 'テキスト形式でコピー',
         copyFailed: 'コピーに失敗しました',
@@ -163,6 +174,10 @@ const translations: Record<Locale, TranslationSet> = {
         accentMarkerLabel: 'Accent Marker',
         accentResultLabel: '音調分析結果',
         accentToggle: '音調',
+        temporaryIssuesBody:
+            '系統目前發生暫時性問題，因此無法完成音調標示。請稍後再試一次。',
+        temporaryIssuesClose: '關閉',
+        temporaryIssuesTitle: '系統暫時發生問題',
         collapseResult: '收合結果面板',
         copyAsText: '複製為文字',
         copyFailed: '複製失敗',
