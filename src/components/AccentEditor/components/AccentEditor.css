@@ -276,6 +276,16 @@
     }
 }
 
+@media (min-width: 769px) and (max-width: 1023px) {
+    .result-panel-stack {
+        padding-bottom: var(--result-panel-callout-space);
+    }
+
+    .result-panel-hint {
+        bottom: var(--result-panel-callout-edge-space);
+    }
+}
+
 @media (max-width: 768px) {
     .main-content {
         padding: 0;
