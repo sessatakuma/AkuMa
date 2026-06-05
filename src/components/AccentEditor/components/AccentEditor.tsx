@@ -141,14 +141,20 @@ export default function AccentEditor() {
                 <div
                     className={`result-panel-stack ${isResultExpanded ? 'result-panel-stack-expanded' : ''}`}
                 >
-                    {isBusy && !isResultExpanded && (
+                    {(isBusy || shouldShowResultHint) && !isResultExpanded && (
                         <p className='result-panel-status result-panel-status-row' aria-hidden='true'>
-                            <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
-                            <span className='result-panel-status-dots'>
-                                <span className='result-panel-status-dot'>.</span>
-                                <span className='result-panel-status-dot'>.</span>
-                                <span className='result-panel-status-dot'>.</span>
-                            </span>
+                            {isBusy ? (
+                                <>
+                                    <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
+                                    <span className='result-panel-status-dots'>
+                                        <span className='result-panel-status-dot'>.</span>
+                                        <span className='result-panel-status-dot'>.</span>
+                                        <span className='result-panel-status-dot'>.</span>
+                                    </span>
+                                </>
+                            ) : (
+                                t.resultHint
+                            )}
                         </p>
                     )}
                     <section
@@ -172,11 +178,6 @@ export default function AccentEditor() {
                             statusMessage={statusMessage}
                         />
                     </section>
-                    {shouldShowResultHint && (
-                        <p className='result-panel-hint result-panel-hint-row' aria-hidden='true'>
-                            {t.resultHint}
-                        </p>
-                    )}
                 </div>
             </div>
             <TemporaryIssuesDialog
