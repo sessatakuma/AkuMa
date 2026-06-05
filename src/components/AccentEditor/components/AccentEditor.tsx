@@ -91,7 +91,7 @@ export default function AccentEditor() {
                 {statusMessage}
             </p>
             {isBusy && !isResultExpanded && (
-                <p className='result-panel-status' aria-hidden='true'>
+                <p className='result-panel-status result-panel-status-chip' aria-hidden='true'>
                     <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
                     <span className='result-panel-status-dots'>
                         <span className='result-panel-status-dot'>.</span>
@@ -118,6 +118,16 @@ export default function AccentEditor() {
                 <div
                     className={`result-panel-stack ${isResultExpanded ? 'result-panel-stack-expanded' : ''}`}
                 >
+                    {isBusy && !isResultExpanded && (
+                        <p className='result-panel-status result-panel-status-row' aria-hidden='true'>
+                            <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
+                            <span className='result-panel-status-dots'>
+                                <span className='result-panel-status-dot'>.</span>
+                                <span className='result-panel-status-dot'>.</span>
+                                <span className='result-panel-status-dot'>.</span>
+                            </span>
+                        </p>
+                    )}
                     <section
                         className={`result-panel ${isResultExpanded ? 'result-panel-expanded' : ''}`}
                         aria-label={t.resultPanelLabel}
