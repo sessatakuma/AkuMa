@@ -6,9 +6,6 @@ export default function Nav() {
 
     return (
         <header className='nav'>
-            <a className='skip-link' href='#main-content'>
-                {t.skipToContent}
-            </a>
             <div className='nav-brand' aria-label={t.faviconAltBrand}>
                 <a className='nav-title' href='#main-content'>
                     <img

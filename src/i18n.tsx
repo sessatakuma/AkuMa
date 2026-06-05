@@ -48,7 +48,6 @@ interface TranslationSet {
     resultPanelLabel: string;
     resultsAndInput: string;
     saveAndCopy: string;
-    skipToContent: string;
     statusAnalyzing: string;
     statusUpdated: (count: number) => string;
     switchAccent: string;
@@ -111,7 +110,6 @@ const translations: Record<Locale, TranslationSet> = {
         resultPanelLabel: 'Result',
         resultsAndInput: 'Input and analysis result',
         saveAndCopy: 'Export and copy',
-        skipToContent: 'Skip to content',
         statusAnalyzing: 'Analyzing',
         statusUpdated: count => `Analysis updated. Displaying ${count} words.`,
         switchAccent: 'Toggle accent',
@@ -162,7 +160,6 @@ const translations: Record<Locale, TranslationSet> = {
         resultPanelLabel: '結果',
         resultsAndInput: '入力と解析結果',
         saveAndCopy: '書き出しとコピー',
-        skipToContent: '本文へ移動',
         statusAnalyzing: '分析中',
         statusUpdated: count => `解析結果を更新しました。${count}件の語を表示しています。`,
         switchAccent: 'アクセントを切り替え',
@@ -213,7 +210,6 @@ const translations: Record<Locale, TranslationSet> = {
         resultPanelLabel: '結果',
         resultsAndInput: '輸入與分析結果',
         saveAndCopy: '匯出與複製',
-        skipToContent: '跳到主要內容',
         statusAnalyzing: '分析中',
         statusUpdated: count => `分析結果已更新，目前顯示 ${count} 個詞語。`,
         switchAccent: '切換音調',

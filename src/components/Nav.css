@@ -11,25 +11,6 @@
     z-index: 100;
 }
 
-.skip-link {
-    position: absolute;
-    left: 1rem;
-    top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-md);
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text-primary);
-    transform: translateY(-160%);
-    transition: transform 0.2s ease;
-    z-index: 101;
-}
-
-.skip-link:focus-visible {
-    transform: translateY(0);
-    outline: 2px solid var(--color-text-inverted);
-    outline-offset: 2px;
-}
-
 .nav-brand {
     display: flex;
     align-items: center;
