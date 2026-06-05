@@ -110,7 +110,7 @@
 }
 
 .empty-state {
-    --result-base-text-offset: calc((1em * var(--kana-ruby-font-scale, 0.6)) + var(--kana-accent-gap, 2px));
+    --result-base-text-offset: calc((1em * var(--kana-ruby-font-scale)) + var(--kana-accent-gap));
 
     display: flex;
     justify-content: flex-start;

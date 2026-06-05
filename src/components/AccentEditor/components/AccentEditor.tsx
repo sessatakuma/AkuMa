@@ -107,7 +107,6 @@ export default function AccentEditor() {
 
                 <div
                     className={`result-panel-stack ${isResultExpanded ? 'result-panel-stack-expanded' : ''}`}
-                    style={{ minHeight: `${minHeight}px` }}
                 >
                     {isBusy && !isResultExpanded && (
                         <p className='result-panel-status' aria-hidden='true'>
@@ -123,6 +122,7 @@ export default function AccentEditor() {
                         className={`result-panel ${isResultExpanded ? 'result-panel-expanded' : ''}`}
                         aria-label={t.resultPanelLabel}
                         aria-busy={isBusy}
+                        style={{ minHeight: `${minHeight}px` }}
                     >
                         <Result
                             accentPhaseActive={accentPhaseActive}

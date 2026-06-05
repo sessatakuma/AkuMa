@@ -77,6 +77,7 @@ export default function Input({ paragraph, setParagraph, isLoading, actionsRef }
                 aria-controls='accent-result-output'
                 aria-busy={isLoading}
                 lang={lang}
+                rows={1}
             />
             <p id='input-shortcuts' className='visually-hidden'>
                 {t.inputDescription}
