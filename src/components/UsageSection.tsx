@@ -15,11 +15,6 @@ export default function UsageSection() {
                         <h2 id='usage-heading'>{t.usageHeading}</h2>
                         <p>{t.usageIntro}</p>
                     </div>
-                    <ol className='usage-section-summary'>
-                        <li>{t.usageStepOne}</li>
-                        <li>{t.usageStepTwo}</li>
-                        <li>{t.usageStepThree}</li>
-                    </ol>
                 </div>
                 <div className='usage-guide' aria-label={t.usageHeading}>
                     <article className='usage-guide-card'>
@@ -28,10 +23,12 @@ export default function UsageSection() {
                                 <WandSparkles size={16} />
                                 <span>{t.usageStepStartHint}</span>
                             </span>
-                            <div className='usage-guide-textarea'>
-                                <span className='usage-guide-line usage-guide-line-strong' />
-                                <span className='usage-guide-line' />
-                                <span className='usage-guide-line usage-guide-line-short' />
+                            <div className='usage-guide-panel usage-guide-panel-input'>
+                                <div className='usage-guide-panel-body usage-guide-textarea'>
+                                    <span className='usage-guide-line usage-guide-line-strong' />
+                                    <span className='usage-guide-line' />
+                                    <span className='usage-guide-line usage-guide-line-short' />
+                                </div>
                             </div>
                         </div>
                         <div className='usage-guide-copy'>
@@ -45,11 +42,13 @@ export default function UsageSection() {
                                 <PencilLine size={16} />
                                 <span>{t.usageStepFuriganaHint}</span>
                             </span>
-                            <div className='usage-guide-reading'>
-                                <span className='usage-guide-ruby usage-guide-ruby-active'>ふ</span>
-                                <span className='usage-guide-ruby'>り</span>
-                                <span className='usage-guide-ruby'>が</span>
-                                <span className='usage-guide-ruby'>な</span>
+                            <div className='usage-guide-panel usage-guide-panel-result'>
+                                <div className='usage-guide-panel-body usage-guide-reading'>
+                                    <span className='usage-guide-ruby usage-guide-ruby-active'>ふ</span>
+                                    <span className='usage-guide-ruby'>り</span>
+                                    <span className='usage-guide-ruby'>が</span>
+                                    <span className='usage-guide-ruby'>な</span>
+                                </div>
                             </div>
                             <div className='usage-guide-arrow-row'>
                                 <ArrowLeftRight size={18} />
@@ -66,9 +65,11 @@ export default function UsageSection() {
                                 <ArrowUpDown size={16} />
                                 <span>{t.usageStepAccentHint}</span>
                             </span>
-                            <div className='usage-guide-accent-track'>
-                                <span className='usage-guide-accent-line usage-guide-accent-line-primary' />
-                                <span className='usage-guide-accent-drop usage-guide-accent-drop-primary' />
+                            <div className='usage-guide-panel usage-guide-panel-result'>
+                                <div className='usage-guide-panel-body usage-guide-accent-track'>
+                                    <span className='usage-guide-accent-line usage-guide-accent-line-primary' />
+                                    <span className='usage-guide-accent-drop usage-guide-accent-drop-primary' />
+                                </div>
                             </div>
                             <div className='usage-guide-arrow-column'>
                                 <ArrowUpDown size={18} />

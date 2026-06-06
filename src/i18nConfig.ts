@@ -274,8 +274,8 @@ export const translations: Record<Locale, TranslationSet> = {
         usageStepFuriganaHint: '輸入假名 / 左右方向鍵',
         usageStepFuriganaTitle: '修改振假名',
         usageStepStartBody:
-            '貼上日語文字或插入範例句，先產生第一輪的讀音與音調分析。',
-        usageStepStartHint: '貼上 / 範例句',
+            '貼上日語文字或插入隨機範文，先產生第一輪的讀音與音調分析。',
+        usageStepStartHint: '貼上 / 隨機範文',
         usageStepStartTitle: '開始分析',
         usageStepOne: '貼上日語文字，或先插入範例句開始新的分析。',
         usageStepThree: '依照用途匯出成文字、HTML 或圖片，方便整理筆記或分享。',
