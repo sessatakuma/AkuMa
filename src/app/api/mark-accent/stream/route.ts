@@ -4,7 +4,6 @@ import {
     isMarkAccentProxyLoop,
 } from '../../../../../proxy.config.js';
 
-const ALLOWED_SITE_ORIGIN = 'https://accent-marker.sessatakuma.dev';
 const ALLOWED_DEV_ORIGINS = new Set(['http://localhost:3000', 'http://127.0.0.1:3000']);
 
 function extractRequestOrigin(request: Request) {
@@ -25,14 +24,29 @@ function extractRequestOrigin(request: Request) {
     }
 }
 
+function extractRequestHostOrigin(request: Request) {
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+
+    if (!host) {
+        return null;
+    }
+
+    const protocol =
+        request.headers.get('x-forwarded-proto') ||
+        (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+
+    return `${protocol}://${host}`;
+}
+
 function jsonResponse(status: number, body: { error: string }, headers?: HeadersInit) {
     return Response.json(body, { status, headers });
 }
 
 export async function POST(request: Request) {
     const requestOrigin = extractRequestOrigin(request);
+    const requestHostOrigin = extractRequestHostOrigin(request);
     const isAllowedOrigin =
-        requestOrigin === ALLOWED_SITE_ORIGIN ||
+        requestOrigin === requestHostOrigin ||
         (process.env.NODE_ENV !== 'production' &&
             requestOrigin !== null &&
             ALLOWED_DEV_ORIGINS.has(requestOrigin));
@@ -41,10 +55,10 @@ export async function POST(request: Request) {
         return jsonResponse(403, { error: 'Forbidden' });
     }
 
-    const apiKey = process.env.MARK_ACCENT_API_KEY || process.env.VITE_X_API_KEY;
+    const apiKey = process.env.MARK_ACCENT_API_KEY;
     if (!apiKey) {
         return jsonResponse(500, {
-            error: 'MARK_ACCENT_API_KEY or VITE_X_API_KEY is not configured',
+            error: 'MARK_ACCENT_API_KEY is not configured',
         });
     }
 

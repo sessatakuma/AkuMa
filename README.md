@@ -40,5 +40,3 @@ If you run the app locally with `bun dev`, the Next.js route handler for `/api/m
 ```bash
 MARK_ACCENT_API_KEY=<your_api_key>
 ```
-
-`VITE_X_API_KEY` is still accepted for backward compatibility, but `MARK_ACCENT_API_KEY` is the preferred variable name.
