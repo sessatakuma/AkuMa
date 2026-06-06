@@ -55,6 +55,9 @@ export interface TranslationSet {
     usageStepFuriganaBody: string;
     usageStepFuriganaHint: string;
     usageStepFuriganaTitle: string;
+    usageStepShareBody: string;
+    usageStepShareHint: string;
+    usageStepShareTitle: string;
     usageStepStartBody: string;
     usageStepStartHint: string;
     usageStepStartTitle: string;
@@ -129,6 +132,10 @@ export const translations: Record<Locale, TranslationSet> = {
             'Click the furigana text to edit it directly. Use Left and Right to jump across reading cells while keeping your hands on the keyboard.',
         usageStepFuriganaHint: 'Type kana, then Left/Right',
         usageStepFuriganaTitle: 'Edit furigana',
+        usageStepShareBody:
+            'Copy the text result, export an image, or save HTML when you need to paste the markup into notes, docs, or messages.',
+        usageStepShareHint: 'Copy, image, or HTML',
+        usageStepShareTitle: 'Share or export',
         usageStepStartBody:
             'Paste Japanese text or insert a sample sentence to generate the first reading and accent pass.',
         usageStepStartHint: 'Paste or sample',
@@ -201,6 +208,10 @@ export const translations: Record<Locale, TranslationSet> = {
             'ふりがな部分をクリックしてそのまま編集できます。左右キーを使うと、読みの区切りをまたいで次のセルへ移動できます。',
         usageStepFuriganaHint: 'かなを入力 / 左右キー',
         usageStepFuriganaTitle: 'ふりがなを直す',
+        usageStepShareBody:
+            'テキストをコピーしたり、画像を書き出したり、HTML を保存したりして、ノートや共有先にそのまま持ち出せます。',
+        usageStepShareHint: 'コピー / 画像 / HTML',
+        usageStepShareTitle: '共有と書き出し',
         usageStepStartBody:
             '日本語テキストを貼り付けるか、サンプル文を入れると最初の読みとアクセントが生成されます。',
         usageStepStartHint: '貼り付け / サンプル',
@@ -248,7 +259,7 @@ export const translations: Record<Locale, TranslationSet> = {
         pageDescription:
             '貼上日語文字，自動加入振假名與音高音調標記，之後還可編輯並匯出結果。',
         pasteFromClipboard: '從剪貼簿貼上',
-        randomSample: '插入範例文字',
+        randomSample: '插入隨機範文',
         result: '結果',
         resultActions: '結果操作',
         resultHint: '分析完成，點擊振假名或音調可進行編輯',
@@ -273,11 +284,15 @@ export const translations: Record<Locale, TranslationSet> = {
             '直接點振假名文字就能編輯。用左右方向鍵可在不同讀音格之間移動，校對時比較順手。',
         usageStepFuriganaHint: '輸入假名 / 左右方向鍵',
         usageStepFuriganaTitle: '修改振假名',
+        usageStepShareBody:
+            '需要整理筆記或分享時，可以直接複製文字、匯出圖片，或下載 HTML 版本帶到其他地方使用。',
+        usageStepShareHint: '複製 / 圖片 / HTML',
+        usageStepShareTitle: '分享與匯出',
         usageStepStartBody:
             '貼上日語文字或插入隨機範文，先產生第一輪的讀音與音調分析。',
         usageStepStartHint: '貼上 / 隨機範文',
         usageStepStartTitle: '開始分析',
-        usageStepOne: '貼上日語文字，或先插入範例句開始新的分析。',
+        usageStepOne: '貼上日語文字，或先插入隨機範文開始新的分析。',
         usageStepThree: '依照用途匯出成文字、HTML 或圖片，方便整理筆記或分享。',
         usageStepTwo: '檢查產生的讀音與音調，必要時直接在結果面板中修正細節。',
     },
