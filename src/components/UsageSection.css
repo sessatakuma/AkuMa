@@ -1,0 +1,54 @@
+.usage-section {
+    padding-block: var(--space-7);
+    border-top: 1px solid var(--color-border);
+}
+
+.usage-section-grid {
+    display: grid;
+    gap: var(--space-6);
+}
+
+.usage-section-copy,
+.usage-section-details {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.usage-section-eyebrow {
+    color: var(--color-accent-green);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.usage-section h2 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+}
+
+.usage-section p,
+.usage-section li {
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+}
+
+.usage-section-steps {
+    display: grid;
+    gap: var(--space-3);
+    padding-inline-start: var(--space-5);
+}
+
+.usage-section-note a {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+@media (min-width: 1024px) {
+    .usage-section-grid {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        align-items: start;
+    }
+}

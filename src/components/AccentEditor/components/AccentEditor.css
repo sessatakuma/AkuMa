@@ -6,12 +6,24 @@
 }
 
 .main-content {
+    --main-content-padding: var(--space-6);
+
     position: relative;
     flex: 1;
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: var(--main-content-padding);
+}
+
+.editor-viewport {
+    min-height: calc(100dvh - var(--nav-height) - (var(--main-content-padding) * 2));
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-viewport .two-col-layout {
+    flex: 1;
 }
 
 .two-col-layout {
@@ -299,12 +311,11 @@
 
 @media (max-width: 768px) {
     .main-content {
-        padding: 0;
+        --main-content-padding: 0px;
     }
 
     .two-col-layout {
         gap: 0;
-        min-height: calc(100dvh - var(--nav-height));
         grid-auto-rows: minmax(calc((100dvh - var(--nav-height)) / 2), auto);
     }
 

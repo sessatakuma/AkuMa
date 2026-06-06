@@ -94,90 +94,92 @@ export default function AccentEditor() {
 
     return (
         <main id='main-content' className='main-content'>
-            <h1 className='visually-hidden'>{t.heading}</h1>
-            <p className='visually-hidden' aria-live='polite'>
-                {statusMessage}
-            </p>
-            {shouldShowMobileStatusChip && (
-                <div className='result-panel-status result-panel-status-chip'>
-                    {isBusy ? (
-                        <>
-                            <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
-                            <span className='result-panel-status-dots'>
-                                <span className='result-panel-status-dot'>.</span>
-                                <span className='result-panel-status-dot'>.</span>
-                                <span className='result-panel-status-dot'>.</span>
-                            </span>
-                        </>
-                    ) : (
-                        <>
-                            <span>{t.resultHint}</span>
-                            <button
-                                type='button'
-                                className='result-panel-status-dismiss'
-                                aria-label={t.dismissResultHint}
-                                onClick={() => setIsMobileResultHintDismissed(true)}
-                            >
-                                <X size={16} aria-hidden='true' />
-                            </button>
-                        </>
-                    )}
-                </div>
-            )}
-            <div
-                className={`two-col-layout ${isResultExpanded ? 'two-col-layout-expanded' : ''}`}
-                aria-label={t.resultsAndInput}
-            >
-                <div className='input-panel-stack'>
-                    <section className='input-panel' aria-label={t.inputPanelLabel}>
-                        <Input
-                            paragraph={paragraph}
-                            setParagraph={setParagraph}
-                            isLoading={isLoading}
-                        />
-                    </section>
-                </div>
-
+            <div className='editor-viewport'>
+                <h1 className='visually-hidden'>{t.heading}</h1>
+                <p className='visually-hidden' aria-live='polite'>
+                    {statusMessage}
+                </p>
+                {shouldShowMobileStatusChip && (
+                    <div className='result-panel-status result-panel-status-chip'>
+                        {isBusy ? (
+                            <>
+                                <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
+                                <span className='result-panel-status-dots'>
+                                    <span className='result-panel-status-dot'>.</span>
+                                    <span className='result-panel-status-dot'>.</span>
+                                    <span className='result-panel-status-dot'>.</span>
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span>{t.resultHint}</span>
+                                <button
+                                    type='button'
+                                    className='result-panel-status-dismiss'
+                                    aria-label={t.dismissResultHint}
+                                    onClick={() => setIsMobileResultHintDismissed(true)}
+                                >
+                                    <X size={16} aria-hidden='true' />
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
                 <div
-                    className={`result-panel-stack ${isResultExpanded ? 'result-panel-stack-expanded' : ''}`}
+                    className={`two-col-layout ${isResultExpanded ? 'two-col-layout-expanded' : ''}`}
+                    aria-label={t.resultsAndInput}
                 >
-                    {(isBusy || shouldShowResultHint) && !isResultExpanded && (
-                        <p className='result-panel-status result-panel-status-row' aria-hidden='true'>
-                            {isBusy ? (
-                                <>
-                                    <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
-                                    <span className='result-panel-status-dots'>
-                                        <span className='result-panel-status-dot'>.</span>
-                                        <span className='result-panel-status-dot'>.</span>
-                                        <span className='result-panel-status-dot'>.</span>
-                                    </span>
-                                </>
-                            ) : (
-                                t.resultHint
-                            )}
-                        </p>
-                    )}
-                    <section
-                        className={`result-panel ${isResultExpanded ? 'result-panel-expanded' : ''}`}
-                        aria-label={t.resultPanelLabel}
-                        aria-busy={isBusy}
+                    <div className='input-panel-stack'>
+                        <section className='input-panel' aria-label={t.inputPanelLabel}>
+                            <Input
+                                paragraph={paragraph}
+                                setParagraph={setParagraph}
+                                isLoading={isLoading}
+                            />
+                        </section>
+                    </div>
+
+                    <div
+                        className={`result-panel-stack ${isResultExpanded ? 'result-panel-stack-expanded' : ''}`}
                     >
-                        <Result
-                            accentPhaseActive={accentPhaseActive}
-                            isPresenting={isPresenting}
-                            isExpanded={isResultExpanded}
-                            paragraph={paragraph}
-                            revealedAccentUnits={revealedAccentUnits}
-                            revealedFuriganaUnits={revealedFuriganaUnits}
-                            revealedLoadingCharacters={revealedLoadingCharacters}
-                            words={words}
-                            updateWords={updateWords}
-                            isLoading={isLoading}
-                            onEditingChange={setIsEditing}
-                            onToggleExpanded={() => setIsResultExpanded(prev => !prev)}
-                            statusMessage={statusMessage}
-                        />
-                    </section>
+                        {(isBusy || shouldShowResultHint) && !isResultExpanded && (
+                            <p className='result-panel-status result-panel-status-row' aria-hidden='true'>
+                                {isBusy ? (
+                                    <>
+                                        <span className='result-panel-status-label'>{t.statusAnalyzing}</span>
+                                        <span className='result-panel-status-dots'>
+                                            <span className='result-panel-status-dot'>.</span>
+                                            <span className='result-panel-status-dot'>.</span>
+                                            <span className='result-panel-status-dot'>.</span>
+                                        </span>
+                                    </>
+                                ) : (
+                                    t.resultHint
+                                )}
+                            </p>
+                        )}
+                        <section
+                            className={`result-panel ${isResultExpanded ? 'result-panel-expanded' : ''}`}
+                            aria-label={t.resultPanelLabel}
+                            aria-busy={isBusy}
+                        >
+                            <Result
+                                accentPhaseActive={accentPhaseActive}
+                                isPresenting={isPresenting}
+                                isExpanded={isResultExpanded}
+                                paragraph={paragraph}
+                                revealedAccentUnits={revealedAccentUnits}
+                                revealedFuriganaUnits={revealedFuriganaUnits}
+                                revealedLoadingCharacters={revealedLoadingCharacters}
+                                words={words}
+                                updateWords={updateWords}
+                                isLoading={isLoading}
+                                onEditingChange={setIsEditing}
+                                onToggleExpanded={() => setIsResultExpanded(prev => !prev)}
+                                statusMessage={statusMessage}
+                            />
+                        </section>
+                    </div>
                 </div>
             </div>
             <TemporaryIssuesDialog

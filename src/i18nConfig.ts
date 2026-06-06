@@ -46,6 +46,13 @@ export interface TranslationSet {
     title: string;
     toggleImageTheme: (isDarkResult: boolean) => string;
     pasteFromClipboard: string;
+    usageEyebrow: string;
+    usageHeading: string;
+    usageImageTip: string;
+    usageIntro: string;
+    usageStepOne: string;
+    usageStepThree: string;
+    usageStepTwo: string;
 }
 
 export const DEFAULT_LOCALE: Locale = 'en';
@@ -102,6 +109,17 @@ export const translations: Record<Locale, TranslationSet> = {
         title: 'Accent Marker | Japanese Pitch Accent & Furigana Tool',
         toggleImageTheme: isDarkResult =>
             `Switch image theme to ${isDarkResult ? 'light' : 'dark'}`,
+        usageEyebrow: 'Usage',
+        usageHeading: 'Use Accent Marker for reading, editing, and export',
+        usageImageTip:
+            'After exporting an image, compress it before sharing or uploading with',
+        usageIntro:
+            'Accent Marker analyzes Japanese text, adds furigana and pitch-accent markings, and lets you refine the result before saving it for study notes or pronunciation practice.',
+        usageStepOne: 'Paste Japanese text or insert a sample sentence to start a new analysis.',
+        usageStepThree:
+            'Export the result as text, HTML, or an image depending on how you want to study or share it.',
+        usageStepTwo:
+            'Review the generated reading, then click furigana or accent lines to correct details directly in the result panel.',
     },
     ja: {
         accentMarkerLabel: 'アクセントマーカー',
@@ -153,6 +171,17 @@ export const translations: Record<Locale, TranslationSet> = {
         title: 'Accent Marker | Japanese Pitch Accent & Furigana Tool',
         toggleImageTheme: isDarkResult =>
             `画像テーマを${isDarkResult ? 'ライト' : 'ダーク'}に切り替え`,
+        usageEyebrow: '使い方',
+        usageHeading: '読解・調整・書き出しを一つの画面で進める',
+        usageImageTip:
+            '画像を書き出したあとに共有しやすいサイズへ圧縮したい場合は、',
+        usageIntro:
+            'Accent Marker は日本語テキストにふりがなとピッチアクセントを付け、確認しながら修正し、そのまま学習用に書き出せるツールです。',
+        usageStepOne: '日本語テキストを貼り付けるか、サンプル文を入れて解析を始めます。',
+        usageStepThree:
+            '学習メモや共有方法に合わせて、テキスト・HTML・画像のいずれかで書き出します。',
+        usageStepTwo:
+            '生成された読みとアクセントを確認し、必要な箇所は結果パネル上で直接修正します。',
     },
     zh: {
         accentMarkerLabel: 'Accent Marker',
@@ -204,6 +233,14 @@ export const translations: Record<Locale, TranslationSet> = {
         title: 'Accent Marker | Japanese Pitch Accent & Furigana Tool',
         toggleImageTheme: isDarkResult =>
             `將圖片主題切換為${isDarkResult ? '淺色' : '深色'}`,
+        usageEyebrow: '使用方式',
+        usageHeading: '在同一個工作區完成分析、校對與匯出',
+        usageImageTip: '如果匯出圖片後還想再壓縮檔案大小，可以用',
+        usageIntro:
+            'Accent Marker 會替日語文字補上振假名與音高音調標記，之後你可以直接校對內容，再匯出成適合複習或分享的格式。',
+        usageStepOne: '貼上日語文字，或先插入範例句開始新的分析。',
+        usageStepThree: '依照用途匯出成文字、HTML 或圖片，方便整理筆記或分享。',
+        usageStepTwo: '檢查產生的讀音與音調，必要時直接在結果面板中修正細節。',
     },
 };
 
