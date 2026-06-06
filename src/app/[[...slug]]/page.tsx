@@ -1,11 +1,8 @@
 import App from '../../App';
 import {
-    DEFAULT_LOCALE,
-    localeToLang,
-    normalizeLocale,
-    translations,
-    type Locale,
-} from '../../i18nConfig';
+    buildLocaleMetadata,
+    resolveLocaleFromSearchParams,
+} from '../locale';
 
 import type { Metadata } from 'next';
 
@@ -13,46 +10,26 @@ interface PageProps {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function resolveLocaleFromSearchParams(
-    searchParams: Record<string, string | string[] | undefined>,
-): Locale {
-    const rawLocale = searchParams.lang;
-    const localeValue = Array.isArray(rawLocale) ? rawLocale[0] : rawLocale;
-
-    return normalizeLocale(localeValue) ?? DEFAULT_LOCALE;
-}
-
-function buildLocaleUrl(locale: Locale) {
-    if (locale === DEFAULT_LOCALE) {
-        return '/';
-    }
-
-    return `/?lang=${locale}`;
-}
-
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
     const locale = resolveLocaleFromSearchParams(await searchParams);
-    const translation = translations[locale];
+    const localeMetadata = buildLocaleMetadata(locale);
 
     return {
-        title: translation.title,
-        description: translation.pageDescription,
+        title: localeMetadata.title,
+        description: localeMetadata.description,
         alternates: {
-            canonical: buildLocaleUrl(locale),
-            languages: {
-                en: '/',
-                ja: '/?lang=ja',
-                'zh-Hant': '/?lang=zh',
-            },
+            canonical: localeMetadata.canonical,
+            languages: localeMetadata.languages,
         },
         openGraph: {
-            description: translation.pageDescription,
-            locale: localeToLang[locale] === 'zh-Hant' ? 'zh_Hant' : localeToLang[locale],
-            title: translation.title,
+            description: localeMetadata.description,
+            locale:
+                localeMetadata.localeCode === 'zh-Hant' ? 'zh_Hant' : localeMetadata.localeCode,
+            title: localeMetadata.title,
         },
         twitter: {
-            description: translation.pageDescription,
-            title: translation.title,
+            description: localeMetadata.description,
+            title: localeMetadata.title,
         },
     };
 }

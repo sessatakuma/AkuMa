@@ -1,12 +1,19 @@
 import type { ReactNode } from 'react';
 
 import { Noto_Sans_JP } from 'next/font/google';
+import { headers } from 'next/headers';
+
+import {
+    buildStructuredData,
+    LOCALE_HEADER,
+    resolveLocaleFromHeader,
+    SITE_URL,
+} from './locale';
 
 import type { Metadata, Viewport } from 'next';
 
 import '../index.css';
 
-const siteUrl = 'https://accent-marker.sessatakuma.dev/';
 const description =
     'Paste Japanese text to add furigana and pitch-accent markings automatically, then edit and export the result.';
 const title = 'Accent Marker | Japanese Pitch Accent & Furigana Tool';
@@ -18,7 +25,7 @@ const notoSansJp = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL(siteUrl),
+    metadataBase: new URL(SITE_URL),
     title,
     description,
     applicationName: 'Accent Marker',
@@ -55,7 +62,7 @@ export const metadata: Metadata = {
         locale: 'en_US',
         siteName: 'Accent Marker',
         type: 'website',
-        url: siteUrl,
+        url: SITE_URL,
     },
     referrer: 'strict-origin-when-cross-origin',
     robots: {
@@ -81,29 +88,24 @@ export const viewport: Viewport = {
 };
 
 const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'Accent Marker',
-    url: siteUrl,
-    applicationCategory: 'EducationalApplication',
-    operatingSystem: 'Any',
-    description,
-    image: `${siteUrl}images/logo.png`,
-    inLanguage: ['en', 'ja', 'zh-Hant'],
-    offers: {
-        '@type': 'Offer',
-        price: '0',
-        priceCurrency: 'USD',
-    },
+    en: buildStructuredData('en'),
+    ja: buildStructuredData('ja'),
+    zh: buildStructuredData('zh'),
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+    const requestHeaders = await headers();
+    const locale = resolveLocaleFromHeader(requestHeaders.get(LOCALE_HEADER));
+    const structuredDataForLocale = structuredData[locale];
+
     return (
-        <html lang='en' className={notoSansJp.variable}>
+        <html lang={structuredDataForLocale.inLanguage[0]} className={notoSansJp.variable}>
             <body>
                 <script
                     type='application/ld+json'
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify(structuredDataForLocale),
+                    }}
                 />
                 <div id='root'>{children}</div>
             </body>
