@@ -281,7 +281,7 @@ export const translations: Record<Locale, TranslationSet> = {
         usageStepAccentHint: '點線 / 上下方向鍵',
         usageStepAccentTitle: '調整音調',
         usageStepFuriganaBody:
-            '直接點振假名文字就能編輯。用左右方向鍵可在不同讀音格之間移動，校對時比較順手。',
+            '直接點振假名文字就能編輯。用左右方向鍵可在不同讀音格之間移動，方便逐格校對。',
         usageStepFuriganaHint: '輸入假名 / 左右方向鍵',
         usageStepFuriganaTitle: '修改振假名',
         usageStepShareBody:

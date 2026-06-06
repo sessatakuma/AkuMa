@@ -19,14 +19,6 @@
     gap: var(--space-3);
 }
 
-.usage-section-eyebrow {
-    color: var(--color-accent-green);
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
 .usage-section h2 {
     font-size: 1.75rem;
     line-height: 1.2;
@@ -38,20 +30,29 @@
     line-height: 1.75;
 }
 
+.usage-section-copy p {
+    max-width: 56rem;
+    text-wrap: pretty;
+}
+
 .usage-guide {
     display: grid;
-    gap: var(--space-5);
+    gap: 0;
     margin-top: var(--space-6);
 }
 
 .usage-guide-card {
     display: grid;
     gap: var(--space-4);
-    padding: var(--space-6);
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-soft);
+    padding: var(--space-7) 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.usage-guide-card + .usage-guide-card {
+    border-top: 1px solid var(--color-border);
 }
 
 .usage-guide-preview {
@@ -70,7 +71,7 @@
 .usage-guide-preview-panel {
     min-height: 0;
     width: 100%;
-    max-width: 760px;
+    max-width: 720px;
     aspect-ratio: 16 / 5;
     overflow: hidden;
 }
@@ -115,6 +116,7 @@
     min-height: 100%;
     display: flex;
     align-items: center;
+    overflow: hidden;
 }
 
 .usage-guide-preview-share-spacer {
@@ -143,6 +145,13 @@
     justify-content: center;
 }
 
+.usage-guide-preview-furigana .usage-guide-result-area {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    font-size: 2.5rem;
+}
+
 .usage-guide-preview-furigana .usage-guide-reading-row,
 .usage-guide-preview-accent .usage-guide-reading-row {
     width: fit-content;
@@ -158,13 +167,19 @@
     padding-inline: var(--space-6);
 }
 
+.usage-guide-preview-furigana .result-panel,
+.usage-guide-preview-accent .result-panel {
+    overflow: hidden;
+}
+
 .usage-guide-preview-share .result-actions {
     margin-top: 0;
     padding-top: var(--space-4);
 }
 
 .usage-guide-preview-share .usage-guide-preview-panel {
-    aspect-ratio: 16 / 4.75;
+    aspect-ratio: 16 / 5.25;
+    overflow: visible;
 }
 
 .usage-guide-copy {
@@ -186,6 +201,17 @@
     min-width: 144px;
 }
 
+.usage-guide-preview-share .save-menu-container {
+    position: relative;
+}
+
+.usage-guide-preview-share .save-menu-dropdown {
+    top: auto;
+    right: calc(100% + var(--space-2));
+    bottom: 0;
+    margin-bottom: 0;
+}
+
 .usage-guide-preview-panel button,
 .usage-guide-preview-panel input,
 .usage-guide-preview-panel label {
@@ -200,13 +226,13 @@
 
     .usage-guide {
         grid-template-columns: 1fr;
-        gap: var(--space-6);
     }
 
     .usage-guide-card {
         grid-template-columns: minmax(560px, 1.15fr) minmax(320px, 0.85fr);
         align-items: center;
-        gap: var(--space-8);
+        gap: var(--space-10);
+        min-height: 320px;
     }
 
     .usage-guide-card:nth-child(odd) .usage-guide-preview-panel {
@@ -232,7 +258,7 @@
     }
 
     .usage-guide-card {
-        padding: var(--space-5);
+        padding: var(--space-6) 0;
     }
 
     .usage-guide-preview-panel {
