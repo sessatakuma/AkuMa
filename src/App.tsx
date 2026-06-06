@@ -5,9 +5,11 @@ import { Analytics } from '@vercel/analytics/react';
 import Main from './components/Main';
 import { I18nProvider } from './i18n';
 
-export default function App() {
+import type { Locale } from './i18nConfig';
+
+export default function App({ initialLocale }: { initialLocale?: Locale }) {
     return (
-        <I18nProvider>
+        <I18nProvider initialLocale={initialLocale}>
             <Main />
             <Analytics />
         </I18nProvider>
