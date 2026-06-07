@@ -60,7 +60,6 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3);
     line-height: 0;
 }
 
@@ -100,7 +99,7 @@
     text-align: right;
     background-image: linear-gradient(currentColor, currentColor);
     background-repeat: no-repeat;
-    background-position: 100% 100%;
+    background-position: 100% 70%;
     background-size: 0 var(--stroke-width-thin);
     transition:
         background-size var(--duration-interaction-fast) ease,
