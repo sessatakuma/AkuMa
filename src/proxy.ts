@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { LOCALE_HEADER } from './src/app/locale';
-import { DEFAULT_LOCALE, normalizeLocale } from './src/i18nConfig';
+import { LOCALE_HEADER } from './app/locale';
+import { DEFAULT_LOCALE, normalizeLocale } from './i18nConfig';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const requestHeaders = new Headers(request.headers);
     const locale =
         normalizeLocale(request.nextUrl.searchParams.get('lang')) ?? DEFAULT_LOCALE;
