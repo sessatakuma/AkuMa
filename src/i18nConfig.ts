@@ -26,9 +26,9 @@ export interface TranslationSet {
     footerInstagramLabel: string;
     footerMailLabel: string;
     footerSocialHeading: string;
+    footerSocialPendingMessage: string;
     footerThreadsLabel: string;
     footerWhatBody: string;
-    footerWhatHeading: string;
     faviconAltBrand: string;
     furiganaInputWarning: string;
     heading: string;
@@ -115,11 +115,11 @@ export const translations: Record<Locale, TranslationSet> = {
         footerInstagramLabel: 'Instagram',
         footerMailLabel: 'Email',
         footerSocialHeading: 'Social media',
+        footerSocialPendingMessage: 'We are working on this account.',
         footerThreadsLabel: 'Threads',
         footerWhatBody:
             'Sessatakuma is developing tools around Japanese learning and preparing a tool-assisted speaking practice community with learning groups, structured plans, and guided practice. The goal is not just a forum, but a place where learners can build speaking confidence through useful tools and a clear practice rhythm.',
-        footerWhatHeading: 'What are we',
-        faviconAltBrand: 'せっさたくま',
+        faviconAltBrand: 'Sessatakuma',
         furiganaInputWarning: 'Only kana can be entered for furigana',
         heading: 'Accent Marker | Japanese Pitch Accent & Furigana Tool',
         htmlExportAriaLabel: 'Accent-marked text export',
@@ -215,11 +215,11 @@ export const translations: Record<Locale, TranslationSet> = {
         footerInstagramLabel: 'Instagram',
         footerMailLabel: 'メール',
         footerSocialHeading: 'SNS',
+        footerSocialPendingMessage: 'このアカウントは準備中です。',
         footerThreadsLabel: 'Threads',
         footerWhatBody:
             'せっさたくまは、日本語学習のためのツールを開発しながら、ツールで支援される会話練習コミュニティを準備しています。単なる掲示板ではなく、学習グループ、練習計画、ガイド付きの実践を通じて、話す自信を育てられる場所を目指しています。',
-        footerWhatHeading: '私たちについて',
-        faviconAltBrand: 'せっさたくま',
+        faviconAltBrand: 'Sessatakuma',
         furiganaInputWarning: 'ふりがなにはかなのみ入力できます',
         heading: '日本語アクセントマーカー',
         htmlExportAriaLabel: 'アクセント付きテキスト書き出し',
@@ -315,11 +315,11 @@ export const translations: Record<Locale, TranslationSet> = {
         footerInstagramLabel: 'Instagram',
         footerMailLabel: '電子郵件',
         footerSocialHeading: '社群媒體',
+        footerSocialPendingMessage: '這個帳號還在準備中。',
         footerThreadsLabel: 'Threads',
         footerWhatBody:
-            'Sessatakuma 正在開發日語學習相關工具，也在規劃以工具輔助的口說練習社群。這不只是論壇，而是結合學習小組、練習計畫與引導式實作的練習環境，幫助學習者更有效地累積開口說日語的信心。',
-        footerWhatHeading: '我們是誰',
-        faviconAltBrand: 'せっさたくま',
+            'Sessatakuma 正在開發日語學習相關工具，也正計劃創立一個日文口說練習社群，透過提供團隊成員過去建立的完整練習體系與為其開發出的各式工具，幫助學習者提升口說練習效率、有效累積開口說日語的信心。',
+        faviconAltBrand: 'Sessatakuma',
         furiganaInputWarning: '振假名只能輸入假名',
         heading: 'Accent Marker | 日語音調與振假名工具',
         htmlExportAriaLabel: '音調標註文字匯出',

@@ -72,7 +72,7 @@ html::after {
     left: 0;
     width: 100vw;
     height: 50vh;
-    background-color: var(--color-bg-primary);
+    background-color: var(--color-accent-green);
     z-index: -1;
 }
 

@@ -26,31 +26,34 @@ export default function Footer() {
     const { t } = useI18n();
     const socialLinks = [
         {
-            href: 'https://www.instagram.com/sessatakuma',
             icon: <Instagram size={24} />,
             label: t.footerInstagramLabel,
+            pending: true,
         },
         {
-            href: 'https://www.threads.net/@sessatakuma',
             icon: <ThreadsIcon size={24} />,
             label: t.footerThreadsLabel,
+            pending: true,
         },
         {
-            href: 'https://www.facebook.com/sessatakuma',
             icon: <Facebook size={24} />,
             label: t.footerFacebookLabel,
+            pending: true,
         },
         {
-            href: 'mailto:hello@sessatakuma.com',
+            href: 'mailto:contact@sessatakuma.dev',
             icon: <Mail size={24} />,
             label: t.footerMailLabel,
         },
         {
-            href: 'https://github.com/sessatakuma',
             icon: <Github size={24} />,
             label: t.footerGithubLabel,
+            pending: true,
         },
     ];
+    const showPendingAccountDialog = () => {
+        window.alert(t.footerSocialPendingMessage);
+    };
 
     return (
         <footer className='site-footer'>
@@ -67,10 +70,8 @@ export default function Footer() {
                             alt=''
                             aria-hidden='true'
                         />
-                        <span>{t.faviconAltBrand}</span>
                     </a>
-                    <section className='site-footer-about' aria-labelledby='footer-what-heading'>
-                        <h2 id='footer-what-heading'>{t.footerWhatHeading}</h2>
+                    <section className='site-footer-about' aria-label={t.faviconAltBrand}>
                         <p>{t.footerWhatBody}</p>
                     </section>
                 </div>
@@ -78,23 +79,33 @@ export default function Footer() {
                 <nav className='site-footer-social' aria-labelledby='footer-social-heading'>
                     <h2 id='footer-social-heading'>{t.footerSocialHeading}</h2>
                     <div className='site-footer-social-links'>
-                        {socialLinks.map(link => (
-                            <a
-                                key={link.label}
-                                className='site-footer-social-link'
-                                href={link.href}
-                                aria-label={link.label}
-                                target={link.href.startsWith('mailto:') ? undefined : '_blank'}
-                                rel={link.href.startsWith('mailto:') ? undefined : 'noreferrer'}
-                            >
-                                {link.icon}
-                            </a>
-                        ))}
+                        {socialLinks.map(link =>
+                            link.pending ? (
+                                <button
+                                    key={link.label}
+                                    className='site-footer-social-link'
+                                    type='button'
+                                    aria-label={link.label}
+                                    onClick={showPendingAccountDialog}
+                                >
+                                    {link.icon}
+                                </button>
+                            ) : (
+                                <a
+                                    key={link.label}
+                                    className='site-footer-social-link'
+                                    href={link.href}
+                                    aria-label={link.label}
+                                >
+                                    {link.icon}
+                                </a>
+                            ),
+                        )}
                     </div>
                 </nav>
 
-                <p className='site-footer-wordmark' aria-label='sessatakuma'>
-                    sessatakuma
+                <p className='site-footer-wordmark' aria-label='Sessatakuma'>
+                    Sessatakuma
                 </p>
             </div>
         </footer>

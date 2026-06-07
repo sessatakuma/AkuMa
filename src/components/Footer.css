@@ -1,6 +1,6 @@
 .site-footer {
     overflow: hidden;
-    padding: calc(var(--space-7) * 2) var(--space-6) var(--space-6);
+    padding: calc(var(--space-7) * 2) 0 var(--space-6);
     background: var(--color-accent-green);
     color: var(--color-text-inverted);
 }
@@ -11,6 +11,7 @@
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
+    padding-inline: var(--space-6);
 }
 
 .site-footer-top {
@@ -29,24 +30,14 @@
 }
 
 .site-footer-logo {
-    width: calc(var(--space-6) * 2);
-    height: calc(var(--space-6) * 2);
+    width: calc(var(--space-7) * 2);
+    height: calc(var(--space-7) * 2);
     object-fit: contain;
 }
 
 .site-footer-about {
     display: grid;
     gap: var(--space-4);
-    padding-block: var(--space-6);
-    border-block: 1px solid color-mix(in srgb, var(--color-text-inverted) 32%, transparent);
-}
-
-.site-footer-about h2,
-.site-footer-social h2 {
-    color: var(--color-text-inverted);
-    font-size: 1.25rem;
-    font-weight: 700;
-    line-height: 1.25;
 }
 
 .site-footer-about p {
@@ -60,6 +51,13 @@
 .site-footer-social {
     display: grid;
     gap: var(--space-4);
+}
+
+.site-footer-social h2 {
+    color: var(--color-text-inverted);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.25;
 }
 
 .site-footer-social-links {
@@ -78,6 +76,7 @@
     border: 1px solid color-mix(in srgb, var(--color-text-inverted) 36%, transparent);
     border-radius: var(--radius-md);
     background: color-mix(in srgb, var(--color-text-inverted) 10%, transparent);
+    font: inherit;
 }
 
 .site-footer-social-link:hover {
@@ -95,15 +94,22 @@
 }
 
 .site-footer-wordmark {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding-inline: var(--space-6);
     color: var(--color-text-inverted);
-    font-size: 4rem;
+    font-size: clamp(3.5rem, 13vw, 12rem);
     font-weight: 700;
-    line-height: 0.95;
-    overflow-wrap: anywhere;
+    line-height: 0.82;
+    white-space: nowrap;
 }
 
 @media (min-width: 768px) {
-    .site-footer {
+    .site-footer-inner {
+        padding-inline: var(--space-7);
+    }
+
+    .site-footer-wordmark {
         padding-inline: var(--space-7);
     }
 
@@ -111,18 +117,14 @@
         grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
         align-items: start;
     }
-
-    .site-footer-wordmark {
-        font-size: 6rem;
-    }
 }
 
 @media (min-width: 1024px) {
-    .site-footer {
+    .site-footer-inner {
         padding-inline: calc((var(--space-7) * 2) + var(--space-6));
     }
 
     .site-footer-wordmark {
-        font-size: 8rem;
+        padding-inline: calc((var(--space-7) * 2) + var(--space-6));
     }
 }
