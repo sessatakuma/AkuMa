@@ -351,6 +351,10 @@
         align-self: center;
     }
 
+    .usage-pitch-mark .kana-shell[data-accent-visible='true'] {
+        transform: translateY(calc(-1 * var(--space-2)));
+    }
+
     .usage-guide {
         margin-top: var(--space-6);
     }
