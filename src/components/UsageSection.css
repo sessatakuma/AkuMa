@@ -56,6 +56,7 @@
 .usage-pitch-copy {
     display: grid;
     gap: var(--space-2);
+    align-self: start;
 }
 
 .usage-pitch-copy h3,
@@ -80,6 +81,7 @@
 .usage-pitch-states {
     display: grid;
     gap: var(--space-6);
+    align-self: start;
 }
 
 .usage-pitch-state {
@@ -222,14 +224,43 @@
     text-wrap: pretty;
 }
 
+@keyframes usage-section-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(var(--space-4));
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+        .usage-section-grid,
+        .usage-pitch-primer,
+        .usage-guide-card {
+            animation: usage-section-reveal linear both;
+            animation-range: entry 0% cover 24%;
+            animation-timeline: view();
+        }
+    }
+}
+
 @media (min-width: 1024px) {
     .usage-section-inner {
         padding-inline: calc((var(--space-7) * 2) + var(--space-6));
     }
 
     .usage-section-grid {
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        grid-template-columns: minmax(0, 1fr);
         align-items: start;
+    }
+
+    .usage-section-copy p {
+        max-width: none;
+        white-space: nowrap;
     }
 
     .usage-pitch-primer {
@@ -248,7 +279,7 @@
         grid-template-columns: 1fr;
         grid-template-rows: 64px auto auto;
         align-items: start;
-        row-gap: var(--space-3);
+        row-gap: var(--space-4);
     }
 
     .usage-pitch-state p {
@@ -259,6 +290,7 @@
         grid-row: auto;
         align-items: flex-start;
         justify-content: flex-start;
+        margin-bottom: var(--space-2);
     }
 
     .usage-guide {
