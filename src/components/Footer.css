@@ -7,9 +7,9 @@
 
 .site-footer-inner {
     display: grid;
-    gap: calc(var(--space-7) + var(--space-6));
+    row-gap: calc(var(--space-7) + var(--space-6));
+    column-gap: 0;
     width: 100%;
-    max-width: 1400px;
     margin: 0 auto;
     margin-bottom: calc(var(--space-7) + var(--space-6));
     padding-inline: var(--space-6);
@@ -112,26 +112,42 @@
 
 @media (min-width: 768px) {
     .site-footer-inner {
-        padding-inline: var(--space-7);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .site-footer-top {
-        grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
-        align-items: start;
-    }
-}
-
-@media (min-width: 1024px) {
-    .site-footer-inner {
-        padding-inline: calc((var(--space-7) * 2) + var(--space-6));
+        display: contents;
     }
 
+    .site-footer-brand {
+        grid-column: 1;
+    }
+
+    .site-footer-social {
+        grid-column: 2;
+    }
+
+    .site-footer-about {
+        grid-column: 1;
+    }
+
+    .site-footer-about p {
+        max-width: none;
+    }
 }
 
 @media (max-width: 767px) {
+    .site-footer-top {
+        display: grid;
+        gap: var(--space-7);
+        align-items: start;
+    }
+
     .site-footer-wordmark {
         flex-wrap: wrap;
         font-size: 26vw;
+        justify-content: center;
+        text-align: center;
     }
 
     .site-footer-wordmark span {
