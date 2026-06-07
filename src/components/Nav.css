@@ -40,3 +40,30 @@
     font-size: 1.25rem;
     color: var(--color-text-inverted);
 }
+
+.nav-guide-button {
+    --nav-guide-button-size: calc(var(--space-6) + var(--space-2));
+
+    width: var(--nav-guide-button-size);
+    height: var(--nav-guide-button-size);
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    color: var(--color-text-inverted);
+    transition:
+        background-color var(--duration-interaction-fast) ease,
+        opacity var(--duration-interaction-fast) ease;
+}
+
+.nav-guide-button:hover {
+    background-color: color-mix(in srgb, var(--color-text-inverted) 16%, transparent);
+    opacity: 0.9;
+}
+
+.nav-guide-button:focus-visible {
+    outline: var(--stroke-width-thin) solid var(--color-text-inverted);
+    outline-offset: var(--space-1);
+}

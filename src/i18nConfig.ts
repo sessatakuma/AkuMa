@@ -92,9 +92,9 @@ export const translations: Record<Locale, TranslationSet> = {
         accentResultLabel: 'Pitch accent analysis result',
         accentToggle: 'Accent',
         temporaryIssuesBody:
-            'The system is encountering temporary issues, so accent rendering could not be completed right now. Please try again shortly.',
+            'The system is temporarily unable to analyze text. The development team is actively working on it, so please try again later.',
         temporaryIssuesClose: 'Close',
-        temporaryIssuesTitle: 'Temporary system issue',
+        temporaryIssuesTitle: 'System issue',
         collapseResult: 'Collapse result',
         copyAsText: 'Copy as text',
         copyFailed: 'Copy failed',
@@ -118,7 +118,7 @@ export const translations: Record<Locale, TranslationSet> = {
         footerSocialPendingMessage: 'We are working on this account.',
         footerThreadsLabel: 'Threads',
         footerWhatBody:
-            'Sessatakuma is developing tools around Japanese learning and preparing a tool-assisted speaking practice community with learning groups, structured plans, and guided practice. The goal is not just a forum, but a place where learners can build speaking confidence through useful tools and a clear practice rhythm.',
+            'Sessatakuma is developing tools for Japanese learning and planning a Japanese speaking practice community. By sharing the complete practice system our team members built in the past, along with tools designed for that system, we want to help learners make speaking practice more efficient and steadily build the confidence to speak Japanese.',
         faviconAltBrand: 'Sessatakuma',
         furiganaInputWarning: 'Only kana can be entered for furigana',
         heading: 'Accent Marker | Japanese Pitch Accent & Furigana Tool',
@@ -134,7 +134,7 @@ export const translations: Record<Locale, TranslationSet> = {
         pageDescription:
             'Paste Japanese text to add furigana and pitch-accent markings automatically, then edit and export the result.',
         pasteFromClipboard: 'Paste from clipboard',
-        randomSample: 'Insert sample text',
+        randomSample: 'Insert random sample',
         result: 'Result',
         resultActions: 'Result actions',
         resultHint: 'Analysis complete. Click furigana or accent marks to edit',
@@ -150,39 +150,39 @@ export const translations: Record<Locale, TranslationSet> = {
         usageEyebrow: 'Usage',
         usageHeading: 'Make Japanese pronunciation natural and clear',
         usageIntro:
-            'Accent Marker turns Japanese text into pronunciation-ready study material with furigana, pitch accent, edits, and export.',
+            'Accent Marker turns Japanese text into pronunciation material you can review, check, and share.',
         usagePitchFallBody:
-            'A vertical drop marks downstep; following sounds and particles stay low.',
+            'Following words or attached particles shift to low pitch.',
         usagePitchFallTitle: 'High, then fall',
         usagePitchFlatBody:
             'The marked span stays high, with no fall inside the word.',
         usagePitchFlatTitle: 'High, no fall',
         usagePitchHeading: 'Why the accent line matters',
         usagePitchIntro:
-            'Japanese pitch accent tracks high, low, and downstep. Seeing it helps pronunciation sound natural and keeps similar words distinct.',
+            'Beyond naturalness, pitch accent can also affect word meaning. Master the right pitch so you no longer ask a shop clerk, "Excuse me, does this store have any bridges?"',
         usagePitchNoneBody:
             'Particles like の, で, and は follow the previous word instead of carrying their own high mark.',
-        usagePitchNoneTitle: 'Following unit',
+        usagePitchNoneTitle: 'Low / follows previous pitch',
         usageStepAccentBody:
             'Click an accent line to switch the pitch pattern, or place the caret at the end of a furigana cell and use Up or Down to cycle the accent.',
         usageStepAccentHint: 'Click line or Up/Down',
         usageStepAccentTitle: 'Adjust accent',
         usageStepEditBody:
-            'Correct furigana, move between reading cells, and switch pitch patterns in place.',
-        usageStepEditTitle: 'Edit readings and accent',
+            'Click furigana or accent marks to edit. Accent cycles through three modes and also supports Up and Down arrow keys.',
+        usageStepEditTitle: 'Check readings and accent',
         usageStepFuriganaBody:
             'Click the furigana text to edit it directly. Use Left and Right to jump across reading cells while keeping your hands on the keyboard.',
         usageStepFuriganaHint: 'Type kana, then Left/Right',
         usageStepFuriganaTitle: 'Edit furigana',
         usageStepShareBody:
-            'Copy text for notes, export images for sharing, or save HTML to preserve markup.',
+            'Text works well for notes or drafts, images for sharing or documents, and HTML output can be reused in formats such as Markdown.',
         usageStepShareHint: 'Copy, image, or HTML',
         usageStepShareTitle: 'Save in the right format',
         usageStepStartBody:
-            'Enter Japanese or insert a sample to start reading and accent analysis.',
-        usageStepStartHint: 'Paste or sample',
+            'Enter words or sentences, paste an article, or insert a random sample to start reading and accent analysis.',
+        usageStepStartHint: 'Paste or random sample',
         usageStepStartTitle: 'Start analysis',
-        usageStepOne: 'Paste Japanese text or insert a sample sentence to start a new analysis.',
+        usageStepOne: 'Paste Japanese text or insert a random sample to start a new analysis.',
         usageStepThree:
             'Export the result as text, HTML, or an image depending on how you want to study or share it.',
         usageStepTwo:
@@ -193,9 +193,9 @@ export const translations: Record<Locale, TranslationSet> = {
         accentResultLabel: 'アクセント解析結果',
         accentToggle: 'アクセント',
         temporaryIssuesBody:
-            '現在システムで一時的な問題が発生しており、アクセント表示を完了できませんでした。少し時間をおいて再度お試しください。',
+            '現在システムで一時的に分析を実行できません。開発チームが対応中ですので、少し時間をおいて再度お試しください。',
         temporaryIssuesClose: '閉じる',
-        temporaryIssuesTitle: '一時的なシステム障害',
+        temporaryIssuesTitle: 'システムの問題',
         collapseResult: '結果の拡大表示を閉じる',
         copyAsText: 'テキスト形式でコピー',
         copyFailed: 'コピーに失敗しました',
@@ -218,7 +218,7 @@ export const translations: Record<Locale, TranslationSet> = {
         footerSocialPendingMessage: 'このアカウントは準備中です。',
         footerThreadsLabel: 'Threads',
         footerWhatBody:
-            'せっさたくまは、日本語学習のためのツールを開発しながら、ツールで支援される会話練習コミュニティを準備しています。単なる掲示板ではなく、学習グループ、練習計画、ガイド付きの実践を通じて、話す自信を育てられる場所を目指しています。',
+            'Sessatakuma は日本語学習に関するツールを開発しながら、日本語の会話練習コミュニティの立ち上げを計画しています。チームメンバーが以前に築いた練習体系と、そのために開発した各種ツールを提供することで、学習者が会話練習の効率を高め、日本語を話す自信を着実に積み重ねられるよう支援します。',
         faviconAltBrand: 'Sessatakuma',
         furiganaInputWarning: 'ふりがなにはかなのみ入力できます',
         heading: '日本語アクセントマーカー',
@@ -234,7 +234,7 @@ export const translations: Record<Locale, TranslationSet> = {
         pageDescription:
             '日本語テキストにふりがなとピッチアクセントを自動で付与し、編集して書き出せる学習ツールです。',
         pasteFromClipboard: 'クリップボードから貼り付け',
-        randomSample: 'サンプル文を生成',
+        randomSample: 'ランダム例文を挿入',
         result: '結果',
         resultActions: '結果の操作',
         resultHint: '分析完了。ふりがな・アクセントをクリックして編集',
@@ -250,39 +250,39 @@ export const translations: Record<Locale, TranslationSet> = {
         usageEyebrow: '使い方',
         usageHeading: '日本語の発音を自然に、意味を明確に',
         usageIntro:
-            'Accent Marker は日本語テキストに、ふりがな・ピッチアクセント・修正・書き出しをまとめます。',
+            'Accent Marker は日本語テキストを、復習・確認・共有しやすい発音素材に整えます。',
         usagePitchFallBody:
-            '縦線はダウンステップを表し、その後の音や助詞は低く続きます。',
+            '後ろに続く語や助詞は低くなります。',
         usagePitchFallTitle: '高く、あとで下がる',
         usagePitchFlatBody:
             '横線の範囲は高いまま続き、語の中では下がりません。',
         usagePitchFlatTitle: '高いまま下がらない',
         usagePitchHeading: 'アクセント線を見る理由',
         usagePitchIntro:
-            '日本語アクセントは高低とダウンステップで聞こえ方が変わります。見える化すると、より自然に発音できます。',
+            '自然さだけでなく、アクセントは語の意味にも関わります。正しい音調を身につければ、店員さんに「すみません、この店に橋はありますか？」と聞いてしまうこともなくなります。',
         usagePitchNoneBody:
             'の・で・は などの助詞は、自分ではなく前の語の高さに続きます。',
-        usagePitchNoneTitle: '前に続く単位',
+        usagePitchNoneTitle: '低音 / 前の音に続く',
         usageStepAccentBody:
             'アクセント線をクリックすると音調を切り替えられます。ふりがなの末尾にカーソルを置いた状態なら、上下キーでも切り替えできます。',
         usageStepAccentHint: '線をクリック / 上下キー',
         usageStepAccentTitle: 'アクセントを直す',
         usageStepEditBody:
-            'ふりがなを直し、読みセルを移動し、アクセント線をその場で切り替えます。',
-        usageStepEditTitle: '読みとアクセントを直す',
+            'ふりがなやアクセントをクリックして編集できます。アクセントは3つのモードを循環し、上下キーにも対応しています。',
+        usageStepEditTitle: '読みとアクセントを確認',
         usageStepFuriganaBody:
             'ふりがな部分をクリックしてそのまま編集できます。左右キーを使うと、読みの区切りをまたいで次のセルへ移動できます。',
         usageStepFuriganaHint: 'かなを入力 / 左右キー',
         usageStepFuriganaTitle: 'ふりがなを直す',
         usageStepShareBody:
-            'テキストはメモ、画像は共有、HTML はふりがなとアクセントの保存に向いています。',
+            'テキストはメモや下書き、画像は共有や資料作成に向いています。HTML 出力は Markdown などの形式でさらに活用できます。',
         usageStepShareHint: 'コピー / 画像 / HTML',
         usageStepShareTitle: '用途に合わせて保存',
         usageStepStartBody:
-            '日本語を入力、またはサンプル文を入れて読みとアクセントを解析します。',
-        usageStepStartHint: '貼り付け / サンプル',
+            '単語や文を入力するか、文章を貼り付けるか、ランダムな例文を入れると、読みとアクセントの解析が始まります。',
+        usageStepStartHint: '貼り付け / ランダム例文',
         usageStepStartTitle: '解析を始める',
-        usageStepOne: '日本語テキストを貼り付けるか、サンプル文を入れて解析を始めます。',
+        usageStepOne: '日本語テキストを貼り付けるか、ランダム例文を入れて解析を始めます。',
         usageStepThree:
             '学習メモや共有方法に合わせて、テキスト・HTML・画像のいずれかで書き出します。',
         usageStepTwo:

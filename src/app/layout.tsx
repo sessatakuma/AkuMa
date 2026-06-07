@@ -65,6 +65,9 @@ export const metadata: Metadata = {
         url: SITE_URL,
     },
     referrer: 'strict-origin-when-cross-origin',
+    verification: {
+        google: 'KW1oCmK6mQpBHEzUt9LPEvRSrfuU4C4JRF82CQ2OvUo',
+    },
     robots: {
         follow: true,
         index: true,

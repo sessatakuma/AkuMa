@@ -65,6 +65,7 @@
 
 html {
     background: var(--color-accent-green);
+    scroll-behavior: smooth;
 }
 
 html::after {
@@ -119,4 +120,10 @@ button {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
 }
