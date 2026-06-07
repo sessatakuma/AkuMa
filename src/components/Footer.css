@@ -83,6 +83,35 @@
     outline-offset: var(--space-1);
 }
 
+.site-footer-email-link {
+    justify-self: end;
+    width: fit-content;
+    max-width: 100%;
+    color: var(--color-text-inverted);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    text-align: right;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0 var(--space-1);
+    transition:
+        background-size var(--duration-interaction-fast) ease,
+        opacity var(--duration-interaction-fast) ease;
+}
+
+.site-footer-email-link:hover {
+    font-weight: 400;
+    background-size: 100% var(--space-1);
+}
+
+.site-footer-email-link:focus-visible {
+    outline: var(--space-1) solid var(--color-text-inverted);
+    outline-offset: var(--space-1);
+}
+
 .footer-social-svg {
     display: block;
 }

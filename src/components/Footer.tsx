@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Mail } from 'lucide-react';
+import { Facebook, Instagram } from 'lucide-react';
 
 import './Footer.css';
 
@@ -45,6 +45,7 @@ function GithubIcon({ size = 24 }: { size?: number }) {
 
 export default function Footer() {
     const { t } = useI18n();
+    const emailAddress = 'contact@sessatakuma.dev';
     const socialLinks = [
         {
             icon: <Instagram size={24} />,
@@ -60,11 +61,6 @@ export default function Footer() {
             icon: <Facebook size={24} />,
             label: t.footerFacebookLabel,
             pending: true,
-        },
-        {
-            href: 'mailto:contact@sessatakuma.dev',
-            icon: <Mail size={24} />,
-            label: t.footerMailLabel,
         },
         {
             href: 'https://github.com/sessatakuma',
@@ -121,6 +117,13 @@ export default function Footer() {
                                 ),
                             )}
                         </div>
+                        <a
+                            className='site-footer-email-link'
+                            href={`mailto:${emailAddress}`}
+                            aria-label={`${t.footerMailLabel}: ${emailAddress}`}
+                        >
+                            {emailAddress}
+                        </a>
                     </nav>
                 </div>
 

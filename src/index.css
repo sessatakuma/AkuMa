@@ -51,6 +51,7 @@
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
 
+    --duration-interaction-fast: 200ms;
     --duration-overlay-dot-wave: 900ms;
 }
 
