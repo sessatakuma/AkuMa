@@ -32,6 +32,10 @@
     color: var(--color-text-primary);
 }
 
+.usage-heading-segment {
+    display: inline;
+}
+
 .usage-section p,
 .usage-section li {
     font-size: var(--usage-font-size-body);
@@ -318,12 +322,38 @@
         padding: var(--space-7) var(--space-4);
     }
 
+    .usage-heading-segment {
+        display: block;
+    }
+
     .usage-section-inner {
         padding: 0;
     }
 
+    .usage-pitch-primer {
+        gap: var(--space-5);
+        margin-top: var(--space-6);
+        padding: var(--space-6) 0;
+    }
+
+    .usage-pitch-states {
+        gap: var(--space-4);
+    }
+
+    .usage-pitch-state {
+        align-items: center;
+    }
+
+    .usage-pitch-mark {
+        align-self: center;
+    }
+
+    .usage-guide {
+        margin-top: var(--space-6);
+    }
+
     .usage-guide-card {
-        padding: var(--space-7) 0;
+        padding: var(--space-6) 0;
     }
 
     .usage-action-showcase {

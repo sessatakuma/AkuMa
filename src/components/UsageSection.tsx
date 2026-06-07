@@ -11,6 +11,21 @@ import './UsageSection.css';
 
 import { useI18n } from '../i18n';
 
+function renderUsageHeading(heading: string) {
+    const splitIndex = heading.indexOf('、');
+
+    if (splitIndex === -1) {
+        return heading;
+    }
+
+    return (
+        <>
+            <span className='usage-heading-segment'>{heading.slice(0, splitIndex + 1)}</span>
+            <span className='usage-heading-segment'>{heading.slice(splitIndex + 1)}</span>
+        </>
+    );
+}
+
 export default function UsageSection() {
     const { t } = useI18n();
 
@@ -19,7 +34,7 @@ export default function UsageSection() {
             <div className='usage-section-inner'>
                 <div className='usage-section-grid'>
                     <div className='usage-section-copy'>
-                        <h2 id='usage-heading'>{t.usageHeading}</h2>
+                        <h2 id='usage-heading'>{renderUsageHeading(t.usageHeading)}</h2>
                         <p>{t.usageIntro}</p>
                     </div>
                 </div>
