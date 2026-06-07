@@ -23,6 +23,65 @@ export default function UsageSection() {
                         <p>{t.usageIntro}</p>
                     </div>
                 </div>
+                <div className='usage-pitch-primer' aria-labelledby='usage-pitch-heading'>
+                    <div className='usage-pitch-copy'>
+                        <h3 id='usage-pitch-heading'>{t.usagePitchHeading}</h3>
+                        <p>{t.usagePitchIntro}</p>
+                    </div>
+                    <div className='usage-pitch-states'>
+                        <article className='usage-pitch-state'>
+                            <div className='usage-pitch-mark' aria-hidden='true'>
+                                <span className='kana-shell' data-accent='none'>
+                                    <span className='kana-accent-lane'></span>
+                                    <span className='kana-text' data-text-visible='true'>
+                                        あ
+                                    </span>
+                                </span>
+                            </div>
+                            <h4>{t.usagePitchNoneTitle}</h4>
+                            <p>{t.usagePitchNoneBody}</p>
+                        </article>
+                        <article className='usage-pitch-state'>
+                            <div className='usage-pitch-mark' aria-hidden='true'>
+                                <span
+                                    className='kana-shell'
+                                    data-accent='flat'
+                                    data-accent-phase-active='true'
+                                    data-accent-visible='true'
+                                >
+                                    <span className='kana-accent-lane'>
+                                        <span className='kana-accent-line'></span>
+                                    </span>
+                                    <span className='kana-text' data-text-visible='true'>
+                                        あ
+                                    </span>
+                                </span>
+                            </div>
+                            <h4>{t.usagePitchFlatTitle}</h4>
+                            <p>{t.usagePitchFlatBody}</p>
+                        </article>
+                        <article className='usage-pitch-state'>
+                            <div className='usage-pitch-mark' aria-hidden='true'>
+                                <span
+                                    className='kana-shell'
+                                    data-accent='drop'
+                                    data-accent-phase-active='true'
+                                    data-accent-visible='true'
+                                >
+                                    <span className='kana-accent-lane'>
+                                        <span className='kana-accent-line'></span>
+                                        <span className='kana-accent-drop'></span>
+                                    </span>
+                                    <span className='kana-text' data-text-visible='true'>
+                                        あ
+                                    </span>
+                                </span>
+                            </div>
+                            <h4>{t.usagePitchFallTitle}</h4>
+                            <p>{t.usagePitchFallBody}</p>
+                        </article>
+                    </div>
+                </div>
                 <div className='usage-guide' aria-label={t.usageHeading}>
                     <article className='usage-guide-card'>
                         <div className='usage-guide-preview usage-guide-preview-start' aria-hidden='true'>
@@ -52,7 +111,7 @@ export default function UsageSection() {
                         </div>
                     </article>
                     <article className='usage-guide-card'>
-                        <div className='usage-guide-preview usage-guide-preview-furigana' aria-hidden='true'>
+                        <div className='usage-guide-preview usage-guide-preview-edit' aria-hidden='true'>
                             <div className='result-panel usage-guide-preview-panel'>
                                 <div className='result-container-inner usage-guide-preview-result-shell'>
                                     <div className='result-content usage-guide-preview-result-content'>
@@ -76,23 +135,7 @@ export default function UsageSection() {
                                                     </span>
                                                 ))}
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='usage-guide-copy'>
-                            <h3>{t.usageStepFuriganaTitle}</h3>
-                            <p>{t.usageStepFuriganaBody}</p>
-                        </div>
-                    </article>
-                    <article className='usage-guide-card'>
-                        <div className='usage-guide-preview usage-guide-preview-accent' aria-hidden='true'>
-                            <div className='result-panel usage-guide-preview-panel'>
-                                <div className='result-container-inner usage-guide-preview-result-shell'>
-                                    <div className='result-content usage-guide-preview-result-content'>
-                                        <div className='result-area usage-guide-result-area'>
-                                            <div className='word-reading-row usage-guide-reading-row'>
+                                            <div className='word-reading-row usage-guide-reading-row usage-guide-accent-row'>
                                                 {['あ', 'く', 'せ', 'ん', 'と'].map((kana, index) => (
                                                     <span key={kana} className='word-reading-cell usage-guide-reading-cell'>
                                                         <span
@@ -118,8 +161,8 @@ export default function UsageSection() {
                             </div>
                         </div>
                         <div className='usage-guide-copy'>
-                            <h3>{t.usageStepAccentTitle}</h3>
-                            <p>{t.usageStepAccentBody}</p>
+                            <h3>{t.usageStepEditTitle}</h3>
+                            <p>{t.usageStepEditBody}</p>
                         </div>
                     </article>
                     <article className='usage-guide-card'>
