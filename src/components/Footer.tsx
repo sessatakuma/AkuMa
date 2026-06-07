@@ -130,7 +130,8 @@ export default function Footer() {
                 </section>
             </div>
             <p className='site-footer-wordmark' aria-label='Sessatakuma'>
-                Sessatakuma
+                <span>Sessa</span>
+                <span>takuma</span>
             </p>
         </footer>
     );

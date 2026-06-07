@@ -95,14 +95,19 @@
 }
 
 .site-footer-wordmark {
+    display: flex;
+    flex-wrap: nowrap;
     width: 100%;
     margin: 0;
     padding: 0;
     color: var(--color-text-inverted);
-    font-size: clamp(4rem, 16vw, 14rem);
+    font-size: clamp(4rem, 15vw, 14rem);
     font-weight: 700;
-    line-height: 0.78;
-    white-space: nowrap;
+    line-height: 1.42;
+}
+
+.site-footer-wordmark span {
+    display: block;
 }
 
 @media (min-width: 768px) {
@@ -121,4 +126,15 @@
         padding-inline: calc((var(--space-7) * 2) + var(--space-6));
     }
 
+}
+
+@media (max-width: 767px) {
+    .site-footer-wordmark {
+        flex-wrap: wrap;
+        font-size: 26vw;
+    }
+
+    .site-footer-wordmark span {
+        flex-basis: 100%;
+    }
 }
