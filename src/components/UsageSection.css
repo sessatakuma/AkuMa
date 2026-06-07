@@ -273,32 +273,8 @@
         gap: calc(var(--space-7) + var(--space-6));
     }
 
-    .usage-pitch-intro {
-        padding-top: var(--space-5);
-    }
-
     .usage-pitch-states {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: calc(var(--space-7) + var(--space-4));
-        align-items: start;
-    }
-
-    .usage-pitch-state {
-        grid-template-columns: 1fr;
-        grid-template-rows: 64px auto auto;
-        align-items: start;
-        row-gap: var(--space-4);
-    }
-
-    .usage-pitch-state p {
-        grid-column: auto;
-    }
-
-    .usage-pitch-mark {
-        grid-row: auto;
-        align-items: flex-start;
-        justify-content: flex-start;
-        margin-bottom: var(--space-2);
+        gap: var(--space-4);
     }
 
     .usage-guide {
