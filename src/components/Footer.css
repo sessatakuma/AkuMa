@@ -7,7 +7,7 @@
 
 .site-footer-inner {
     display: grid;
-    row-gap: calc(var(--space-7) + var(--space-6));
+    row-gap: var(--space-6);
     column-gap: 0;
     width: 100%;
     margin: 0 auto;
@@ -97,17 +97,19 @@
 .site-footer-wordmark {
     display: flex;
     flex-wrap: nowrap;
+    align-items: flex-end;
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 0.18em 0 0;
     color: var(--color-text-inverted);
     font-size: clamp(4rem, 15vw, 14rem);
     font-weight: 700;
-    line-height: 1.42;
+    line-height: 0.82;
 }
 
 .site-footer-wordmark span {
     display: block;
+    white-space: nowrap;
 }
 
 @media (min-width: 768px) {
@@ -125,6 +127,12 @@
 
     .site-footer-social {
         grid-column: 2;
+        justify-self: end;
+        text-align: right;
+    }
+
+    .site-footer-social-links {
+        justify-content: flex-end;
     }
 
     .site-footer-about {
@@ -145,6 +153,7 @@
 
     .site-footer-wordmark {
         flex-wrap: wrap;
+        align-content: flex-end;
         font-size: 26vw;
         justify-content: center;
         text-align: center;
