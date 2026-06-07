@@ -192,7 +192,7 @@ export default function UsageSection() {
                         </article>
                     </div>
                 </div>
-                <div className='usage-guide' aria-label={t.usageHeading}>
+                <div id='usage-guide' className='usage-guide' aria-label={t.usageHeading}>
                     <article className='usage-guide-card usage-reveal-target'>
                         <div className='usage-guide-preview usage-guide-preview-start' aria-hidden='true'>
                             <div className='usage-action-showcase'>

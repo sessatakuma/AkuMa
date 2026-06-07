@@ -124,6 +124,7 @@
     display: grid;
     gap: 0;
     margin-top: calc(var(--space-7) + var(--space-4));
+    scroll-margin-top: calc(var(--nav-height) + var(--space-4));
 }
 
 .usage-guide-card {

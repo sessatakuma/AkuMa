@@ -1,4 +1,7 @@
 import './Nav.css';
+
+import { CircleQuestionMark } from 'lucide-react';
+
 import { useI18n } from '../i18n';
 
 export default function Nav() {
@@ -21,6 +24,14 @@ export default function Nav() {
                     <span className='title'>{t.faviconAltBrand}</span>
                 </a>
             </div>
+            <a
+                className='nav-guide-button'
+                href='#usage-guide'
+                title={t.usageEyebrow}
+                aria-label={`${t.usageEyebrow}: ${t.usageHeading}`}
+            >
+                <CircleQuestionMark size={20} aria-hidden='true' />
+            </a>
         </header>
     );
 }
