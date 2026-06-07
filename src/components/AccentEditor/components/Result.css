@@ -132,11 +132,17 @@
 .result-area {
     --result-ruby-font-size: calc(1em * var(--kana-ruby-font-scale, 0.6));
     --result-ruby-line-height: 1.2;
-    --result-reading-text-height: calc(var(--result-ruby-font-size) * var(--result-ruby-line-height));
+    --result-reading-text-height: calc(
+        var(--result-ruby-font-size) * var(--result-ruby-line-height)
+    );
     --result-kana-shell-gap: var(--kana-accent-gap);
     --result-kana-shell-rows: var(--kana-accent-lane-height) auto;
-    --result-accent-track-height: calc(var(--kana-accent-lane-height) + var(--result-kana-shell-gap));
-    --result-reading-track-height: calc(var(--result-accent-track-height) + var(--result-reading-text-height));
+    --result-accent-track-height: calc(
+        var(--kana-accent-lane-height) + var(--result-kana-shell-gap)
+    );
+    --result-reading-track-height: calc(
+        var(--result-accent-track-height) + var(--result-reading-text-height)
+    );
 
     font-size: 1.5rem;
     line-height: 2.5;
@@ -258,7 +264,7 @@
 .furigana-group::before {
     content: '';
     position: absolute;
-    top: calc(var(--kana-accent-lane-height) + var(--kana-accent-gap) - 0.125rem);
+    top: -0.125rem;
     right: -0.125rem;
     bottom: -0.0625rem;
     left: -0.125rem;
