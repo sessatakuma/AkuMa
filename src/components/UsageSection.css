@@ -237,6 +237,8 @@
 }
 
 .usage-accent-kana-cell .kana-accent-hitbox {
+    top: calc(var(--kana-accent-lane-height) - (var(--kana-accent-hitbox-height) / 2) + 0.125rem);
+    bottom: auto;
     pointer-events: none;
 }
 
@@ -272,6 +274,17 @@
 .usage-accent-word .kana-accent-line,
 .usage-accent-word .kana-accent-drop {
     transition: opacity 0.2s ease;
+}
+
+.usage-accent-word .kana-accent-line {
+    top: 0;
+    bottom: auto;
+}
+
+.usage-accent-word .kana-accent-drop {
+    top: var(--accent-width);
+    bottom: auto;
+    height: var(--kana-drop-height);
 }
 
 @keyframes usage-cursor-slide-in {
