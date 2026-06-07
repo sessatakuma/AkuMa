@@ -414,6 +414,7 @@ export default function UsageSection() {
                                                 accent={currentAccents[index]}
                                                 accentPhaseActive
                                                 accentVisible
+                                                interactive={false}
                                                 text={kana}
                                                 textVisible
                                             />
