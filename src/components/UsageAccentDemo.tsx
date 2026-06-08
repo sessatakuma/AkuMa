@@ -32,7 +32,7 @@ function buildDemoPhases(): AnimationPhase[] {
         { accents: [...MIDDLE_ACCENTS], cursor: 'moving', cursorTarget: 1, delay: 300 },
         { accents: [...MIDDLE_ACCENTS], cursor: 'hover', cursorTarget: 1, delay: 320 },
         { accents: [...FINAL_ACCENTS], cursor: 'click', cursorTarget: 1, delay: 220 },
-        { accents: [...FINAL_ACCENTS], cursor: 'result', cursorTarget: 1, delay: 0 },
+        { accents: [...FINAL_ACCENTS], cursor: 'result', cursorTarget: 1, delay: 420 },
         { accents: [...FINAL_ACCENTS], cursor: 'exiting', cursorTarget: 1, delay: 2000 },
     ];
 }
