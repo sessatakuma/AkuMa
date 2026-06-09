@@ -26,6 +26,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
             locale:
                 localeMetadata.localeCode === 'zh-Hant' ? 'zh_Hant' : localeMetadata.localeCode,
             title: localeMetadata.title,
+            url: localeMetadata.absoluteUrl,
         },
         twitter: {
             description: localeMetadata.description,

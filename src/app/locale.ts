@@ -32,17 +32,20 @@ export function buildLocaleUrl(locale: Locale) {
 
 export function buildLocaleMetadata(locale: Locale) {
     const translation = translations[locale];
+    const canonical = buildLocaleUrl(locale);
 
     return {
         locale,
         localeCode: localeToLang[locale],
         title: translation.title,
         description: translation.pageDescription,
-        canonical: buildLocaleUrl(locale),
+        canonical,
+        absoluteUrl: new URL(canonical, SITE_URL).toString(),
         languages: {
             en: '/',
             ja: '/?lang=ja',
             'zh-Hant': '/?lang=zh',
+            'x-default': '/',
         },
     };
 }
@@ -54,7 +57,7 @@ export function buildStructuredData(locale: Locale) {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
         name: 'AkuMa',
-        url: new URL(metadata.canonical, SITE_URL).toString(),
+        url: metadata.absoluteUrl,
         applicationCategory: 'EducationalApplication',
         operatingSystem: 'Any',
         description: metadata.description,

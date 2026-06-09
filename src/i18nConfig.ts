@@ -244,7 +244,7 @@ export const translations: Record<Locale, TranslationSet> = {
         statusAnalyzing: '分析中',
         statusUpdated: count => `解析結果を更新しました。${count}件の語を表示しています。`,
         switchAccent: 'アクセントを切り替え',
-        title: 'AkuMa | Japanese Pitch Accent & Furigana Tool',
+        title: 'AkuMa | 日本語アクセント・ふりがなツール',
         toggleImageTheme: isDarkResult =>
             `画像テーマを${isDarkResult ? 'ライト' : 'ダーク'}に切り替え`,
         usageEyebrow: '使い方',
@@ -344,7 +344,7 @@ export const translations: Record<Locale, TranslationSet> = {
         statusAnalyzing: '分析中',
         statusUpdated: count => `分析結果已更新，目前顯示 ${count} 個詞語。`,
         switchAccent: '切換音調',
-        title: 'AkuMa | Japanese Pitch Accent & Furigana Tool',
+        title: 'AkuMa | 日文讀音與音調分析工具',
         toggleImageTheme: isDarkResult =>
             `將圖片主題切換為${isDarkResult ? '淺色' : '深色'}`,
         usageEyebrow: '使用方式',
