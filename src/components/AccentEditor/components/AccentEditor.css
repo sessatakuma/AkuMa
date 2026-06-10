@@ -229,9 +229,15 @@
     line-height: 1.75;
 }
 
+.temporary-issues-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
 .temporary-issues-dialog-button {
     min-height: 2.5rem;
-    justify-self: flex-end;
     padding: 0 var(--space-4);
     border-radius: var(--radius-md);
     background-color: var(--color-bg-secondary);
@@ -258,6 +264,18 @@
 
 .temporary-issues-dialog-button:active {
     transform: translateY(1px);
+}
+
+.temporary-issues-dialog-button-primary {
+    background-color: var(--color-accent-green);
+    border-color: var(--color-accent-green);
+    color: var(--color-text-inverted);
+}
+
+.temporary-issues-dialog-button-primary:hover {
+    background-color: color-mix(in srgb, var(--color-accent-green) 88%, black);
+    border-color: color-mix(in srgb, var(--color-accent-green) 88%, black);
+    color: var(--color-text-inverted);
 }
 
 @media (min-width: 1024px) {

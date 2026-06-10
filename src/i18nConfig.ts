@@ -48,6 +48,11 @@ export interface TranslationSet {
     resultHint: string;
     resultPanelLabel: string;
     resultsAndInput: string;
+    restoreAllEdits: string;
+    restoreAllEditsCancel: string;
+    restoreAllEditsConfirm: string;
+    restoreAllEditsDialogBody: string;
+    restoreAllEditsDialogTitle: string;
     saveAndCopy: string;
     statusAnalyzing: string;
     statusUpdated: (count: number) => string;
@@ -143,6 +148,12 @@ export const translations: Record<Locale, TranslationSet> = {
         resultHint: 'Analysis complete. Click furigana or accent marks to edit',
         resultPanelLabel: 'Result',
         resultsAndInput: 'Input and analysis result',
+        restoreAllEdits: 'Restore all edits',
+        restoreAllEditsCancel: 'Cancel',
+        restoreAllEditsConfirm: 'Restore',
+        restoreAllEditsDialogBody:
+            'This will discard all furigana and accent edits and return the result to the latest analyzed state.',
+        restoreAllEditsDialogTitle: 'Restore all edits?',
         saveAndCopy: 'Export and copy',
         statusAnalyzing: 'Analyzing',
         statusUpdated: count => `Analysis updated. Displaying ${count} words.`,
@@ -245,6 +256,12 @@ export const translations: Record<Locale, TranslationSet> = {
         resultHint: '分析完了。ふりがな・アクセントをクリックして編集',
         resultPanelLabel: '結果',
         resultsAndInput: '入力と解析結果',
+        restoreAllEdits: 'すべての編集を元に戻す',
+        restoreAllEditsCancel: 'キャンセル',
+        restoreAllEditsConfirm: '元に戻す',
+        restoreAllEditsDialogBody:
+            'ふりがなとアクセントの編集内容をすべて破棄し、最新の解析結果の状態に戻します。',
+        restoreAllEditsDialogTitle: 'すべての編集を元に戻しますか？',
         saveAndCopy: '書き出しとコピー',
         statusAnalyzing: '分析中',
         statusUpdated: count => `解析結果を更新しました。${count}件の語を表示しています。`,
@@ -347,6 +364,12 @@ export const translations: Record<Locale, TranslationSet> = {
         resultHint: '分析完成，點擊振假名或音調可進行編輯',
         resultPanelLabel: '結果',
         resultsAndInput: '輸入與分析結果',
+        restoreAllEdits: '還原所有編輯',
+        restoreAllEditsCancel: '取消',
+        restoreAllEditsConfirm: '還原',
+        restoreAllEditsDialogBody:
+            '這會捨棄目前所有振假名與音調編輯，並回到最近一次分析完成時的結果。',
+        restoreAllEditsDialogTitle: '要還原所有編輯嗎？',
         saveAndCopy: '匯出與複製',
         statusAnalyzing: '分析中',
         statusUpdated: count => `分析結果已更新，目前顯示 ${count} 個詞語。`,

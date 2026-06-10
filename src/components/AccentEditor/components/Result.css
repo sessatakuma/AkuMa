@@ -69,6 +69,16 @@
     color: var(--color-text-primary);
 }
 
+.action-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.action-button:disabled:hover {
+    background-color: transparent;
+    color: var(--color-text-secondary);
+}
+
 .action-button:focus-visible,
 .menu-item:focus-visible,
 .switch input:focus-visible + .slider,
@@ -85,6 +95,11 @@
 .result-container-inner.dark-result .action-button:hover {
     background-color: var(--color-bg-dark-hover);
     color: var(--color-text-dark-primary);
+}
+
+.result-container-inner.dark-result .action-button:disabled:hover {
+    background-color: transparent;
+    color: var(--color-text-dark-secondary);
 }
 
 .action-button-expand {

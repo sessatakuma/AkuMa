@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { X } from 'lucide-react';
+import { AlertTriangle, RotateCcw, X } from 'lucide-react';
 
 import { useI18n } from '../../../i18n';
 import { useAccentAnalysis } from '../hooks/useAccentAnalysis';
@@ -20,11 +20,14 @@ export default function AccentEditor() {
     const [isEditing, setIsEditing] = useState(false);
     const [isMobileResultHintDismissed, setIsMobileResultHintDismissed] = useState(false);
     const [isResultExpanded, setIsResultExpanded] = useState(false);
+    const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
     const [isTemporaryIssuesDialogOpen, setIsTemporaryIssuesDialogOpen] = useState(false);
     const {
+        canRestore,
         redoWords,
         replaceVersion,
         replaceWords,
+        restoreWords,
         streamReplaceWords,
         undoWords,
         updateWords,
@@ -165,8 +168,10 @@ export default function AccentEditor() {
                         >
                             <Result
                                 accentPhaseActive={accentPhaseActive}
+                                canRestore={canRestore}
                                 isPresenting={isPresenting}
                                 isExpanded={isResultExpanded}
+                                onRequestRestoreAll={() => setIsRestoreDialogOpen(true)}
                                 paragraph={paragraph}
                                 revealedAccentUnits={revealedAccentUnits}
                                 revealedFuriganaUnits={revealedFuriganaUnits}
@@ -185,6 +190,20 @@ export default function AccentEditor() {
             <TemporaryIssuesDialog
                 isOpen={isTemporaryIssuesDialogOpen}
                 onClose={() => setIsTemporaryIssuesDialogOpen(false)}
+                icon={<AlertTriangle size={20} />}
+            />
+            <TemporaryIssuesDialog
+                isOpen={isRestoreDialogOpen}
+                onClose={() => setIsRestoreDialogOpen(false)}
+                onConfirm={() => {
+                    restoreWords();
+                    setIsRestoreDialogOpen(false);
+                }}
+                icon={<RotateCcw size={20} />}
+                title={t.restoreAllEditsDialogTitle}
+                body={t.restoreAllEditsDialogBody}
+                cancelLabel={t.restoreAllEditsCancel}
+                confirmLabel={t.restoreAllEditsConfirm}
             />
         </main>
     );

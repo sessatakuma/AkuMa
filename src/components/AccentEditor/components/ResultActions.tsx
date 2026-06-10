@@ -4,6 +4,7 @@ import {
     Copy,
     Image as ImageIcon,
     Moon,
+    RotateCcw,
     Sun,
 } from 'lucide-react';
 
@@ -13,6 +14,7 @@ type FeedbackType = 'success' | 'warning';
 
 interface ResultActionsProps {
     copyFeedback: string | null;
+    canRestore: boolean;
     downloadHtml: () => void;
     copyPlainText: () => void;
     downloadImage: () => void;
@@ -20,6 +22,7 @@ interface ResultActionsProps {
     isExpanded: boolean;
     isDarkResult: boolean;
     isMenuOpen: boolean;
+    onRequestRestoreAll: () => void;
     onToggleExpanded: () => void;
     setIsDarkResult: React.Dispatch<React.SetStateAction<boolean>>;
     setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -30,12 +33,14 @@ interface ResultActionsProps {
 export default function ResultActions({
     copyFeedback,
     copyPlainText,
+    canRestore,
     downloadHtml,
     downloadImage,
     feedbackType,
     isExpanded,
     isDarkResult,
     isMenuOpen,
+    onRequestRestoreAll,
     onToggleExpanded,
     setIsDarkResult,
     setIsMenuOpen,
@@ -83,6 +88,17 @@ export default function ResultActions({
                         <Copy size={18} />
                     </button>
                 </div>
+
+                <button
+                    className='action-button'
+                    onClick={onRequestRestoreAll}
+                    title={t.restoreAllEdits}
+                    aria-label={t.restoreAllEdits}
+                    type='button'
+                    disabled={!canRestore}
+                >
+                    <RotateCcw size={18} />
+                </button>
 
                 <div className='save-menu-container'>
                     <button

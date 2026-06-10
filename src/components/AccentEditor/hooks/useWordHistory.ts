@@ -7,6 +7,7 @@ import type { Word } from '../core/word/accentTypes';
 const HISTORY_LIMIT = 50;
 
 interface WordHistoryState {
+    baseWords: Word[];
     futureWords: Word[][];
     pastWords: Word[][];
     replaceVersion: number;
@@ -26,6 +27,9 @@ type WordHistoryAction =
           words: Word[];
       }
     | {
+          type: 'restore';
+      }
+    | {
           type: 'undo';
       }
     | {
@@ -34,6 +38,7 @@ type WordHistoryAction =
       };
 
 const INITIAL_STATE: WordHistoryState = {
+    baseWords: [],
     futureWords: [],
     pastWords: [],
     replaceVersion: 0,
@@ -73,6 +78,7 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
     switch (action.type) {
         case 'replace':
             return {
+                baseWords: cloneWords(action.words),
                 futureWords: [],
                 pastWords: [],
                 replaceVersion: state.replaceVersion + 1,
@@ -80,6 +86,7 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
             };
         case 'streamReplace':
             return {
+                baseWords: cloneWords(action.words),
                 futureWords: [],
                 pastWords: [],
                 replaceVersion: state.replaceVersion,
@@ -93,10 +100,24 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
             }
 
             return {
+                baseWords: state.baseWords,
                 futureWords: [],
                 pastWords: [...state.pastWords.slice(-(HISTORY_LIMIT - 1)), cloneWords(state.words)],
                 replaceVersion: state.replaceVersion,
                 words: nextWords,
+            };
+        }
+        case 'restore': {
+            if (areWordsEqual(state.words, state.baseWords)) {
+                return state;
+            }
+
+            return {
+                baseWords: state.baseWords,
+                futureWords: [],
+                pastWords: [...state.pastWords.slice(-(HISTORY_LIMIT - 1)), cloneWords(state.words)],
+                replaceVersion: state.replaceVersion,
+                words: cloneWords(state.baseWords),
             };
         }
         case 'undo': {
@@ -106,6 +127,7 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
             }
 
             return {
+                baseWords: state.baseWords,
                 futureWords: [cloneWords(state.words), ...state.futureWords].slice(0, HISTORY_LIMIT),
                 pastWords: state.pastWords.slice(0, -1),
                 replaceVersion: state.replaceVersion,
@@ -119,6 +141,7 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
             }
 
             return {
+                baseWords: state.baseWords,
                 futureWords: state.futureWords.slice(1),
                 pastWords: [...state.pastWords.slice(-(HISTORY_LIMIT - 1)), cloneWords(state.words)],
                 replaceVersion: state.replaceVersion,
@@ -173,12 +196,20 @@ export function useWordHistory() {
         });
     }, []);
 
+    const restoreWords = useCallback((): void => {
+        dispatch({
+            type: 'restore',
+        });
+    }, []);
+
     return {
+        canRestore: !areWordsEqual(state.words, state.baseWords),
         canRedo: state.futureWords.length > 0,
         canUndo: state.pastWords.length > 0,
         redoWords,
         replaceVersion: state.replaceVersion,
         replaceWords,
+        restoreWords,
         streamReplaceWords,
         undoWords,
         updateWords,

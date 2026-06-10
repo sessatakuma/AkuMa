@@ -1,15 +1,28 @@
 import { useEffect } from 'react';
 
-import { AlertTriangle } from 'lucide-react';
-
 import { useI18n } from '../../../i18n';
 
 interface TemporaryIssuesDialogProps {
+    body?: string;
+    cancelLabel?: string;
+    confirmLabel?: string;
+    icon?: React.ReactNode;
     isOpen: boolean;
     onClose: () => void;
+    onConfirm?: () => void;
+    title?: string;
 }
 
-export default function TemporaryIssuesDialog({ isOpen, onClose }: TemporaryIssuesDialogProps) {
+export default function TemporaryIssuesDialog({
+    body,
+    cancelLabel,
+    confirmLabel,
+    icon,
+    isOpen,
+    onClose,
+    onConfirm,
+    title,
+}: TemporaryIssuesDialogProps) {
     const { t } = useI18n();
 
     useEffect(() => {
@@ -41,16 +54,35 @@ export default function TemporaryIssuesDialog({ isOpen, onClose }: TemporaryIssu
                 aria-describedby='temporary-issues-dialog-body'
                 onClick={event => event.stopPropagation()}
             >
-                <div className='temporary-issues-dialog-icon' aria-hidden='true'>
-                    <AlertTriangle size={20} />
-                </div>
+                {icon && (
+                    <div className='temporary-issues-dialog-icon' aria-hidden='true'>
+                        {icon}
+                    </div>
+                )}
                 <div className='temporary-issues-dialog-copy'>
-                    <h2 id='temporary-issues-dialog-title'>{t.temporaryIssuesTitle}</h2>
-                    <p id='temporary-issues-dialog-body'>{t.temporaryIssuesBody}</p>
+                    <h2 id='temporary-issues-dialog-title'>{title ?? t.temporaryIssuesTitle}</h2>
+                    <p id='temporary-issues-dialog-body'>{body ?? t.temporaryIssuesBody}</p>
                 </div>
-                <button type='button' className='temporary-issues-dialog-button' onClick={onClose}>
-                    {t.temporaryIssuesClose}
-                </button>
+                <div className='temporary-issues-dialog-actions'>
+                    {cancelLabel && (
+                        <button
+                            type='button'
+                            className='temporary-issues-dialog-button'
+                            onClick={onClose}
+                        >
+                            {cancelLabel}
+                        </button>
+                    )}
+                    <button
+                        type='button'
+                        className={`temporary-issues-dialog-button${
+                            onConfirm ? ' temporary-issues-dialog-button-primary' : ''
+                        }`}
+                        onClick={onConfirm ?? onClose}
+                    >
+                        {confirmLabel ?? t.temporaryIssuesClose}
+                    </button>
+                </div>
             </div>
         </div>
     );

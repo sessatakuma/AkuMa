@@ -11,6 +11,7 @@ import './Result.css';
 
 interface ResultProps {
     accentPhaseActive: boolean;
+    canRestore: boolean;
     isPresenting: boolean;
     words: Word[];
     paragraph: string;
@@ -20,6 +21,7 @@ interface ResultProps {
     updateWords: (updater: Word[] | ((current: Word[]) => Word[])) => void;
     isLoading: boolean;
     onEditingChange: (isEditing: boolean) => void;
+    onRequestRestoreAll: () => void;
     onToggleExpanded: () => void;
     isExpanded: boolean;
     statusMessage: string;
@@ -27,6 +29,7 @@ interface ResultProps {
 
 export default function Result({
     accentPhaseActive,
+    canRestore,
     isPresenting,
     paragraph,
     revealedAccentUnits,
@@ -37,6 +40,7 @@ export default function Result({
     isLoading,
     isExpanded,
     onEditingChange,
+    onRequestRestoreAll,
     onToggleExpanded,
     statusMessage,
 }: ResultProps) {
@@ -109,11 +113,13 @@ export default function Result({
                 <ResultActions
                     copyFeedback={copyFeedback}
                     copyPlainText={copyPlainText}
+                    canRestore={canRestore}
                     downloadImage={downloadImage}
                     downloadHtml={downloadHtml}
                     feedbackType={feedbackType}
                     isDarkResult={isDarkResult}
                     isMenuOpen={isMenuOpen}
+                    onRequestRestoreAll={onRequestRestoreAll}
                     setIsDarkResult={setIsDarkResult}
                     setIsMenuOpen={setIsMenuOpen}
                     setShowAccent={setShowAccent}
