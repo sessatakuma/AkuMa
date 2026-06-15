@@ -7,9 +7,12 @@
     const ANNOTATED_ATTR = 'data-akuma-crx-annotated';
     const MIN_JAPANESE_CHARS = 40;
     const JAPANESE_RATIO_THRESHOLD = 0.28;
-    const MAX_NODE_TEXT_LENGTH = 600;
+    const MAX_STREAM_CHUNK_CHARS = 280;
+    const MAX_FULL_PAGE_CHARS = 30_000;
+    const MAX_FULL_PAGE_CHUNKS = 140;
     const JAPANESE_CHECK_DELAY_MS = 400;
     const PAGE_SIGNATURE_LENGTH = 2048;
+    const NEAR_VIEWPORT_MULTIPLIER = 1.5;
     let pagePopover: HTMLElement | undefined;
     let selectionPopover: HTMLElement | undefined;
     let currentSelectionRange: Range | undefined;
@@ -105,6 +108,7 @@
                 <button type="button" data-akuma-action="accent">With accent</button>
                 <button type="button" data-akuma-action="dismiss">Not this time</button>
             </div>
+            <div class="akuma-crx-popover-status" data-akuma-status></div>
         `;
         document.body.append(pagePopover);
         pagePopover.addEventListener('click', handlePagePopoverClick);
@@ -146,19 +150,50 @@
     }
 
     async function annotateWholePage(options: AkumaAnnotateOptions) {
-        const textNodes = collectTextNodes(document.body);
+        const candidates = collectTextCandidates(document.body);
+        const { isLimited, tasks } = prepareViewportFirstTasks(candidates);
+        const totalCount = tasks.length;
 
-        for (const textNode of textNodes) {
-            await annotateTextNode(textNode, options);
+        if (totalCount === 0) {
+            updatePagePopoverStatus('No Japanese text found.');
+            return;
         }
+
+        for (let index = 0; index < tasks.length; index += 1) {
+            updatePagePopoverStatus(`Annotating ${index + 1}/${totalCount}`);
+            await annotateTextNode(tasks[index].textNode, options);
+        }
+
+        updatePagePopoverStatus(
+            isLimited
+                ? `Annotated ${totalCount} visible-first chunks. Reopen AkuMa to continue.`
+                : `Annotated ${totalCount} chunks.`,
+        );
     }
 
-    function collectTextNodes(root: HTMLElement | null) {
+    interface TextCandidate {
+        distanceFromViewport: number;
+        isInViewport: boolean;
+        text: string;
+        textNode: Text;
+        top: number;
+    }
+
+    interface AnnotationTask {
+        textNode: Text;
+    }
+
+    interface AnnotationTaskPlan {
+        isLimited: boolean;
+        tasks: AnnotationTask[];
+    }
+
+    function collectTextCandidates(root: HTMLElement | null) {
         if (!root) {
             return [];
         }
 
-        const nodes: Text[] = [];
+        const candidates: TextCandidate[] = [];
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
             acceptNode(node) {
                 if (!node.textContent || !hasJapanese(node.textContent)) {
@@ -176,12 +211,179 @@
 
         while (walker.nextNode()) {
             const textNode = walker.currentNode as Text;
-            if (textNode.textContent && textNode.textContent.trim().length <= MAX_NODE_TEXT_LENGTH) {
-                nodes.push(textNode);
+            const text = textNode.textContent ?? '';
+            if (text.trim().length === 0) {
+                continue;
             }
+
+            const position = getTextNodeViewportPosition(textNode);
+            if (!position.isRenderable) {
+                continue;
+            }
+            candidates.push({
+                distanceFromViewport: position.distanceFromViewport,
+                isInViewport: position.isInViewport,
+                text,
+                textNode,
+                top: position.top,
+            });
         }
 
-        return nodes;
+        return candidates.sort(compareTextCandidates);
+    }
+
+    function compareTextCandidates(left: TextCandidate, right: TextCandidate) {
+        if (left.isInViewport !== right.isInViewport) {
+            return left.isInViewport ? -1 : 1;
+        }
+
+        if (left.distanceFromViewport !== right.distanceFromViewport) {
+            return left.distanceFromViewport - right.distanceFromViewport;
+        }
+
+        return left.top - right.top;
+    }
+
+    function prepareViewportFirstTasks(candidates: TextCandidate[]): AnnotationTaskPlan {
+        const tasks: AnnotationTask[] = [];
+        let isLimited = false;
+        let selectedCharacters = 0;
+
+        for (const candidate of candidates) {
+            if (tasks.length >= MAX_FULL_PAGE_CHUNKS || selectedCharacters >= MAX_FULL_PAGE_CHARS) {
+                isLimited = true;
+                break;
+            }
+
+            const remainingCharacters = MAX_FULL_PAGE_CHARS - selectedCharacters;
+            const chunks = splitTextForStreaming(candidate.text, remainingCharacters);
+            if (chunks.length === 0) {
+                continue;
+            }
+
+            const remainingTaskSlots = MAX_FULL_PAGE_CHUNKS - tasks.length;
+            const selectedChunks = chunks.slice(0, remainingTaskSlots);
+            if (selectedChunks.length < chunks.length) {
+                isLimited = true;
+            }
+            const textNodes = replaceTextNodeWithChunks(candidate.textNode, selectedChunks);
+
+            selectedCharacters += selectedChunks.reduce((total, chunk) => total + chunk.trim().length, 0);
+            textNodes.forEach(textNode => tasks.push({ textNode }));
+        }
+
+        return { isLimited, tasks };
+    }
+
+    function splitTextForStreaming(text: string, characterBudget: number) {
+        const chunks: string[] = [];
+        let remaining = text;
+        let usedCharacters = 0;
+
+        while (remaining.trim().length > 0 && usedCharacters < characterBudget) {
+            const remainingBudget = characterBudget - usedCharacters;
+            const nextChunk = takeStreamingChunk(remaining, Math.min(MAX_STREAM_CHUNK_CHARS, remainingBudget));
+            if (!nextChunk) {
+                break;
+            }
+
+            chunks.push(nextChunk);
+            usedCharacters += nextChunk.trim().length;
+            remaining = remaining.slice(nextChunk.length);
+        }
+
+        return chunks;
+    }
+
+    function takeStreamingChunk(text: string, maxCharacters: number) {
+        if (maxCharacters <= 0) {
+            return '';
+        }
+
+        const characters = [...text];
+        if (characters.length <= maxCharacters) {
+            return text;
+        }
+
+        const candidate = characters.slice(0, maxCharacters).join('');
+        const sentenceBreakIndex = Math.max(
+            candidate.lastIndexOf('。'),
+            candidate.lastIndexOf('！'),
+            candidate.lastIndexOf('？'),
+            candidate.lastIndexOf('\n'),
+        );
+
+        if (sentenceBreakIndex >= Math.floor(maxCharacters * 0.45)) {
+            return candidate.slice(0, sentenceBreakIndex + 1);
+        }
+
+        const softBreakIndex = Math.max(
+            candidate.lastIndexOf('、'),
+            candidate.lastIndexOf(' '),
+            candidate.lastIndexOf('　'),
+        );
+
+        if (softBreakIndex >= Math.floor(maxCharacters * 0.6)) {
+            return candidate.slice(0, softBreakIndex + 1);
+        }
+
+        return candidate;
+    }
+
+    function replaceTextNodeWithChunks(textNode: Text, chunks: string[]) {
+        if (chunks.length === 1 && chunks[0] === textNode.textContent) {
+            return [textNode];
+        }
+
+        const parent = textNode.parentNode;
+        if (!parent) {
+            return [];
+        }
+
+        const textNodes = chunks.map(chunk => document.createTextNode(chunk));
+        textNodes.forEach(chunkNode => parent.insertBefore(chunkNode, textNode));
+
+        const originalText = textNode.textContent ?? '';
+        const usedLength = chunks.reduce((length, chunk) => length + chunk.length, 0);
+        const remainder = originalText.slice(usedLength);
+        if (remainder.length > 0) {
+            parent.insertBefore(document.createTextNode(remainder), textNode);
+        }
+        textNode.remove();
+
+        return textNodes;
+    }
+
+    function getTextNodeViewportPosition(textNode: Text) {
+        const range = document.createRange();
+        range.selectNodeContents(textNode);
+        const rect = range.getBoundingClientRect();
+        range.detach();
+
+        const isRenderable = rect.width > 0 || rect.height > 0;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        const top = rect.top + window.scrollY;
+        const isInViewport = rect.bottom >= 0 && rect.top <= viewportHeight;
+        const distanceFromViewport = isInViewport ? 0 : getDistanceFromViewport(rect, viewportHeight);
+
+        return {
+            distanceFromViewport,
+            isInViewport,
+            isRenderable,
+            top,
+        };
+    }
+
+    function getDistanceFromViewport(rect: DOMRect, viewportHeight: number) {
+        if (rect.top > viewportHeight) {
+            return rect.top - viewportHeight;
+        }
+
+        return Math.abs(rect.bottom) + viewportHeight * NEAR_VIEWPORT_MULTIPLIER;
+    }
+
+    function updatePagePopoverStatus(message: string) {
+        pagePopover?.querySelector('[data-akuma-status]')?.replaceChildren(document.createTextNode(message));
     }
 
     async function annotateTextNode(textNode: Text, options: AkumaAnnotateOptions) {

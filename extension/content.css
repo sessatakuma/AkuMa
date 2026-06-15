@@ -54,6 +54,14 @@
     line-height: 1.4;
 }
 
+.akuma-crx-popover-status {
+    min-height: 16px;
+    margin-top: var(--akuma-crx-space-2);
+    color: var(--akuma-crx-color-muted);
+    font-size: 12px;
+    line-height: 1.3;
+}
+
 .akuma-crx-popover-actions,
 .akuma-crx-selection-popover {
     display: flex;
