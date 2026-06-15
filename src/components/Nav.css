@@ -72,3 +72,13 @@
     outline: var(--stroke-width-thin) solid var(--color-text-inverted);
     outline-offset: var(--space-1);
 }
+
+@media (max-width: 480px) {
+    .nav {
+        padding: 0 var(--space-3);
+    }
+
+    .nav-guide-button {
+        display: none;
+    }
+}

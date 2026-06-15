@@ -1,0 +1,134 @@
+.chrome-extension-section {
+    width: 100%;
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border);
+}
+
+.chrome-extension-inner {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
+    gap: var(--space-6);
+    padding: var(--space-7) var(--space-6);
+    align-items: center;
+}
+
+.chrome-extension-copy {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.chrome-extension-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-accent-green);
+    font-weight: 800;
+}
+
+.chrome-extension-copy h2 {
+    max-width: 720px;
+    font-size: 3.5rem;
+    line-height: 1;
+}
+
+.chrome-extension-copy p {
+    max-width: 680px;
+    color: var(--color-text-secondary);
+    font-size: 1.0625rem;
+}
+
+.chrome-extension-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.chrome-extension-primary {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--space-4);
+    color: var(--color-text-inverted);
+    background: var(--color-accent-green);
+    border-radius: var(--radius-md);
+    font-weight: 800;
+}
+
+.chrome-extension-primary:hover {
+    background: var(--color-accent-green-hover);
+}
+
+.chrome-extension-primary:disabled {
+    cursor: default;
+    opacity: 0.72;
+}
+
+.chrome-extension-price {
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+}
+
+.chrome-extension-plan-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+.chrome-extension-plan-grid article {
+    display: grid;
+    gap: var(--space-3);
+    min-height: 220px;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary-hover);
+}
+
+.chrome-extension-plan-grid h3 {
+    font-size: 1.25rem;
+}
+
+.chrome-extension-plan-grid ul {
+    display: grid;
+    gap: var(--space-3);
+    list-style: none;
+}
+
+.chrome-extension-plan-grid li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+}
+
+.chrome-extension-plan-grid svg {
+    flex: 0 0 auto;
+    color: var(--color-accent-green);
+    margin-top: var(--space-1);
+}
+
+@media (max-width: 840px) {
+    .chrome-extension-inner {
+        grid-template-columns: 1fr;
+        padding: var(--space-7) var(--space-4);
+    }
+
+    .chrome-extension-copy h2 {
+        font-size: 2.75rem;
+    }
+}
+
+@media (max-width: 560px) {
+    .chrome-extension-copy h2 {
+        font-size: 2rem;
+    }
+
+    .chrome-extension-plan-grid {
+        grid-template-columns: 1fr;
+    }
+}

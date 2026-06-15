@@ -91,3 +91,9 @@
         display: none;
     }
 }
+
+@media (max-width: 480px) {
+    .auth-controls input {
+        width: 96px;
+    }
+}
