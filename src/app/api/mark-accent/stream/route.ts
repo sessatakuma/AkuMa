@@ -3,17 +3,10 @@ import {
     DEFAULT_MARK_ACCENT_UPSTREAM_URL,
     isMarkAccentProxyLoop,
 } from '../../../../../proxy.config.js';
+import { assertCanUseAccentApi, authenticateRequest } from '../../../../lib/billing/entitlements';
+import { extensionOptionsResponse, getExtensionCorsHeaders } from '../../../../lib/http/extensionCors';
 
 const ALLOWED_DEV_ORIGINS = new Set(['http://localhost:3000', 'http://127.0.0.1:3000']);
-
-function getAllowedExtensionOrigins() {
-    return new Set(
-        (process.env.AKUMA_EXTENSION_ORIGINS ?? '')
-            .split(',')
-            .map(origin => origin.trim())
-            .filter(Boolean),
-    );
-}
 
 function extractRequestOrigin(request: Request) {
     const originHeader = request.headers.get('origin');
@@ -51,28 +44,10 @@ function jsonResponse(status: number, body: { error: string }, headers?: Headers
     return Response.json(body, { status, headers });
 }
 
-function getCorsHeaders(requestOrigin: string | null): HeadersInit | undefined {
-    if (!requestOrigin || !requestOrigin.startsWith('chrome-extension://')) {
-        return undefined;
-    }
-
-    const allowedExtensionOrigins = getAllowedExtensionOrigins();
-    if (!allowedExtensionOrigins.has(requestOrigin)) {
-        return undefined;
-    }
-
-    return {
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Origin': requestOrigin,
-        Vary: 'Origin',
-    };
-}
-
 export async function POST(request: Request) {
     const requestOrigin = extractRequestOrigin(request);
     const requestHostOrigin = extractRequestHostOrigin(request);
-    const corsHeaders = getCorsHeaders(requestOrigin);
+    const corsHeaders = getExtensionCorsHeaders(request);
     const isAllowedOrigin =
         requestOrigin === requestHostOrigin ||
         corsHeaders !== undefined ||
@@ -82,6 +57,11 @@ export async function POST(request: Request) {
 
     if (!isAllowedOrigin) {
         return jsonResponse(403, { error: 'Forbidden' }, corsHeaders);
+    }
+
+    const account = await authenticateRequest(request);
+    if (!account) {
+        return jsonResponse(401, { error: 'Unauthorized' }, corsHeaders);
     }
 
     const apiKey = process.env.MARK_ACCENT_API_KEY;
@@ -96,6 +76,27 @@ export async function POST(request: Request) {
     }
 
     try {
+        const body = await request.text();
+        const requestBody = JSON.parse(body) as { text?: unknown };
+        const text = typeof requestBody.text === 'string' ? requestBody.text : '';
+        const access = await assertCanUseAccentApi(account.user.id, text);
+
+        if (!access.allowed) {
+            return Response.json(
+                {
+                    error:
+                        access.reason === 'free-word-only'
+                            ? 'Free usage supports selected Japanese words only'
+                            : 'Daily free usage limit reached',
+                    entitlement: access.snapshot,
+                },
+                {
+                    status: 402,
+                    headers: corsHeaders,
+                },
+            );
+        }
+
         const baseUpstreamUrl =
             process.env.MARK_ACCENT_UPSTREAM_URL || DEFAULT_MARK_ACCENT_UPSTREAM_URL;
         const requestHost = request.headers.get('host');
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
                 'Content-Type': request.headers.get('content-type') || 'application/json',
                 'X-API-KEY': apiKey,
             },
-            body: await request.text(),
+            body,
         });
 
         return new Response(upstreamResponse.body, {
@@ -141,15 +142,5 @@ export function GET() {
 }
 
 export function OPTIONS(request: Request) {
-    const requestOrigin = extractRequestOrigin(request);
-    const corsHeaders = getCorsHeaders(requestOrigin);
-
-    if (!corsHeaders) {
-        return jsonResponse(403, { error: 'Forbidden' });
-    }
-
-    return new Response(null, {
-        status: 204,
-        headers: corsHeaders,
-    });
+    return extensionOptionsResponse(request);
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useAuth } from '../../../auth/AuthContext';
 import useThrottle from '../../../hooks/useThrottle';
 import { useI18n } from '../../../i18n';
 import { streamMarkAccent } from '../core/api/markAccentClient';
@@ -36,6 +37,7 @@ export function useAccentAnalysis({
     streamReplaceWords,
 }: UseAccentAnalysisOptions) {
     const { t } = useI18n();
+    const { accessToken, isAuthReady } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
@@ -76,6 +78,15 @@ export function useAccentAnalysis({
             activeRequestIdRef.current = requestId;
             abortInFlightRequest();
             clearVisibleLoadingTimeout();
+
+            if (!isAuthReady || !accessToken) {
+                setStatusMessage('Sign in to annotate Japanese text.');
+                setIsLoading(false);
+                setIsStreaming(false);
+                replaceWords([]);
+                return;
+            }
+
             setIsLoading(false);
             setIsStreaming(false);
             visibleLoadingTimeoutRef.current = window.setTimeout(() => {
@@ -92,6 +103,7 @@ export function useAccentAnalysis({
             let lastChunkIdx = -1;
 
             const result = await streamMarkAccent(text, {
+                accessToken,
                 signal: abortController.signal,
                 onChunk: ({ chunk, result: chunkResult, subchunk }) => {
                     if (activeRequestIdRef.current !== requestId) {
@@ -154,7 +166,16 @@ export function useAccentAnalysis({
             setIsStreaming(false);
             setIsLoading(false);
         },
-        [abortInFlightRequest, clearVisibleLoadingTimeout, onTemporaryIssue, replaceWords, streamReplaceWords, t],
+        [
+            abortInFlightRequest,
+            accessToken,
+            clearVisibleLoadingTimeout,
+            isAuthReady,
+            onTemporaryIssue,
+            replaceWords,
+            streamReplaceWords,
+            t,
+        ],
     );
 
     useEffect(() => {

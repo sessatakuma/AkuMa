@@ -2,6 +2,7 @@ import './Nav.css';
 
 import { BookOpenText } from 'lucide-react';
 
+import AuthControls from '../auth/AuthControls';
 import { useI18n } from '../i18n';
 
 export default function Nav() {
@@ -33,6 +34,7 @@ export default function Nav() {
                 <BookOpenText size={20} aria-hidden='true' />
                 <span className='nav-guide-button-label'>{t.usageGuideButton}</span>
             </a>
+            <AuthControls />
         </header>
     );
 }

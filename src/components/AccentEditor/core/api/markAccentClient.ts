@@ -11,6 +11,7 @@ export type StreamMarkAccentResult =
     | { ok: false; reason: 'network' | 'invalid-response' | 'aborted' };
 
 interface StreamMarkAccentOptions {
+    accessToken: string;
     signal?: AbortSignal;
     onChunk: (chunk: MarkAccentStreamChunk) => void;
 }
@@ -52,12 +53,13 @@ function parseStreamLine(line: string): MarkAccentStreamChunk | null {
 
 export async function streamMarkAccent(
     text: string,
-    { onChunk, signal }: StreamMarkAccentOptions,
+    { accessToken, onChunk, signal }: StreamMarkAccentOptions,
 ): Promise<StreamMarkAccentResult> {
     try {
         const response = await fetch('/api/mark-accent/stream', {
             method: 'POST',
             headers: {
+                Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ text }),
