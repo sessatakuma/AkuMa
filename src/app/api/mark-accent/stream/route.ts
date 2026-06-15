@@ -3,7 +3,11 @@ import {
     DEFAULT_MARK_ACCENT_UPSTREAM_URL,
     isMarkAccentProxyLoop,
 } from '../../../../../proxy.config.js';
-import { assertCanUseAccentApi, authenticateRequest } from '../../../../lib/billing/entitlements';
+import {
+    MAX_ANNOTATION_TEXT_CHARS,
+    assertCanUseAccentApi,
+    authenticateRequest,
+} from '../../../../lib/billing/entitlements';
 import { extensionOptionsResponse, getExtensionCorsHeaders } from '../../../../lib/http/extensionCors';
 
 const ALLOWED_DEV_ORIGINS = new Set(['http://localhost:3000', 'http://127.0.0.1:3000']);
@@ -44,6 +48,55 @@ function jsonResponse(status: number, body: { error: string }, headers?: Headers
     return Response.json(body, { status, headers });
 }
 
+function getAccessDeniedResponse(access: Awaited<ReturnType<typeof assertCanUseAccentApi>>, headers?: HeadersInit) {
+    const reason = access.reason;
+
+    if (reason === 'text-too-long') {
+        return Response.json(
+            {
+                error: `Text is too long. Limit each annotation request to ${MAX_ANNOTATION_TEXT_CHARS} characters.`,
+                entitlement: access.snapshot,
+            },
+            {
+                status: 413,
+                headers,
+            },
+        );
+    }
+
+    if (
+        reason === 'rate-minute' ||
+        reason === 'rate-hour' ||
+        reason === 'rate-day' ||
+        reason === 'characters-day'
+    ) {
+        return Response.json(
+            {
+                error: 'Pro fair-use limit reached. Please wait and try again later.',
+                entitlement: access.snapshot,
+            },
+            {
+                status: 429,
+                headers,
+            },
+        );
+    }
+
+    return Response.json(
+        {
+            error:
+                reason === 'free-word-only'
+                    ? 'Free usage supports selected Japanese words only'
+                    : 'Daily free usage limit reached',
+            entitlement: access.snapshot,
+        },
+        {
+            status: 402,
+            headers,
+        },
+    );
+}
+
 export async function POST(request: Request) {
     const requestOrigin = extractRequestOrigin(request);
     const requestHostOrigin = extractRequestHostOrigin(request);
@@ -82,19 +135,7 @@ export async function POST(request: Request) {
         const access = await assertCanUseAccentApi(account.userId, text);
 
         if (!access.allowed) {
-            return Response.json(
-                {
-                    error:
-                        access.reason === 'free-word-only'
-                            ? 'Free usage supports selected Japanese words only'
-                            : 'Daily free usage limit reached',
-                    entitlement: access.snapshot,
-                },
-                {
-                    status: 402,
-                    headers: corsHeaders,
-                },
-            );
+            return getAccessDeniedResponse(access, corsHeaders);
         }
 
         const baseUpstreamUrl =

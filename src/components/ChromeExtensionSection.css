@@ -112,6 +112,13 @@
     margin-top: var(--space-1);
 }
 
+.chrome-extension-fair-use {
+    align-self: end;
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
 @media (max-width: 840px) {
     .chrome-extension-inner {
         grid-template-columns: 1fr;

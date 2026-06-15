@@ -69,6 +69,9 @@ export default function ChromeExtensionSection() {
                                 JLPT highlighting
                             </li>
                         </ul>
+                        <p className='chrome-extension-fair-use'>
+                            Unlimited annotation is subject to fair-use and anti-abuse safeguards.
+                        </p>
                     </article>
                 </div>
             </div>

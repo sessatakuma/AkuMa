@@ -4,6 +4,11 @@ import { createSupabaseAuthClient, createSupabaseServiceClient } from '../supaba
 import type { User } from '@supabase/supabase-js';
 
 export const FREE_DAILY_USAGE_CAP = 50;
+export const MAX_ANNOTATION_TEXT_CHARS = 10_000;
+export const PRO_CHARACTERS_PER_DAY_LIMIT = 1_000_000;
+export const PRO_REQUESTS_PER_DAY_LIMIT = 10_000;
+export const PRO_REQUESTS_PER_HOUR_LIMIT = 1_000;
+export const PRO_REQUESTS_PER_MINUTE_LIMIT = 60;
 
 export type Plan = 'free' | 'pro';
 
@@ -26,6 +31,24 @@ interface SubscriptionRow {
 
 interface UsageRow {
     count: number;
+}
+
+type AccessDeniedReason =
+    | 'characters-day'
+    | 'free-daily-cap'
+    | 'free-word-only'
+    | 'rate-day'
+    | 'rate-hour'
+    | 'rate-minute'
+    | 'text-too-long';
+
+interface ProUsageResult {
+    allowed: boolean;
+    day_character_count: number;
+    day_count: number;
+    hour_count: number;
+    minute_count: number;
+    reason: AccessDeniedReason | null;
 }
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing']);
@@ -105,12 +128,18 @@ export async function getEntitlementSnapshot(userId: string): Promise<Entitlemen
 
 export async function assertCanUseAccentApi(userId: string, text: string) {
     const snapshot = await getEntitlementSnapshot(userId);
+    const characterCount = [...text.trim()].length;
 
-    if (snapshot.plan === 'pro') {
+    if (characterCount > MAX_ANNOTATION_TEXT_CHARS) {
         return {
-            allowed: true,
+            allowed: false,
+            reason: 'text-too-long' as const,
             snapshot,
         };
+    }
+
+    if (snapshot.plan === 'pro') {
+        return assertProFairUse(userId, characterCount, snapshot);
     }
 
     if (!isSingleJapaneseWord(text)) {
@@ -145,6 +174,36 @@ export async function assertCanUseAccentApi(userId: string, text: string) {
         allowed: Boolean(data?.allowed),
         reason: data?.allowed ? undefined : ('free-daily-cap' as const),
         snapshot: nextSnapshot,
+    };
+}
+
+async function assertProFairUse(
+    userId: string,
+    characterCount: number,
+    snapshot: EntitlementSnapshot,
+) {
+    const supabase = createSupabaseServiceClient();
+    const { data, error } = await supabase
+        .schema('private')
+        .rpc('record_akuma_pro_annotation_usage', {
+            per_day_character_limit: PRO_CHARACTERS_PER_DAY_LIMIT,
+            per_day_limit: PRO_REQUESTS_PER_DAY_LIMIT,
+            per_hour_limit: PRO_REQUESTS_PER_HOUR_LIMIT,
+            per_minute_limit: PRO_REQUESTS_PER_MINUTE_LIMIT,
+            target_character_count: characterCount,
+            target_user_id: userId,
+        })
+        .single<ProUsageResult>();
+
+    if (error) {
+        throw error;
+    }
+
+    return {
+        allowed: Boolean(data?.allowed),
+        proUsage: data,
+        reason: data?.allowed ? undefined : (data?.reason ?? 'rate-minute'),
+        snapshot,
     };
 }
 
