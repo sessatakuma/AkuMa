@@ -8,11 +8,11 @@ export async function GET(request: Request) {
         return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
     }
 
-    const entitlement = await getEntitlementSnapshot(account.user.id);
+    const entitlement = await getEntitlementSnapshot(account.userId);
 
     return Response.json(
         {
-            email: account.user.email ?? null,
+            email: account.user?.email ?? null,
             ...entitlement,
         },
         {

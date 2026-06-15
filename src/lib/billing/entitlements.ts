@@ -1,3 +1,4 @@
+import { getExtensionBearerToken, validateExtensionToken } from '../auth/extensionTokens';
 import { createSupabaseAuthClient, createSupabaseServiceClient } from '../supabase/server';
 
 import type { User } from '@supabase/supabase-js';
@@ -13,8 +14,9 @@ export interface EntitlementSnapshot {
 }
 
 export interface AuthenticatedAccount {
-    user: User;
-    accessToken: string;
+    accessToken?: string;
+    user?: User;
+    userId: string;
 }
 
 interface SubscriptionRow {
@@ -44,6 +46,18 @@ export async function authenticateRequest(request: Request): Promise<Authenticat
         return null;
     }
 
+    const extensionToken = getExtensionBearerToken(request);
+    if (extensionToken) {
+        const extensionAccount = await validateExtensionToken(extensionToken);
+        if (!extensionAccount) {
+            return null;
+        }
+
+        return {
+            userId: extensionAccount.userId,
+        };
+    }
+
     const supabase = createSupabaseAuthClient();
     const { data, error } = await supabase.auth.getUser(accessToken);
 
@@ -53,6 +67,7 @@ export async function authenticateRequest(request: Request): Promise<Authenticat
 
     return {
         accessToken,
+        userId: data.user.id,
         user: data.user,
     };
 }

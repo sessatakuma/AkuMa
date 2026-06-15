@@ -79,7 +79,7 @@ export async function POST(request: Request) {
         const body = await request.text();
         const requestBody = JSON.parse(body) as { text?: unknown };
         const text = typeof requestBody.text === 'string' ? requestBody.text : '';
-        const access = await assertCanUseAccentApi(account.user.id, text);
+        const access = await assertCanUseAccentApi(account.userId, text);
 
         if (!access.allowed) {
             return Response.json(

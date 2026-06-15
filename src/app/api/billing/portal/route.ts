@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const { data: profile, error } = await supabase
         .from('akuma_profiles')
         .select('stripe_customer_id')
-        .eq('user_id', account.user.id)
+        .eq('user_id', account.userId)
         .maybeSingle<{ stripe_customer_id: string | null }>();
 
     if (error) {

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
         .from('akuma_profiles')
         .select('stripe_customer_id')
-        .eq('user_id', account.user.id)
+        .eq('user_id', account.userId)
         .maybeSingle<{ stripe_customer_id: string | null }>();
 
     if (profileError) {
@@ -27,18 +27,18 @@ export async function POST(request: Request) {
     let customerId = profile?.stripe_customer_id ?? null;
     if (!customerId) {
         const customer = await stripe.customers.create({
-            email: account.user.email ?? undefined,
+            email: account.user?.email ?? undefined,
             metadata: {
-                supabase_user_id: account.user.id,
+                supabase_user_id: account.userId,
             },
         });
         customerId = customer.id;
 
         const { error } = await supabase.from('akuma_profiles').upsert({
-            email: account.user.email ?? null,
+            email: account.user?.email ?? null,
             stripe_customer_id: customerId,
             updated_at: new Date().toISOString(),
-            user_id: account.user.id,
+            user_id: account.userId,
         });
 
         if (error) {
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         success_url: `${appUrl}/extension?checkout=success`,
         subscription_data: {
             metadata: {
-                supabase_user_id: account.user.id,
+                supabase_user_id: account.userId,
             },
         },
     });
