@@ -43,6 +43,7 @@ type AccessDeniedReason =
     | 'text-too-long';
 
 interface ProUsageResult {
+    annotation_event_id: string | null;
     allowed: boolean;
     day_character_count: number;
     day_count: number;
@@ -50,6 +51,16 @@ interface ProUsageResult {
     minute_count: number;
     reason: AccessDeniedReason | null;
 }
+
+export type UsageReservation =
+    | {
+          kind: 'free';
+          usageDate: string;
+      }
+    | {
+          annotationEventId: string;
+          kind: 'pro';
+      };
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing']);
 
@@ -150,12 +161,13 @@ export async function assertCanUseAccentApi(userId: string, text: string) {
         };
     }
 
+    const usageDate = getUtcUsageDate();
     const supabase = createSupabaseServiceClient();
     const { data, error } = await supabase
         .schema('private')
         .rpc('increment_akuma_daily_usage', {
             free_daily_cap: FREE_DAILY_USAGE_CAP,
-            target_usage_date: getUtcUsageDate(),
+            target_usage_date: usageDate,
             target_user_id: userId,
         })
         .single<{ allowed: boolean; usage_count: number }>();
@@ -173,6 +185,7 @@ export async function assertCanUseAccentApi(userId: string, text: string) {
     return {
         allowed: Boolean(data?.allowed),
         reason: data?.allowed ? undefined : ('free-daily-cap' as const),
+        reservation: data?.allowed ? ({ kind: 'free', usageDate } satisfies UsageReservation) : undefined,
         snapshot: nextSnapshot,
     };
 }
@@ -199,12 +212,55 @@ async function assertProFairUse(
         throw error;
     }
 
+    if (data?.allowed && !data.annotation_event_id) {
+        throw new Error('Pro annotation usage was allowed without a usage event id');
+    }
+
     return {
         allowed: Boolean(data?.allowed),
         proUsage: data,
         reason: data?.allowed ? undefined : (data?.reason ?? 'rate-minute'),
+        reservation:
+            data?.allowed && data.annotation_event_id
+                ? ({
+                      annotationEventId: data.annotation_event_id,
+                      kind: 'pro',
+                  } satisfies UsageReservation)
+                : undefined,
         snapshot,
     };
+}
+
+export async function rollbackAccentApiUsage(userId: string, reservation: UsageReservation | undefined) {
+    if (!reservation) {
+        return;
+    }
+
+    const supabase = createSupabaseServiceClient();
+
+    if (reservation.kind === 'free') {
+        const { error } = await supabase
+            .schema('private')
+            .rpc('decrement_akuma_daily_usage', {
+                target_usage_date: reservation.usageDate,
+                target_user_id: userId,
+            })
+            .single<{ usage_count: number }>();
+
+        if (error) {
+            throw error;
+        }
+        return;
+    }
+
+    const { error } = await supabase.schema('private').rpc('delete_akuma_annotation_event', {
+        target_event_id: reservation.annotationEventId,
+        target_user_id: userId,
+    });
+
+    if (error) {
+        throw error;
+    }
 }
 
 export function getUtcUsageDate(date = new Date()) {

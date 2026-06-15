@@ -7,6 +7,7 @@ import {
     MAX_ANNOTATION_TEXT_CHARS,
     assertCanUseAccentApi,
     authenticateRequest,
+    rollbackAccentApiUsage,
 } from '../../../../lib/billing/entitlements';
 import { extensionOptionsResponse, getExtensionCorsHeaders } from '../../../../lib/http/extensionCors';
 
@@ -97,6 +98,22 @@ function getAccessDeniedResponse(access: Awaited<ReturnType<typeof assertCanUseA
     );
 }
 
+async function rollbackReservedUsage(
+    userId: string,
+    access: Awaited<ReturnType<typeof assertCanUseAccentApi>> | undefined,
+) {
+    const reservation = access && 'reservation' in access ? access.reservation : undefined;
+    if (!reservation) {
+        return;
+    }
+
+    try {
+        await rollbackAccentApiUsage(userId, reservation);
+    } catch (error) {
+        console.error('Failed to roll back AkuMa usage reservation:', error);
+    }
+}
+
 export async function POST(request: Request) {
     const requestOrigin = extractRequestOrigin(request);
     const requestHostOrigin = extractRequestHostOrigin(request);
@@ -128,11 +145,13 @@ export async function POST(request: Request) {
         );
     }
 
+    let access: Awaited<ReturnType<typeof assertCanUseAccentApi>> | undefined;
+
     try {
         const body = await request.text();
         const requestBody = JSON.parse(body) as { text?: unknown };
         const text = typeof requestBody.text === 'string' ? requestBody.text : '';
-        const access = await assertCanUseAccentApi(account.userId, text);
+        access = await assertCanUseAccentApi(account.userId, text);
 
         if (!access.allowed) {
             return getAccessDeniedResponse(access, corsHeaders);
@@ -161,6 +180,10 @@ export async function POST(request: Request) {
             body,
         });
 
+        if (!upstreamResponse.ok) {
+            await rollbackReservedUsage(account.userId, access);
+        }
+
         return new Response(upstreamResponse.body, {
             status: upstreamResponse.status,
             headers: {
@@ -173,6 +196,7 @@ export async function POST(request: Request) {
             },
         });
     } catch (error) {
+        await rollbackReservedUsage(account.userId, access);
         console.error('MarkAccent stream proxy failed:', error);
         return jsonResponse(502, { error: 'Upstream request failed' }, corsHeaders);
     }
