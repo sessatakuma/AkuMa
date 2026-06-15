@@ -4,9 +4,11 @@
     "description": "A tool for Japanese furigana and accent marking",
     "type": "module",
     "scripts": {
+        "build:crx": "bun run scripts/build-crx.ts",
         "dev": "next dev",
         "build": "next build",
         "lint": "eslint .",
+        "release:crx": "bun run scripts/release-crx.ts",
         "start": "next start",
         "typecheck": "tsc --noEmit"
     },

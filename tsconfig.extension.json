@@ -1,0 +1,23 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "allowJs": false,
+        "isolatedModules": false,
+        "incremental": false,
+        "module": "none",
+        "moduleResolution": "node",
+        "noEmit": false,
+        "outDir": "./.build/extension",
+        "resolveJsonModule": false,
+        "rootDir": "./extension",
+        "types": []
+    },
+    "include": [
+        "extension/**/*.ts",
+        "extension/**/*.d.ts"
+    ],
+    "exclude": [
+        "dist",
+        "node_modules"
+    ]
+}

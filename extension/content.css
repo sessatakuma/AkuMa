@@ -1,0 +1,18 @@
+:root {
+    --akuma-crx-color-accent: #d04747;
+    --akuma-crx-color-accent-strong: #a83535;
+    --akuma-crx-color-border: rgba(17, 24, 39, 0.16);
+    --akuma-crx-color-focus: rgba(61, 126, 255, 0.42);
+    --akuma-crx-color-muted: #52606d;
+    --akuma-crx-color-surface: #ffffff;
+    --akuma-crx-color-surface-hover: #f5f7f9;
+    --akuma-crx-color-text: #111827;
+    --akuma-crx-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --akuma-crx-radius-sm: 4px;
+    --akuma-crx-radius-md: 8px;
+    --akuma-crx-shadow-popover: 0 16px 48px rgba(17, 24, 39, 0.18);
+    --akuma-crx-space-1: 4px;
+    --akuma-crx-space-2: 8px;
+    --akuma-crx-space-3: 12px;
+    --akuma-crx-space-4: 16px;
+}
