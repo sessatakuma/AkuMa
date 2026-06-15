@@ -320,17 +320,18 @@
             return null;
         }
 
-        const stored = await storage.get<{ akumaSession?: AkumaExtensionSession }>({
-            akumaSession: undefined,
+        const stored = await storage.get<{ akumaExtensionToken?: AkumaExtensionToken }>({
+            akumaExtensionToken: undefined,
         });
-        const accessToken = stored.akumaSession?.access_token;
-        if (!accessToken) {
+        const session = stored.akumaExtensionToken;
+        if (!session || session.expiresAt <= Date.now()) {
+            await storage.remove('akumaExtensionToken');
             return null;
         }
 
         const response = await fetch(`${apiBaseUrl.replace(/\/$/u, '')}/api/account`, {
             headers: {
-                Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${session.token}`,
             },
         });
 

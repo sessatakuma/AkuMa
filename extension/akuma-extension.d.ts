@@ -5,6 +5,13 @@ declare const chrome:
                   addListener: (callback: (tab: { id?: number }) => void) => void;
               };
           };
+          identity?: {
+              getRedirectURL: (path?: string) => string;
+              launchWebAuthFlow: (
+                  options: { interactive: boolean; url: string },
+                  callback: (responseUrl?: string) => void,
+              ) => void;
+          };
           runtime?: {
               onMessage?: {
                   addListener: (
@@ -54,8 +61,6 @@ interface AkumaExtensionNamespace {
     config?: {
         apiBaseUrl: string;
         appUrl?: string;
-        supabasePublishableKey?: string;
-        supabaseUrl?: string;
     };
     mapper?: {
         mapApiResultToWords: (result: AkumaMarkAccentEntry[]) => AkumaWord[];
@@ -107,4 +112,10 @@ interface AkumaExtensionSession {
         email?: string;
         id?: string;
     };
+}
+
+interface AkumaExtensionToken {
+    expiresAt: number;
+    token: string;
+    userId: string;
 }

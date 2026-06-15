@@ -5,9 +5,7 @@
     const storage = chrome?.storage?.local;
     const authSection = document.querySelector<HTMLElement>('#akuma-auth');
     const actionsSection = document.querySelector<HTMLElement>('#akuma-actions');
-    const authForm = document.querySelector<HTMLFormElement>('#akuma-auth-form');
-    const emailInput = document.querySelector<HTMLInputElement>('#akuma-email');
-    const passwordInput = document.querySelector<HTMLInputElement>('#akuma-password');
+    const signInButton = document.querySelector<HTMLButtonElement>('#akuma-signin');
     const planNode = document.querySelector<HTMLElement>('#akuma-plan');
     const messageNode = document.querySelector<HTMLElement>('#akuma-message');
     const annotateButton = document.querySelector<HTMLButtonElement>('#akuma-annotate');
@@ -17,59 +15,58 @@
     initialize();
 
     async function initialize() {
-        if (!storage || !config?.supabaseUrl || !config.supabasePublishableKey) {
+        if (!storage || !config?.appUrl) {
             setMessage('Extension auth is not configured.');
             return;
         }
 
-        authForm?.addEventListener('submit', event => {
-            event.preventDefault();
-            const submitter = event.submitter instanceof HTMLButtonElement ? event.submitter : null;
-            void authenticate(submitter?.dataset.mode === 'signup' ? 'signup' : 'signin');
-        });
+        signInButton?.addEventListener('click', () => void signInWithHostedFlow());
         annotateButton?.addEventListener('click', () => void requestPagePopover());
         upgradeButton?.addEventListener('click', () => void openUpgrade());
         signOutButton?.addEventListener('click', () => void signOut());
         await refreshUi();
     }
 
-    async function authenticate(mode: 'signin' | 'signup') {
-        const localStorageArea = storage;
-        const email = emailInput?.value.trim() ?? '';
-        const password = passwordInput?.value ?? '';
-        if (!localStorageArea || !email || !password || !config?.supabaseUrl || !config.supabasePublishableKey) {
+    async function signInWithHostedFlow() {
+        if (!storage || !chrome?.identity || !config?.appUrl) {
             return;
         }
 
-        setMessage(mode === 'signup' ? 'Creating account' : 'Signing in');
-        const endpoint = mode === 'signup' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
-        const response = await fetch(`${config.supabaseUrl.replace(/\/$/u, '')}${endpoint}`, {
-            body: JSON.stringify({ email, password }),
+        const redirectUrl = chrome.identity.getRedirectURL('akuma');
+        const authUrl = new URL('/extension/auth', config.appUrl);
+        authUrl.searchParams.set('redirect_url', redirectUrl);
+        setMessage('Opening AkuMa sign-in.');
+
+        const responseUrl = await launchWebAuthFlow(authUrl.toString());
+        const code = responseUrl ? new URL(responseUrl).searchParams.get('code') : null;
+        if (!code) {
+            setMessage('Sign-in was cancelled.');
+            return;
+        }
+
+        const response = await fetch(`${getApiBaseUrl()}/api/extension/session`, {
+            body: JSON.stringify({ code, redirectUrl }),
             headers: {
-                apikey: config.supabasePublishableKey,
                 'Content-Type': 'application/json',
             },
             method: 'POST',
         });
-        const result = (await response.json()) as AkumaExtensionSession & {
-            error_description?: string;
-            msg?: string;
-        };
+        const result = (await response.json()) as AkumaExtensionToken & { error?: string };
 
-        if (!response.ok || !result.access_token) {
-            setMessage(result.error_description || result.msg || 'Authentication failed.');
+        if (!response.ok || !result.token) {
+            setMessage(result.error ?? 'Authentication failed.');
             return;
         }
 
-        await localStorageArea.set({ akumaSession: result });
+        await storage.set({ akumaExtensionToken: result });
         await refreshUi();
         setMessage('Signed in.');
     }
 
     async function refreshUi() {
-        const session = await readSession();
-        const account = session ? await fetchAccount(session) : null;
-        const isSignedIn = Boolean(session);
+        const token = await readExtensionToken();
+        const account = token ? await fetchAccount(token) : null;
+        const isSignedIn = Boolean(token);
 
         if (authSection) {
             authSection.hidden = isSignedIn;
@@ -89,10 +86,10 @@
         }
     }
 
-    async function fetchAccount(session: AkumaExtensionSession) {
+    async function fetchAccount(token: string) {
         const response = await fetch(`${getApiBaseUrl()}/api/account`, {
             headers: {
-                Authorization: `Bearer ${session.access_token}`,
+                Authorization: `Bearer ${token}`,
             },
         });
 
@@ -115,16 +112,16 @@
     }
 
     async function openUpgrade() {
-        const session = await readSession();
-        if (!session) {
+        const token = await readExtensionToken();
+        if (!token) {
             return;
         }
 
-        const account = await fetchAccount(session);
+        const account = await fetchAccount(token);
         const route = account?.plan === 'pro' ? '/api/billing/portal' : '/api/billing/checkout';
         const response = await fetch(`${getApiBaseUrl()}${route}`, {
             headers: {
-                Authorization: `Bearer ${session.access_token}`,
+                Authorization: `Bearer ${token}`,
             },
             method: 'POST',
         });
@@ -136,17 +133,23 @@
     }
 
     async function signOut() {
-        await storage?.remove('akumaSession');
+        await storage?.remove('akumaExtensionToken');
         await refreshUi();
         setMessage('Signed out.');
     }
 
-    async function readSession() {
-        const stored = await storage?.get<{ akumaSession?: AkumaExtensionSession }>({
-            akumaSession: undefined,
+    async function readExtensionToken() {
+        const stored = await storage?.get<{ akumaExtensionToken?: AkumaExtensionToken }>({
+            akumaExtensionToken: undefined,
         });
+        const session = stored?.akumaExtensionToken;
 
-        return stored?.akumaSession ?? null;
+        if (!session || session.expiresAt <= Date.now()) {
+            await storage?.remove('akumaExtensionToken');
+            return null;
+        }
+
+        return session.token;
     }
 
     function getApiBaseUrl() {
@@ -157,5 +160,13 @@
         if (messageNode) {
             messageNode.textContent = message;
         }
+    }
+
+    function launchWebAuthFlow(url: string) {
+        return new Promise<string | undefined>(resolve => {
+            chrome?.identity?.launchWebAuthFlow({ interactive: true, url }, responseUrl => {
+                resolve(responseUrl);
+            });
+        });
     }
 })(globalThis);
