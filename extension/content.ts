@@ -44,9 +44,6 @@
                 scheduleJapanesePageCheck(100);
             }
         });
-        document.addEventListener('akuma:show-page-popover', () => {
-            void showPagePopover({ forced: true, detectionSignature: getCurrentPageSignature() });
-        });
         document.addEventListener('selectionchange', handleSelectionChange);
         document.addEventListener('pointerdown', handleDocumentPointerDown, true);
         window.addEventListener('hashchange', handleLocationChange);
@@ -120,6 +117,10 @@
     }
 
     function handlePagePopoverClick(event: MouseEvent) {
+        if (!event.isTrusted) {
+            return;
+        }
+
         const target = event.target instanceof HTMLElement ? event.target.closest('button') : null;
         const action = target?.dataset.akumaAction;
         if (!action) {
@@ -261,6 +262,10 @@
     }
 
     function handleSelectionPopoverClick(event: MouseEvent) {
+        if (!event.isTrusted) {
+            return;
+        }
+
         const target = event.target instanceof HTMLElement ? event.target.closest('button') : null;
         const action = target?.dataset.akumaSelectionAction;
         if (!action || !currentSelectionRange) {

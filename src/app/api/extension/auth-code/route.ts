@@ -1,4 +1,7 @@
-import { createExtensionAuthCode } from '../../../../lib/auth/extensionTokens';
+import {
+    createExtensionAuthCode,
+    isAllowedExtensionRedirectUrl,
+} from '../../../../lib/auth/extensionTokens';
 import { authenticateRequest } from '../../../../lib/billing/entitlements';
 
 export async function POST(request: Request) {
@@ -11,6 +14,9 @@ export async function POST(request: Request) {
     const redirectUrl = typeof body.redirectUrl === 'string' ? body.redirectUrl : '';
     if (!redirectUrl) {
         return Response.json({ error: 'redirectUrl is required' }, { status: 400 });
+    }
+    if (!isAllowedExtensionRedirectUrl(redirectUrl)) {
+        return Response.json({ error: 'Extension redirect URL is not allowed' }, { status: 400 });
     }
 
     const code = await createExtensionAuthCode(account.userId, redirectUrl);
