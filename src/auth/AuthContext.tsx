@@ -32,7 +32,7 @@ interface AuthContextValue {
     signOut: () => Promise<void>;
     startCheckout: () => Promise<void>;
     openBillingPortal: () => Promise<void>;
-    supabase: SupabaseClient;
+    supabase: SupabaseClient | null;
     user: User | null;
 }
 
@@ -72,7 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let isMounted = true;
 
-        supabase.auth.getSession().then(({ data }) => {
+            if (!supabase) {
+                setIsAuthReady(true);
+                return;
+            }
+
+            supabase.auth.getSession().then(({ data }) => {
             if (!isMounted) {
                 return;
             }
@@ -96,6 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signInWithEmail = useCallback(
         async (email: string) => {
+            if (!supabase) {
+                return { ok: false, error: 'Authentication is not configured.' };
+            }
+
             const { error } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
@@ -113,6 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     const signOut = useCallback(async () => {
+        if (!supabase) {
+            setAccount(null);
+            return;
+        }
+
         await supabase.auth.signOut();
         setAccount(null);
     }, [supabase]);
