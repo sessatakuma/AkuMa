@@ -23,20 +23,40 @@ export default function ChromeExtensionSection() {
                     </p>
                     <div className='chrome-extension-actions'>
                         {user ? (
-                            <button
-                                type='button'
-                                className='chrome-extension-primary'
-                                disabled={isBillingBusy || isPro}
-                                onClick={() => void startCheckout()}
-                            >
-                                {isPro ? 'Pro active' : 'Get Pro'}
-                            </button>
+                            isPro ? (
+                                <button
+                                    type='button'
+                                    className='chrome-extension-primary'
+                                    disabled
+                                >
+                                    Pro active
+                                </button>
+                            ) : (
+                                <>
+                                    <button
+                                        type='button'
+                                        className='chrome-extension-primary'
+                                        disabled={isBillingBusy}
+                                        onClick={() => void startCheckout('year')}
+                                    >
+                                        Get Pro yearly
+                                    </button>
+                                    <button
+                                        type='button'
+                                        className='chrome-extension-secondary'
+                                        disabled={isBillingBusy}
+                                        onClick={() => void startCheckout('month')}
+                                    >
+                                        Monthly
+                                    </button>
+                                </>
+                            )
                         ) : (
                             <a className='chrome-extension-primary' href='#main-content'>
                                 Sign in to start
                             </a>
                         )}
-                        <span className='chrome-extension-price'>Pro is under $5/month.</span>
+                        <span className='chrome-extension-price'>Annual Pro is $49/year.</span>
                     </div>
                 </div>
                 <div className='chrome-extension-plan-grid' aria-label='Chrome extension plans'>
@@ -66,7 +86,7 @@ export default function ChromeExtensionSection() {
                             </li>
                             <li>
                                 <Highlighter size={16} aria-hidden='true' />
-                                JLPT highlighting
+                                JLPT highlighting TODO
                             </li>
                         </ul>
                         <p className='chrome-extension-fair-use'>

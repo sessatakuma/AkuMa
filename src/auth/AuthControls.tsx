@@ -61,7 +61,7 @@ export default function AuthControls() {
                 type='button'
                 className='auth-controls-button'
                 disabled={isBillingBusy}
-                onClick={isPro ? openBillingPortal : startCheckout}
+                onClick={isPro ? openBillingPortal : () => void startCheckout('year')}
             >
                 <Sparkles size={16} aria-hidden='true' />
                 <span>{isPro ? 'Manage' : 'Get Pro'}</span>

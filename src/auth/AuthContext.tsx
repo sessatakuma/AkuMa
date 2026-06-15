@@ -30,7 +30,7 @@ interface AuthContextValue {
     session: Session | null;
     signInWithEmail: (email: string) => Promise<{ ok: boolean; error?: string }>;
     signOut: () => Promise<void>;
-    startCheckout: () => Promise<void>;
+    startCheckout: (interval?: 'month' | 'year') => Promise<void>;
     openBillingPortal: () => Promise<void>;
     supabase: SupabaseClient | null;
     user: User | null;
@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccount(null);
     }, [supabase]);
 
-    const startCheckout = useCallback(async () => {
+    const startCheckout = useCallback(async (interval: 'month' | 'year' = 'year') => {
         if (!accessToken) {
             return;
         }
@@ -142,7 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({ interval }),
             });
             const result = (await response.json()) as { url?: string };
             if (response.ok && result.url) {

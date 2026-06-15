@@ -1,5 +1,7 @@
 import Stripe from 'stripe';
 
+export type BillingInterval = 'month' | 'year';
+
 export function getStripe() {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
@@ -12,12 +14,19 @@ export function getStripe() {
     });
 }
 
-export function getStripeProPriceId() {
-    const value = process.env.STRIPE_PRO_PRICE_ID;
+export function getStripeProPriceId(interval: BillingInterval) {
+    const envName =
+        interval === 'year' ? 'STRIPE_PRO_ANNUAL_PRICE_ID' : 'STRIPE_PRO_MONTHLY_PRICE_ID';
+    const value =
+        process.env[envName] || (interval === 'month' ? process.env.STRIPE_PRO_PRICE_ID : undefined);
     if (!value) {
-        throw new Error('STRIPE_PRO_PRICE_ID is not configured');
+        throw new Error(`${envName} is not configured`);
     }
     return value;
+}
+
+export function parseBillingInterval(value: unknown): BillingInterval {
+    return value === 'month' ? 'month' : 'year';
 }
 
 export function getAppUrl() {
