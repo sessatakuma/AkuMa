@@ -40,3 +40,7 @@ If you run the app locally with `bun dev`, the Next.js route handler for `/api/m
 ```bash
 MARK_ACCENT_API_KEY=<your_api_key>
 ```
+
+## Chrome Extension, Billing, and Deployment
+
+See [docs/crx-billing-deployment.md](docs/crx-billing-deployment.md) for the CRX release flow, Supabase grants/RLS model, Stripe annual/monthly pricing setup, quota behavior, and deployment checklist.
