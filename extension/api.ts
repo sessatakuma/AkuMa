@@ -5,9 +5,11 @@
 
     async function markAccent(text: string): Promise<AkumaMarkAccentEntry[]> {
         const apiBaseUrl = namespace.config?.apiBaseUrl || 'https://akuma.sessatakuma.dev';
+        const session = await readSession();
         const response = await fetch(`${apiBaseUrl.replace(/\/$/u, '')}/api/mark-accent/stream`, {
             body: JSON.stringify({ text }),
             headers: {
+                ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
                 'Content-Type': 'application/json',
             },
             method: 'POST',
@@ -36,6 +38,19 @@
         readBufferedLines(`${buffer}\n`, result);
 
         return result;
+    }
+
+    async function readSession(): Promise<AkumaExtensionSession | null> {
+        const storage = chrome?.storage?.local;
+        if (!storage) {
+            return null;
+        }
+
+        const stored = await storage.get<{ akumaSession?: AkumaExtensionSession }>({
+            akumaSession: undefined,
+        });
+
+        return stored.akumaSession ?? null;
     }
 
     function readBufferedLines(buffer: string, result: AkumaMarkAccentEntry[]) {

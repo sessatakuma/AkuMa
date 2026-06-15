@@ -1,0 +1,103 @@
+:root {
+    --akuma-page-color-accent: #619e83;
+    --akuma-page-color-border: #e5e7eb;
+    --akuma-page-color-muted: #6b7280;
+    --akuma-page-color-surface: #ffffff;
+    --akuma-page-color-surface-hover: #f5f7f4;
+    --akuma-page-color-text: #1f2937;
+    --akuma-page-radius-md: 8px;
+    --akuma-page-space-2: 8px;
+    --akuma-page-space-3: 12px;
+    --akuma-page-space-4: 16px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    width: 320px;
+    margin: 0;
+    color: var(--akuma-page-color-text);
+    background: var(--akuma-page-color-surface);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.akuma-page {
+    display: grid;
+    gap: var(--akuma-page-space-3);
+    padding: var(--akuma-page-space-4);
+}
+
+.akuma-page-header {
+    display: flex;
+    align-items: center;
+    gap: var(--akuma-page-space-3);
+}
+
+.akuma-page-header h1,
+.akuma-page-header p,
+.akuma-panel h2,
+#akuma-message {
+    margin: 0;
+}
+
+.akuma-page-header h1 {
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.akuma-page-header p,
+#akuma-message {
+    color: var(--akuma-page-color-muted);
+    font-size: 13px;
+}
+
+.akuma-panel,
+form,
+.akuma-row {
+    display: grid;
+    gap: var(--akuma-page-space-2);
+}
+
+.akuma-panel {
+    gap: var(--akuma-page-space-3);
+}
+
+.akuma-panel h2 {
+    font-size: 14px;
+}
+
+.akuma-row {
+    grid-template-columns: 1fr 1fr;
+}
+
+input,
+button {
+    min-height: 36px;
+    border-radius: var(--akuma-page-radius-md);
+    font: inherit;
+}
+
+input {
+    width: 100%;
+    padding: 0 var(--akuma-page-space-3);
+    border: 1px solid var(--akuma-page-color-border);
+}
+
+button {
+    padding: 0 var(--akuma-page-space-3);
+    color: #ffffff;
+    background: var(--akuma-page-color-accent);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:hover {
+    background: color-mix(in srgb, var(--akuma-page-color-accent) 88%, black);
+}
+
+.akuma-secondary {
+    color: var(--akuma-page-color-text);
+    background: var(--akuma-page-color-surface-hover);
+}

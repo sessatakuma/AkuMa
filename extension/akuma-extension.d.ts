@@ -23,6 +23,20 @@ declare const chrome:
                   files: string[];
               }) => Promise<unknown>;
           };
+          storage?: {
+              local?: {
+                  get: <T extends Record<string, unknown>>(
+                      keys: string[] | Record<string, unknown>,
+                  ) => Promise<T>;
+                  remove: (keys: string | string[]) => Promise<void>;
+                  set: (items: Record<string, unknown>) => Promise<void>;
+              };
+          };
+          tabs?: {
+              create: (options: { url: string }) => Promise<unknown>;
+              query: (options: { active: boolean; currentWindow: boolean }) => Promise<Array<{ id?: number }>>;
+              sendMessage: (tabId: number, message: unknown) => Promise<unknown>;
+          };
       }
     | undefined;
 
@@ -39,6 +53,9 @@ interface AkumaExtensionNamespace {
     };
     config?: {
         apiBaseUrl: string;
+        appUrl?: string;
+        supabasePublishableKey?: string;
+        supabaseUrl?: string;
     };
     mapper?: {
         mapApiResultToWords: (result: AkumaMarkAccentEntry[]) => AkumaWord[];
@@ -73,3 +90,21 @@ interface AkumaWord {
 }
 
 type AkumaAccentValue = 0 | 1 | 2;
+
+interface AkumaExtensionAccount {
+    email: string | null;
+    plan: 'free' | 'pro';
+    usageCount: number;
+    usageLimit: number;
+}
+
+interface AkumaExtensionSession {
+    access_token: string;
+    expires_at?: number;
+    refresh_token?: string;
+    token_type: string;
+    user?: {
+        email?: string;
+        id?: string;
+    };
+}

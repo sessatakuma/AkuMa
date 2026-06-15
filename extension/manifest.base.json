@@ -3,6 +3,7 @@
     "name": "AkuMa Furigana",
     "description": "Add Japanese furigana and pitch accent annotations to pages.",
     "action": {
+        "default_popup": "page.html",
         "default_title": "AkuMa"
     },
     "permissions": [
@@ -23,6 +24,7 @@
     "web_accessible_resources": [
         {
             "resources": [
+                "page.html",
                 "content.css"
             ],
             "matches": [

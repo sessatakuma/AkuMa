@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>AkuMa</title>
+        <link rel="stylesheet" href="page.css" />
+    </head>
+    <body>
+        <main class="akuma-page">
+            <header class="akuma-page-header">
+                <img src="assets/logo-64.png" width="32" height="32" alt="" />
+                <div>
+                    <h1>AkuMa</h1>
+                    <p id="akuma-plan">Checking account</p>
+                </div>
+            </header>
+
+            <section id="akuma-auth" class="akuma-panel">
+                <h2>Sign in</h2>
+                <form id="akuma-auth-form">
+                    <input id="akuma-email" type="email" autocomplete="email" placeholder="Email" required />
+                    <input
+                        id="akuma-password"
+                        type="password"
+                        autocomplete="current-password"
+                        placeholder="Password"
+                        required
+                    />
+                    <div class="akuma-row">
+                        <button type="submit" data-mode="signin">Sign in</button>
+                        <button type="submit" data-mode="signup">Create account</button>
+                    </div>
+                </form>
+            </section>
+
+            <section id="akuma-actions" class="akuma-panel" hidden>
+                <div class="akuma-row">
+                    <button id="akuma-annotate" type="button">Annotate page</button>
+                    <button id="akuma-upgrade" type="button">Get Pro</button>
+                </div>
+                <button id="akuma-signout" type="button" class="akuma-secondary">Sign out</button>
+            </section>
+
+            <p id="akuma-message" role="status"></p>
+        </main>
+        <script src="config.js"></script>
+        <script src="page.js"></script>
+    </body>
+</html>

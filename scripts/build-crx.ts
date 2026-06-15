@@ -25,6 +25,9 @@ const { version } = JSON.parse(readFileSync(path.join(projectRoot, 'package.json
 };
 const outputZip = path.join(distDir, `akuma-crx-v${version}.zip`);
 const apiBaseUrl = process.env.AKUMA_CRX_API_BASE_URL || 'https://akuma.sessatakuma.dev';
+const appUrl = process.env.AKUMA_CRX_APP_URL || apiBaseUrl;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 function isRecordObject(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && value.constructor === Object;
@@ -111,6 +114,9 @@ function writeRuntimeConfig(outputPath: string) {
             '    runtimeScope.AKUMA_EXTENSION ??= {};',
             '    runtimeScope.AKUMA_EXTENSION.config = {',
             `        apiBaseUrl: ${JSON.stringify(apiBaseUrl)},`,
+            `        appUrl: ${JSON.stringify(appUrl)},`,
+            `        supabasePublishableKey: ${JSON.stringify(supabasePublishableKey)},`,
+            `        supabaseUrl: ${JSON.stringify(supabaseUrl)},`,
             '    };',
             '})(globalThis);',
             '',

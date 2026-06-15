@@ -11,6 +11,7 @@
     let pagePopover: HTMLElement | undefined;
     let selectionPopover: HTMLElement | undefined;
     let currentSelectionRange: Range | undefined;
+    let accountPromise: Promise<AkumaExtensionAccount | null> | undefined;
 
     initialize();
 
@@ -20,24 +21,46 @@
         }
 
         document.documentElement.dataset.akumaCrxLoaded = 'true';
-        document.addEventListener('akuma:show-page-popover', () => showPagePopover({ forced: true }));
+        chrome?.runtime?.onMessage?.addListener(message => {
+            if (isRuntimeMessage(message, 'akuma:show-page-popover')) {
+                accountPromise = undefined;
+                void showPagePopover({ forced: true });
+            }
+        });
+        document.addEventListener('akuma:show-page-popover', () => void showPagePopover({ forced: true }));
         document.addEventListener('selectionchange', handleSelectionChange);
         document.addEventListener('pointerdown', handleDocumentPointerDown, true);
         window.setTimeout(checkJapanesePage, 400);
     }
 
-    function checkJapanesePage() {
-        if (isMostlyJapanese(document.body?.innerText ?? '')) {
-            showPagePopover({ forced: false });
+    async function checkJapanesePage() {
+        const account = await getAccount();
+        if (account?.plan === 'pro' && isMostlyJapanese(document.body?.innerText ?? '')) {
+            await showPagePopover({ forced: false });
         }
     }
 
-    function showPagePopover({ forced }: { forced: boolean }) {
+    async function showPagePopover({ forced }: { forced: boolean }) {
+        const account = await getAccount();
         removePagePopover();
         pagePopover = document.createElement('section');
         pagePopover.id = POPOVER_ID;
         pagePopover.className = 'akuma-crx-popover akuma-crx-page-popover';
         pagePopover.setAttribute('aria-label', 'AkuMa Japanese annotation');
+        if (account?.plan !== 'pro') {
+            pagePopover.innerHTML = `
+                <div class="akuma-crx-popover-title">Pro required</div>
+                <div class="akuma-crx-popover-copy">Free supports selected single-word annotation. Pro unlocks whole-page and sentence annotation.</div>
+                <div class="akuma-crx-popover-actions">
+                    <button type="button" data-akuma-action="upgrade">Get Pro</button>
+                    <button type="button" data-akuma-action="dismiss">Not this time</button>
+                </div>
+            `;
+            document.body.append(pagePopover);
+            pagePopover.addEventListener('click', handlePagePopoverClick);
+            return;
+        }
+
         pagePopover.innerHTML = `
             <div class="akuma-crx-popover-title">${forced ? 'Annotate this page?' : 'Japanese detected'}</div>
             <div class="akuma-crx-popover-copy">Add AkuMa annotations to the page.</div>
@@ -65,6 +88,12 @@
         }
 
         if (action === 'dismiss') {
+            removePagePopover();
+            return;
+        }
+
+        if (action === 'upgrade') {
+            window.open(`${namespace.config?.appUrl || namespace.config?.apiBaseUrl || 'https://akuma.sessatakuma.dev'}/extension`, '_blank', 'noopener,noreferrer');
             removePagePopover();
             return;
         }
@@ -136,6 +165,11 @@
 
     function handleSelectionChange() {
         window.setTimeout(() => {
+            void updateSelectionPopover();
+        }, 0);
+    }
+
+    async function updateSelectionPopover() {
             const selection = window.getSelection();
             if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
                 removeSelectionPopover();
@@ -143,14 +177,18 @@
             }
 
             const selectedText = selection.toString().trim();
-            if (!selectedText || !hasJapanese(selectedText)) {
+            const account = await getAccount();
+            if (
+                !selectedText ||
+                !hasJapanese(selectedText) ||
+                (account?.plan !== 'pro' && !isSingleJapaneseWord(selectedText))
+            ) {
                 removeSelectionPopover();
                 return;
             }
 
             currentSelectionRange = selection.getRangeAt(0).cloneRange();
             showSelectionPopover(currentSelectionRange);
-        }, 0);
     }
 
     function showSelectionPopover(range: Range) {
@@ -250,8 +288,56 @@
         return /[\u3040-\u30ff\u3400-\u9fff]/u.test(text);
     }
 
+    function isSingleJapaneseWord(text: string) {
+        const trimmed = text.trim();
+        if (!hasJapanese(trimmed) || /\s/u.test(trimmed)) {
+            return false;
+        }
+
+        const segmenter = new Intl.Segmenter('ja', { granularity: 'word' });
+        const wordLikeSegments = [...segmenter.segment(trimmed)].filter(segment => segment.isWordLike);
+
+        return wordLikeSegments.length === 1 && wordLikeSegments[0]?.segment === trimmed;
+    }
+
     function countMatches(text: string, pattern: RegExp) {
         return [...text.matchAll(pattern)].length;
     }
 
+    function isRuntimeMessage(message: unknown, type: string): message is { type: string } {
+        return Boolean(message && typeof message === 'object' && 'type' in message && message.type === type);
+    }
+
+    async function getAccount() {
+        accountPromise ??= fetchAccount();
+        return accountPromise;
+    }
+
+    async function fetchAccount(): Promise<AkumaExtensionAccount | null> {
+        const storage = chrome?.storage?.local;
+        const apiBaseUrl = namespace.config?.apiBaseUrl || 'https://akuma.sessatakuma.dev';
+        if (!storage) {
+            return null;
+        }
+
+        const stored = await storage.get<{ akumaSession?: AkumaExtensionSession }>({
+            akumaSession: undefined,
+        });
+        const accessToken = stored.akumaSession?.access_token;
+        if (!accessToken) {
+            return null;
+        }
+
+        const response = await fetch(`${apiBaseUrl.replace(/\/$/u, '')}/api/account`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return (await response.json()) as AkumaExtensionAccount;
+    }
 })(globalThis);
