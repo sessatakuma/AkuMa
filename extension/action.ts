@@ -1,3 +1,3 @@
 (function triggerAkumaExtensionAction() {
-    chrome?.runtime?.sendMessage?.({ type: 'akuma:show-page-popover' });
+    document.dispatchEvent(new CustomEvent('akuma:show-page-popover'));
 })();

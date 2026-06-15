@@ -38,7 +38,6 @@ async function main() {
     }
 
     run('git', ['add', 'package.json']);
-    run('git', ['add', archivePath]);
     run('git', ['commit', '-m', `chore: prepare crx release v${nextVersion}`]);
     output.write(`Prepared ${archivePath}\n`);
 }

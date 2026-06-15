@@ -1,16 +1,15 @@
+import { spawnSync } from 'node:child_process';
 import {
     copyFileSync,
-    existsSync,
     lstatSync,
+    mkdtempSync,
     mkdirSync,
     readdirSync,
     readFileSync,
     rmSync,
     writeFileSync,
 } from 'node:fs';
-import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const projectRoot = process.cwd();
@@ -25,6 +24,7 @@ const { version } = JSON.parse(readFileSync(path.join(projectRoot, 'package.json
     version: string;
 };
 const outputZip = path.join(distDir, `akuma-crx-v${version}.zip`);
+const apiBaseUrl = process.env.AKUMA_CRX_API_BASE_URL || 'https://akuma.sessatakuma.dev';
 
 function isRecordObject(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && value.constructor === Object;
@@ -102,6 +102,22 @@ function writeManifest(outputPath: string) {
     writeFileSync(outputPath, `${JSON.stringify(manifest, undefined, 4)}\n`);
 }
 
+function writeRuntimeConfig(outputPath: string) {
+    writeFileSync(
+        outputPath,
+        [
+            '(function registerAkumaExtensionConfig(globalScope) {',
+            '    const runtimeScope = globalScope;',
+            '    runtimeScope.AKUMA_EXTENSION ??= {};',
+            '    runtimeScope.AKUMA_EXTENSION.config = {',
+            `        apiBaseUrl: ${JSON.stringify(apiBaseUrl)},`,
+            '    };',
+            '})(globalThis);',
+            '',
+        ].join('\n'),
+    );
+}
+
 try {
     mkdirSync(distDir, { recursive: true });
     rmSync(compiledDir, { recursive: true, force: true });
@@ -129,6 +145,8 @@ try {
     copyFileSync(path.join(projectRoot, 'public', 'images', 'logo-64.png'), path.join(unpackedDir, 'assets', 'logo-64.png'));
     copyFileSync(path.join(projectRoot, 'public', 'images', 'logo-128.png'), path.join(unpackedDir, 'assets', 'logo-128.png'));
 
+    writeRuntimeConfig(path.join(stagingDir, 'config.js'));
+    writeRuntimeConfig(path.join(unpackedDir, 'config.js'));
     writeManifest(path.join(stagingDir, 'manifest.json'));
     writeManifest(path.join(unpackedDir, 'manifest.json'));
 
