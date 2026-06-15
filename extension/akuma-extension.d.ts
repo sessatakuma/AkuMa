@@ -29,6 +29,10 @@ declare const chrome:
                   target: { tabId: number };
                   files: string[];
               }) => Promise<unknown>;
+              insertCSS: (options: {
+                  target: { tabId: number };
+                  files: string[];
+              }) => Promise<unknown>;
           };
           storage?: {
               local?: {
@@ -37,6 +41,14 @@ declare const chrome:
                   ) => Promise<T>;
                   remove: (keys: string | string[]) => Promise<void>;
                   set: (items: Record<string, unknown>) => Promise<void>;
+              };
+              onChanged?: {
+                  addListener: (
+                      callback: (
+                          changes: Record<string, { newValue?: unknown; oldValue?: unknown }>,
+                          areaName: string,
+                      ) => void,
+                  ) => void;
               };
           };
           tabs?: {

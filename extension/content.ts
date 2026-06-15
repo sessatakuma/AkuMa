@@ -8,10 +8,16 @@
     const MIN_JAPANESE_CHARS = 40;
     const JAPANESE_RATIO_THRESHOLD = 0.28;
     const MAX_NODE_TEXT_LENGTH = 600;
+    const JAPANESE_CHECK_DELAY_MS = 400;
+    const PAGE_SIGNATURE_LENGTH = 2048;
     let pagePopover: HTMLElement | undefined;
     let selectionPopover: HTMLElement | undefined;
     let currentSelectionRange: Range | undefined;
     let accountPromise: Promise<AkumaExtensionAccount | null> | undefined;
+    let dismissedDetectionSignature = '';
+    let japaneseCheckTimer: number | undefined;
+    let currentLocation = window.location.href;
+    let mutationObserver: MutationObserver | undefined;
 
     initialize();
 
@@ -21,32 +27,65 @@
         }
 
         document.documentElement.dataset.akumaCrxLoaded = 'true';
-        chrome?.runtime?.onMessage?.addListener(message => {
+        chrome?.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
+            if (isRuntimeMessage(message, 'akuma:ping')) {
+                sendResponse({ ok: true });
+                return;
+            }
+
             if (isRuntimeMessage(message, 'akuma:show-page-popover')) {
                 accountPromise = undefined;
-                void showPagePopover({ forced: true });
+                void showPagePopover({ forced: true, detectionSignature: getCurrentPageSignature() });
             }
         });
-        document.addEventListener('akuma:show-page-popover', () => void showPagePopover({ forced: true }));
+        chrome?.storage?.onChanged?.addListener((changes, areaName) => {
+            if (areaName === 'local' && 'akumaExtensionToken' in changes) {
+                accountPromise = undefined;
+                scheduleJapanesePageCheck(100);
+            }
+        });
+        document.addEventListener('akuma:show-page-popover', () => {
+            void showPagePopover({ forced: true, detectionSignature: getCurrentPageSignature() });
+        });
         document.addEventListener('selectionchange', handleSelectionChange);
         document.addEventListener('pointerdown', handleDocumentPointerDown, true);
-        window.setTimeout(checkJapanesePage, 400);
+        window.addEventListener('hashchange', handleLocationChange);
+        window.addEventListener('popstate', handleLocationChange);
+        observePageChanges();
+        scheduleJapanesePageCheck();
     }
 
     async function checkJapanesePage() {
+        if (pagePopover) {
+            return;
+        }
+
+        const pageText = document.body?.innerText ?? '';
+        const detectionSignature = getPageSignature(pageText);
+        if (!detectionSignature || detectionSignature === dismissedDetectionSignature) {
+            return;
+        }
+
         const account = await getAccount();
-        if (account?.plan === 'pro' && isMostlyJapanese(document.body?.innerText ?? '')) {
-            await showPagePopover({ forced: false });
+        if (account?.plan === 'pro' && isMostlyJapanese(pageText)) {
+            await showPagePopover({ forced: false, detectionSignature });
         }
     }
 
-    async function showPagePopover({ forced }: { forced: boolean }) {
+    async function showPagePopover({
+        detectionSignature,
+        forced,
+    }: {
+        detectionSignature: string;
+        forced: boolean;
+    }) {
         const account = await getAccount();
         removePagePopover();
         pagePopover = document.createElement('section');
         pagePopover.id = POPOVER_ID;
         pagePopover.className = 'akuma-crx-popover akuma-crx-page-popover';
         pagePopover.setAttribute('aria-label', 'AkuMa Japanese annotation');
+        pagePopover.dataset.akumaDetectionSignature = detectionSignature;
         if (account?.plan !== 'pro') {
             pagePopover.innerHTML = `
                 <div class="akuma-crx-popover-title">Pro required</div>
@@ -88,17 +127,20 @@
         }
 
         if (action === 'dismiss') {
+            dismissCurrentPageDetection();
             removePagePopover();
             return;
         }
 
         if (action === 'upgrade') {
+            dismissCurrentPageDetection();
             window.open(`${namespace.config?.appUrl || namespace.config?.apiBaseUrl || 'https://akuma.sessatakuma.dev'}/extension`, '_blank', 'noopener,noreferrer');
             removePagePopover();
             return;
         }
 
         target.setAttribute('aria-busy', 'true');
+        dismissCurrentPageDetection();
         annotateWholePage({ showAccent: action === 'accent' }).finally(removePagePopover);
     }
 
@@ -170,25 +212,26 @@
     }
 
     async function updateSelectionPopover() {
-            const selection = window.getSelection();
-            if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
-                removeSelectionPopover();
-                return;
-            }
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+            removeSelectionPopover();
+            return;
+        }
 
-            const selectedText = selection.toString().trim();
-            const account = await getAccount();
-            if (
-                !selectedText ||
-                !hasJapanese(selectedText) ||
-                (account?.plan !== 'pro' && !isSingleJapaneseWord(selectedText))
-            ) {
-                removeSelectionPopover();
-                return;
-            }
+        const selectedText = selection.toString().trim();
+        const account = await getAccount();
+        if (
+            !account ||
+            !selectedText ||
+            !hasJapanese(selectedText) ||
+            (account.plan !== 'pro' && !isSingleJapaneseWord(selectedText))
+        ) {
+            removeSelectionPopover();
+            return;
+        }
 
-            currentSelectionRange = selection.getRangeAt(0).cloneRange();
-            showSelectionPopover(currentSelectionRange);
+        currentSelectionRange = selection.getRangeAt(0).cloneRange();
+        showSelectionPopover(currentSelectionRange);
     }
 
     function showSelectionPopover(range: Range) {
@@ -302,6 +345,53 @@
 
     function countMatches(text: string, pattern: RegExp) {
         return [...text.matchAll(pattern)].length;
+    }
+
+    function scheduleJapanesePageCheck(delay = JAPANESE_CHECK_DELAY_MS) {
+        window.clearTimeout(japaneseCheckTimer);
+        japaneseCheckTimer = window.setTimeout(() => void checkJapanesePage(), delay);
+    }
+
+    function observePageChanges() {
+        if (mutationObserver) {
+            return;
+        }
+
+        mutationObserver = new MutationObserver(() => {
+            handleLocationChange();
+            scheduleJapanesePageCheck();
+        });
+        mutationObserver.observe(document.documentElement, {
+            characterData: true,
+            childList: true,
+            subtree: true,
+        });
+    }
+
+    function handleLocationChange() {
+        if (window.location.href === currentLocation) {
+            return;
+        }
+
+        currentLocation = window.location.href;
+        accountPromise = undefined;
+        dismissedDetectionSignature = '';
+        removePagePopover();
+        removeSelectionPopover();
+        scheduleJapanesePageCheck(100);
+    }
+
+    function dismissCurrentPageDetection() {
+        dismissedDetectionSignature =
+            pagePopover?.dataset.akumaDetectionSignature || getCurrentPageSignature();
+    }
+
+    function getCurrentPageSignature() {
+        return getPageSignature(document.body?.innerText ?? '');
+    }
+
+    function getPageSignature(text: string) {
+        return text.replace(/\s+/gu, ' ').trim().slice(0, PAGE_SIGNATURE_LENGTH);
     }
 
     function isRuntimeMessage(message: unknown, type: string): message is { type: string } {

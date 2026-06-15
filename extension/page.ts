@@ -3,6 +3,15 @@
     const namespace = runtimeScope.AKUMA_EXTENSION;
     const config = namespace?.config;
     const storage = chrome?.storage?.local;
+    const CONTENT_CSS_FILE = 'content.css';
+    const CONTENT_SCRIPT_FILES = [
+        'config.js',
+        'accent-types.js',
+        'accent-mappers.js',
+        'annotation-renderer.js',
+        'api.js',
+        'content.js',
+    ];
     const authSection = document.querySelector<HTMLElement>('#akuma-auth');
     const actionsSection = document.querySelector<HTMLElement>('#akuma-actions');
     const signInButton = document.querySelector<HTMLButtonElement>('#akuma-signin');
@@ -24,6 +33,11 @@
         annotateButton?.addEventListener('click', () => void requestPagePopover());
         upgradeButton?.addEventListener('click', () => void openUpgrade());
         signOutButton?.addEventListener('click', () => void signOut());
+        chrome?.storage?.onChanged?.addListener((changes, areaName) => {
+            if (areaName === 'local' && 'akumaExtensionToken' in changes) {
+                void refreshUi();
+            }
+        });
         await refreshUi();
     }
 
@@ -104,11 +118,20 @@
         const tabs = await chrome?.tabs?.query({ active: true, currentWindow: true });
         const tabId = tabs?.[0]?.id;
         if (typeof tabId !== 'number') {
+            setMessage('No active tab found.');
             return;
         }
 
-        await chrome?.tabs?.sendMessage(tabId, { type: 'akuma:show-page-popover' });
-        window.close();
+        setMessage('Opening page controls.');
+
+        try {
+            await ensureContentScript(tabId);
+            await chrome?.tabs?.sendMessage(tabId, { type: 'akuma:show-page-popover' });
+            window.close();
+        } catch (error) {
+            console.error('AkuMa could not run on the active tab:', error);
+            setMessage('AkuMa cannot run on this tab. Try a normal web page.');
+        }
     }
 
     async function openUpgrade() {
@@ -118,12 +141,15 @@
         }
 
         const account = await fetchAccount(token);
-        const route = account?.plan === 'pro' ? '/api/billing/portal' : '/api/billing/checkout';
+        const isPro = account?.plan === 'pro';
+        const route = isPro ? '/api/billing/portal' : '/api/billing/checkout';
         const response = await fetch(`${getApiBaseUrl()}${route}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
+                ...(!isPro ? { 'Content-Type': 'application/json' } : {}),
             },
             method: 'POST',
+            ...(!isPro ? { body: JSON.stringify({ interval: 'year' }) } : {}),
         });
         const result = (await response.json()) as { url?: string };
         if (response.ok && result.url) {
@@ -136,6 +162,34 @@
         await storage?.remove('akumaExtensionToken');
         await refreshUi();
         setMessage('Signed out.');
+    }
+
+    async function ensureContentScript(tabId: number) {
+        if (await isContentScriptLoaded(tabId)) {
+            return;
+        }
+
+        if (!chrome?.scripting) {
+            throw new Error('Chrome scripting API is not available');
+        }
+
+        await chrome.scripting.insertCSS({
+            files: [CONTENT_CSS_FILE],
+            target: { tabId },
+        });
+        await chrome.scripting.executeScript({
+            files: CONTENT_SCRIPT_FILES,
+            target: { tabId },
+        });
+    }
+
+    async function isContentScriptLoaded(tabId: number) {
+        try {
+            await chrome?.tabs?.sendMessage(tabId, { type: 'akuma:ping' });
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     async function readExtensionToken() {
