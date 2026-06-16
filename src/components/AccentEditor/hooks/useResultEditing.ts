@@ -73,43 +73,29 @@ export function useResultEditing({
 
     const moveFocusAcrossFurigana = useCallback(
         (wordIndex: number, textIndex: number, direction: FocusDirection): boolean => {
-            const step = direction === 'next' ? 1 : -1;
-            let nextWordIndex = wordIndex;
-            let nextTextIndex = textIndex + step;
+            const currentKey = getEditableKanaKey(wordIndex, textIndex);
+            const registeredTargets = Array.from(editableKanaRefs.current.entries())
+                .map(([key, node]) => {
+                    const [targetWordIndex, targetTextIndex] = key.split(':').map(Number);
+                    return { key, node, targetTextIndex, targetWordIndex };
+                })
+                .sort((left, right) =>
+                    left.targetWordIndex === right.targetWordIndex
+                        ? left.targetTextIndex - right.targetTextIndex
+                        : left.targetWordIndex - right.targetWordIndex,
+                );
+            const currentIndex = registeredTargets.findIndex(target => target.key === currentKey);
+            const targetIndex = currentIndex + (direction === 'next' ? 1 : -1);
+            const target = registeredTargets[targetIndex];
 
-            while (nextWordIndex >= 0 && nextWordIndex < words.length) {
-                const nextWord = words[nextWordIndex];
-                const furiganaLength = nextWord?.furigana.length ?? 0;
-
-                if (furiganaLength === 0) {
-                    nextWordIndex += step;
-                    nextTextIndex = direction === 'next' ? 0 : -1;
-                    continue;
-                }
-
-                if (nextTextIndex >= 0 && nextTextIndex < furiganaLength) {
-                    const target = editableKanaRefs.current.get(
-                        getEditableKanaKey(nextWordIndex, nextTextIndex),
-                    );
-
-                    if (target) {
-                        setCaretPosition(target, direction === 'next' ? 'end' : 'start');
-                        return true;
-                    }
-                }
-
-                nextWordIndex += step;
-                nextTextIndex = direction === 'next' ? 0 : Number.MAX_SAFE_INTEGER;
-
-                if (direction === 'previous') {
-                    const previousWord = words[nextWordIndex];
-                    nextTextIndex = (previousWord?.furigana.length ?? 0) - 1;
-                }
+            if (target) {
+                setCaretPosition(target.node, direction === 'next' ? 'end' : 'start');
+                return true;
             }
 
             return false;
         },
-        [setCaretPosition, words],
+        [setCaretPosition],
     );
 
     const updateKana = useCallback(

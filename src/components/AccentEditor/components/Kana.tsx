@@ -5,6 +5,7 @@ import {
     useRef,
     type CompositionEvent,
     type FocusEvent,
+    type FormEvent,
     type KeyboardEvent,
     type MouseEvent,
 } from 'react';
@@ -27,6 +28,7 @@ interface KanaProps {
     onDeleteAtStart?: (currentText: string) => boolean;
     onArrowAtEdge?: (direction: 'previous' | 'next') => boolean;
     editable?: boolean;
+    keyboardNavigable?: boolean;
     ghost?: boolean;
     onFocusChange?: (isFocused: boolean) => void;
     registerTextRef?: (node: HTMLSpanElement | null) => void;
@@ -48,6 +50,7 @@ function Kana({
     onDeleteAtStart,
     onArrowAtEdge,
     editable = false,
+    keyboardNavigable = editable,
     ghost = false,
     onFocusChange,
     registerTextRef,
@@ -220,7 +223,7 @@ function Kana({
     };
 
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>): void => {
-        if (!editable || event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) {
+        if (!keyboardNavigable || event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) {
             return;
         }
 
@@ -239,6 +242,11 @@ function Kana({
         }
 
         if ((event.metaKey || event.ctrlKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
+            return;
+        }
+
+        if (!editable && ['Backspace', 'Delete'].includes(event.key)) {
+            event.preventDefault();
             return;
         }
 
@@ -282,6 +290,12 @@ function Kana({
             event.preventDefault();
             if (target.innerText.length === 0) target.innerText = placeholder;
             target.blur();
+        }
+    };
+
+    const handleBeforeInput = (event: FormEvent<HTMLSpanElement>): void => {
+        if (!editable) {
+            event.preventDefault();
         }
     };
 
@@ -345,8 +359,9 @@ function Kana({
             <span
                 ref={setTextNodeRef}
                 className={`kana-text ${editable ? 'furigana' : ''}`}
-                contentEditable={editable && interactive ? true : undefined}
+                contentEditable={keyboardNavigable && interactive ? true : undefined}
                 suppressContentEditableWarning
+                onBeforeInput={handleBeforeInput}
                 onBlur={finishEditing}
                 onCompositionEnd={handleCompositionEnd}
                 onCompositionStart={handleCompositionStart}
@@ -361,8 +376,8 @@ function Kana({
                 autoCorrect='off'
                 inputMode='text'
                 spellCheck={false}
-                data-text-index={editable ? textIndex : undefined}
-                data-word-index={editable ? wordIndex : undefined}
+                data-text-index={keyboardNavigable ? textIndex : undefined}
+                data-word-index={keyboardNavigable ? wordIndex : undefined}
                 data-text-visible={textVisible || undefined}
             >
                 {text}
@@ -379,6 +394,7 @@ function areKanaPropsEqual(previous: KanaProps, next: KanaProps): boolean {
         previous.editable === next.editable &&
         previous.ghost === next.ghost &&
         previous.interactive === next.interactive &&
+        previous.keyboardNavigable === next.keyboardNavigable &&
         previous.text === next.text &&
         previous.textVisible === next.textVisible &&
         previous.textIndex === next.textIndex &&

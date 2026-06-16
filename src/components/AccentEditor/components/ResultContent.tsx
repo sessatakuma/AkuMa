@@ -13,12 +13,16 @@ function createWidthStyle(widthEm: number): CSSProperties {
 
 function renderKanaSegment(
     key: string,
+    wordIndex: number,
+    textIndex: number,
     segment: string,
     accent: AccentValueType,
     accentPhaseActive: boolean,
     accentVisible: boolean,
     isPresenting: boolean,
     showAccent: boolean,
+    moveFocusAcrossFurigana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean,
+    registerEditableKana: (wordIndex: number, textIndex: number, node: HTMLSpanElement | null) => void,
     onUpdate: (_ignore: string, newAccent: AccentValueType) => void,
 ) {
     return (
@@ -33,9 +37,18 @@ function renderKanaSegment(
                     accentPhaseActive={accentPhaseActive}
                     accentVisible={showAccent && accentVisible}
                     interactive={!isPresenting}
+                    keyboardNavigable
                     text={segment}
+                    textIndex={textIndex}
                     textVisible
+                    wordIndex={wordIndex}
+                    onArrowAtEdge={direction =>
+                        moveFocusAcrossFurigana(wordIndex, textIndex, direction)
+                    }
                     onUpdate={onUpdate}
+                    registerTextRef={node =>
+                        registerEditableKana(wordIndex, textIndex, node)
+                    }
                 />
             </span>
         </span>
@@ -164,8 +177,17 @@ export default function ResultContent({
                                             accent={kanaAccents[charIndex] ?? AccentValue.None}
                                             accentVisible={isAccentVisible}
                                             interactive={!isPresenting}
+                                            keyboardNavigable
+                                            textIndex={charIndex}
+                                            wordIndex={wordIndex}
+                                            onArrowAtEdge={direction =>
+                                                moveFocusAcrossFurigana(wordIndex, charIndex, direction)
+                                            }
                                             onUpdate={(_ignore, newAccent) =>
                                                 updateKana(wordIndex, charIndex, newAccent)
+                                            }
+                                            registerTextRef={node =>
+                                                registerEditableKana(wordIndex, charIndex, node)
                                             }
                                         />
                                     </span>
@@ -197,12 +219,16 @@ export default function ResultContent({
 
                             return renderKanaSegment(
                                 `prefix-${wordIndex}-${segmentIndex}`,
+                                wordIndex,
+                                charIndex,
                                 segment,
                                 accent,
                                 accentPhaseActive,
                                 isAccentVisible,
                                 isPresenting,
                                 showAccent,
+                                moveFocusAcrossFurigana,
+                                registerEditableKana,
                                 (_ignore, newAccent) => updateKana(wordIndex, charIndex, newAccent),
                             );
                         })}
@@ -296,12 +322,16 @@ export default function ResultContent({
 
                             return renderKanaSegment(
                                 `suffix-${wordIndex}-${segmentIndex}`,
+                                wordIndex,
+                                charIndex,
                                 segment,
                                 accent,
                                 accentPhaseActive,
                                 isAccentVisible,
                                 isPresenting,
                                 showAccent,
+                                moveFocusAcrossFurigana,
+                                registerEditableKana,
                                 (_ignore, newAccent) => updateKana(wordIndex, charIndex, newAccent),
                             );
                         })}
