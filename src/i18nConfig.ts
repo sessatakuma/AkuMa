@@ -398,7 +398,7 @@ export const translations: Record<Locale, TranslationSet> = {
         usageStepAccentHint: '上鍵 / 左右 / Enter',
         usageStepAccentTitle: '調整音調',
         usageStepEditBody:
-            '點擊振假名可修改讀音，聚焦音調線後可調整音調。音調控制用 Enter 或 Space 在三種模式間切換。',
+            '點擊振假名或音調以編輯，音調會在三種模式循環切換。支援以方向鍵在假名/音調行列間移動及以空白/Enter 鍵切換音調。',
         usageStepEditTitle: '確認讀音與音調',
         usageStepFuriganaBody:
             '直接點振假名文字就能編輯。用左右方向鍵可在不同讀音格之間移動，方便逐格校對。',
