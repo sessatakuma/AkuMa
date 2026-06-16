@@ -59,6 +59,7 @@ interface ResultContentProps {
     deleteBackwardAcrossFurigana: (wordIndex: number, textIndex: number, currentText: string) => boolean;
     deleteForwardAcrossFurigana: (wordIndex: number, textIndex: number, currentText: string) => boolean;
     focusAccentControl: (wordIndex: number, textIndex: number) => boolean;
+    focusEditableKanaCell: (wordIndex: number, textIndex: number) => boolean;
     isLoading: boolean;
     isPresenting: boolean;
     moveFocusAcrossEditableKana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean;
@@ -87,6 +88,7 @@ export default function ResultContent({
     deleteBackwardAcrossFurigana,
     deleteForwardAcrossFurigana,
     focusAccentControl,
+    focusEditableKanaCell,
     isLoading,
     isPresenting,
     moveFocusAcrossEditableKana,
@@ -274,6 +276,9 @@ export default function ResultContent({
                                                     wordIndex={wordIndex}
                                                     onAccentArrowAtEdge={direction =>
                                                         moveFocusAcrossFurigana(wordIndex, charIndex, direction)
+                                                    }
+                                                    onMoveToFuriganaRow={() =>
+                                                        focusEditableKanaCell(wordIndex, charIndex)
                                                     }
                                                     onBackspaceAtStart={currentText =>
                                                         deleteBackwardAcrossFurigana(wordIndex, charIndex, currentText)

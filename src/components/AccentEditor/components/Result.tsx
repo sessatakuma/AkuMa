@@ -68,6 +68,7 @@ export default function Result({
         deleteBackwardAcrossFurigana,
         deleteForwardAcrossFurigana,
         focusAccentControl,
+        focusEditableKanaCell,
         moveFocusAcrossEditableKana,
         moveFocusAcrossFurigana,
         registerAccentControl,
@@ -96,6 +97,7 @@ export default function Result({
                     deleteBackwardAcrossFurigana={deleteBackwardAcrossFurigana}
                     deleteForwardAcrossFurigana={deleteForwardAcrossFurigana}
                     focusAccentControl={focusAccentControl}
+                    focusEditableKanaCell={focusEditableKanaCell}
                     isLoading={isLoading}
                     isPresenting={isPresenting}
                     moveFocusAcrossEditableKana={moveFocusAcrossEditableKana}

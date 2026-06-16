@@ -28,6 +28,7 @@ interface KanaProps {
     onAccentArrowAtEdge?: (direction: 'previous' | 'next') => boolean;
     onArrowAtEdge?: (direction: 'previous' | 'next') => boolean;
     onMoveToAccentRow?: () => boolean;
+    onMoveToFuriganaRow?: () => boolean;
     editable?: boolean;
     ghost?: boolean;
     onFocusChange?: (isFocused: boolean) => void;
@@ -52,6 +53,7 @@ function Kana({
     onAccentArrowAtEdge,
     onArrowAtEdge,
     onMoveToAccentRow,
+    onMoveToFuriganaRow,
     editable = false,
     ghost = false,
     onFocusChange,
@@ -195,6 +197,11 @@ function Kana({
         if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             updateAccent(((accent + 1) % 3) as AccentValueType);
+            return;
+        }
+
+        if (event.key === 'ArrowDown' && onMoveToFuriganaRow?.()) {
+            event.preventDefault();
             return;
         }
 

@@ -130,7 +130,7 @@ export function useResultEditing({
             const target = registeredTargets[targetIndex];
 
             if (target) {
-                setCaretPosition(target.node, direction === 'next' ? 'end' : 'start');
+                setCaretPosition(target.node, direction === 'next' ? 'start' : 'end');
                 return true;
             }
 
@@ -150,6 +150,19 @@ export function useResultEditing({
             return true;
         },
         [],
+    );
+
+    const focusEditableKanaCell = useCallback(
+        (wordIndex: number, textIndex: number): boolean => {
+            const target = editableKanaRefs.current.get(getEditableKanaKey(wordIndex, textIndex));
+            if (!target) {
+                return false;
+            }
+
+            setCaretPosition(target, 'end');
+            return true;
+        },
+        [setCaretPosition],
     );
 
     const updateKana = useCallback(
@@ -356,6 +369,7 @@ export function useResultEditing({
         deleteBackwardAcrossFurigana,
         deleteForwardAcrossFurigana,
         focusAccentControl,
+        focusEditableKanaCell,
         moveFocusAcrossEditableKana,
         moveFocusAcrossFurigana,
         registerAccentControl,
