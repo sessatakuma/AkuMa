@@ -86,7 +86,7 @@
 
 .usage-pitch-states {
     display: grid;
-    gap: var(--space-6);
+    gap: calc(var(--space-6) + var(--space-3));
     align-self: start;
 }
 
@@ -250,7 +250,7 @@
     }
 
     .usage-pitch-states {
-        gap: var(--space-4);
+        gap: calc(var(--space-4) + var(--space-3));
     }
 
     .usage-guide {
@@ -292,7 +292,7 @@
     }
 
     .usage-pitch-states {
-        gap: var(--space-4);
+        gap: calc(var(--space-4) + var(--space-3));
     }
 
     .usage-pitch-state {
