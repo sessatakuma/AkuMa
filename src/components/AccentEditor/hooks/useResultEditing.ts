@@ -109,7 +109,47 @@ export function useResultEditing({
 
             return false;
         },
+        [],
+    );
+
+    const moveFocusAcrossEditableKana = useCallback(
+        (wordIndex: number, textIndex: number, direction: FocusDirection): boolean => {
+            const currentKey = getEditableKanaKey(wordIndex, textIndex);
+            const registeredTargets = Array.from(editableKanaRefs.current.entries())
+                .map(([key, node]) => {
+                    const [targetWordIndex, targetTextIndex] = key.split(':').map(Number);
+                    return { key, node, targetTextIndex, targetWordIndex };
+                })
+                .sort((left, right) =>
+                    left.targetWordIndex === right.targetWordIndex
+                        ? left.targetTextIndex - right.targetTextIndex
+                        : left.targetWordIndex - right.targetWordIndex,
+                );
+            const currentIndex = registeredTargets.findIndex(target => target.key === currentKey);
+            const targetIndex = currentIndex + (direction === 'next' ? 1 : -1);
+            const target = registeredTargets[targetIndex];
+
+            if (target) {
+                setCaretPosition(target.node, direction === 'next' ? 'end' : 'start');
+                return true;
+            }
+
+            return false;
+        },
         [setCaretPosition],
+    );
+
+    const focusAccentControl = useCallback(
+        (wordIndex: number, textIndex: number): boolean => {
+            const target = accentControlRefs.current.get(getEditableKanaKey(wordIndex, textIndex));
+            if (!target) {
+                return false;
+            }
+
+            target.focus();
+            return true;
+        },
+        [],
     );
 
     const updateKana = useCallback(
@@ -315,6 +355,8 @@ export function useResultEditing({
     return {
         deleteBackwardAcrossFurigana,
         deleteForwardAcrossFurigana,
+        focusAccentControl,
+        moveFocusAcrossEditableKana,
         moveFocusAcrossFurigana,
         registerAccentControl,
         registerEditableKana,

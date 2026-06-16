@@ -179,14 +179,14 @@ export const translations: Record<Locale, TranslationSet> = {
             'Particles like の, で, and は follow the previous word instead of carrying their own high mark.',
         usagePitchNoneTitle: 'Low / follows previous pitch',
         usageStepAccentBody:
-            'Click an accent line to switch the pitch pattern, or place the caret at the end of a furigana cell and use Up or Down to cycle the accent.',
-        usageStepAccentHint: 'Click line or Up/Down',
+            'Press Up from a furigana cell to focus its accent line. Move across the accent row with Left and Right, then press Enter or Space to switch the pitch pattern.',
+        usageStepAccentHint: 'Up, Left/Right, Enter',
         usageStepAccentTitle: 'Adjust accent',
         usageStepEditBody:
-            'Click furigana or accent marks to edit. Accent cycles through three modes and also supports Up and Down arrow keys.',
+            'Click furigana to edit readings, or focus accent marks to adjust pitch. Accent controls cycle through three modes with Enter or Space.',
         usageStepEditTitle: 'Check readings and accent',
         usageStepFuriganaBody:
-            'Click the furigana text to edit it directly. Use Left and Right to jump across reading cells while keeping your hands on the keyboard.',
+            'Click the furigana text to edit it directly. Use Left and Right to move across reading cells while keeping your hands on the keyboard.',
         usageStepFuriganaHint: 'Type kana, then Left/Right',
         usageStepFuriganaTitle: 'Edit furigana',
         usageStepShareBody:
@@ -287,11 +287,11 @@ export const translations: Record<Locale, TranslationSet> = {
             'の・で・は などの助詞は、自分ではなく前の語の高さに続きます。',
         usagePitchNoneTitle: '低音 / 前の音に続く',
         usageStepAccentBody:
-            'アクセント線をクリックすると音調を切り替えられます。ふりがなの末尾にカーソルを置いた状態なら、上下キーでも切り替えできます。',
-        usageStepAccentHint: '線をクリック / 上下キー',
+            'ふりがなセルで上キーを押すと、対応するアクセント線に移動します。アクセント行では左右キーで移動し、Enter または Space で音調を切り替えます。',
+        usageStepAccentHint: '上キー / 左右 / Enter',
         usageStepAccentTitle: 'アクセントを直す',
         usageStepEditBody:
-            'ふりがなやアクセントをクリックして編集できます。アクセントは3つのモードを循環し、上下キーにも対応しています。',
+            'ふりがなをクリックして読みを編集し、アクセント線にフォーカスして音調を調整できます。アクセントは Enter または Space で3つのモードを循環します。',
         usageStepEditTitle: '読みとアクセントを確認',
         usageStepFuriganaBody:
             'ふりがな部分をクリックしてそのまま編集できます。左右キーを使うと、読みの区切りをまたいで次のセルへ移動できます。',
@@ -394,11 +394,11 @@ export const translations: Record<Locale, TranslationSet> = {
             '像 の、で、は 這類助詞，本身不帶高音標記，會接續前詞音高。',
         usagePitchNoneTitle: '低音/接續前音',
         usageStepAccentBody:
-            '點一下音調線即可切換音型。若游標停在振假名格的尾端，也可以用上下方向鍵循環切換音調。',
-        usageStepAccentHint: '點線 / 上下方向鍵',
+            '在振假名格按上方向鍵可移到對應的音調線。進入音調列後，用左右方向鍵移動，再按 Enter 或 Space 切換音型。',
+        usageStepAccentHint: '上鍵 / 左右 / Enter',
         usageStepAccentTitle: '調整音調',
         usageStepEditBody:
-            '點擊振假名或音調以編輯，音調會在三種模式循環切換、支援上下方向鍵。',
+            '點擊振假名可修改讀音，聚焦音調線後可調整音調。音調控制用 Enter 或 Space 在三種模式間切換。',
         usageStepEditTitle: '確認讀音與音調',
         usageStepFuriganaBody:
             '直接點振假名文字就能編輯。用左右方向鍵可在不同讀音格之間移動，方便逐格校對。',

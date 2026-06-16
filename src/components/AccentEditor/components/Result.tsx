@@ -67,6 +67,8 @@ export default function Result({
     const {
         deleteBackwardAcrossFurigana,
         deleteForwardAcrossFurigana,
+        focusAccentControl,
+        moveFocusAcrossEditableKana,
         moveFocusAcrossFurigana,
         registerAccentControl,
         registerEditableKana,
@@ -93,8 +95,10 @@ export default function Result({
                     accentPhaseActive={accentPhaseActive}
                     deleteBackwardAcrossFurigana={deleteBackwardAcrossFurigana}
                     deleteForwardAcrossFurigana={deleteForwardAcrossFurigana}
+                    focusAccentControl={focusAccentControl}
                     isLoading={isLoading}
                     isPresenting={isPresenting}
+                    moveFocusAcrossEditableKana={moveFocusAcrossEditableKana}
                     moveFocusAcrossFurigana={moveFocusAcrossFurigana}
                     onEditingChange={onEditingChange}
                     paragraph={paragraph}

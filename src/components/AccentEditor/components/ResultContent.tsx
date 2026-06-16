@@ -41,7 +41,7 @@ function renderKanaSegment(
                     textIndex={textIndex}
                     textVisible
                     wordIndex={wordIndex}
-                    onArrowAtEdge={direction =>
+                    onAccentArrowAtEdge={direction =>
                         moveFocusAcrossFurigana(wordIndex, textIndex, direction)
                     }
                     onUpdate={onUpdate}
@@ -58,8 +58,10 @@ interface ResultContentProps {
     accentPhaseActive: boolean;
     deleteBackwardAcrossFurigana: (wordIndex: number, textIndex: number, currentText: string) => boolean;
     deleteForwardAcrossFurigana: (wordIndex: number, textIndex: number, currentText: string) => boolean;
+    focusAccentControl: (wordIndex: number, textIndex: number) => boolean;
     isLoading: boolean;
     isPresenting: boolean;
+    moveFocusAcrossEditableKana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean;
     moveFocusAcrossFurigana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean;
     onEditingChange: (isEditing: boolean) => void;
     paragraph: string;
@@ -84,8 +86,10 @@ export default function ResultContent({
     accentPhaseActive,
     deleteBackwardAcrossFurigana,
     deleteForwardAcrossFurigana,
+    focusAccentControl,
     isLoading,
     isPresenting,
+    moveFocusAcrossEditableKana,
     moveFocusAcrossFurigana,
     onEditingChange,
     paragraph,
@@ -180,7 +184,7 @@ export default function ResultContent({
                                             interactive={!isPresenting}
                                             textIndex={charIndex}
                                             wordIndex={wordIndex}
-                                            onArrowAtEdge={direction =>
+                                            onAccentArrowAtEdge={direction =>
                                                 moveFocusAcrossFurigana(wordIndex, charIndex, direction)
                                             }
                                             onUpdate={(_ignore, newAccent) =>
@@ -268,6 +272,9 @@ export default function ResultContent({
                                                     textIndex={charIndex}
                                                     textVisible={isFuriganaVisible}
                                                     wordIndex={wordIndex}
+                                                    onAccentArrowAtEdge={direction =>
+                                                        moveFocusAcrossFurigana(wordIndex, charIndex, direction)
+                                                    }
                                                     onBackspaceAtStart={currentText =>
                                                         deleteBackwardAcrossFurigana(wordIndex, charIndex, currentText)
                                                     }
@@ -275,7 +282,10 @@ export default function ResultContent({
                                                         deleteForwardAcrossFurigana(wordIndex, charIndex, currentText)
                                                     }
                                                     onArrowAtEdge={direction =>
-                                                        moveFocusAcrossFurigana(wordIndex, charIndex, direction)
+                                                        moveFocusAcrossEditableKana(wordIndex, charIndex, direction)
+                                                    }
+                                                    onMoveToAccentRow={() =>
+                                                        focusAccentControl(wordIndex, charIndex)
                                                     }
                                                     onUpdate={(newText, newAccent) =>
                                                         updateFurigana(wordIndex, charIndex, newText, newAccent)

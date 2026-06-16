@@ -25,7 +25,9 @@ interface KanaProps {
     onUpdate?: (text: string, accent: AccentValueType) => void;
     onBackspaceAtStart?: (currentText: string) => boolean;
     onDeleteAtStart?: (currentText: string) => boolean;
+    onAccentArrowAtEdge?: (direction: 'previous' | 'next') => boolean;
     onArrowAtEdge?: (direction: 'previous' | 'next') => boolean;
+    onMoveToAccentRow?: () => boolean;
     editable?: boolean;
     ghost?: boolean;
     onFocusChange?: (isFocused: boolean) => void;
@@ -47,7 +49,9 @@ function Kana({
     onUpdate,
     onBackspaceAtStart,
     onDeleteAtStart,
+    onAccentArrowAtEdge,
     onArrowAtEdge,
+    onMoveToAccentRow,
     editable = false,
     ghost = false,
     onFocusChange,
@@ -176,46 +180,35 @@ function Kana({
     const changeAccent = (event: MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault();
         event.stopPropagation();
-        textRef.current?.blur();
-        updateAccent(((accent + 1) % 3) as AccentValueType);
-    };
-
-    const shiftAccent = (step: -1 | 1, restoreTextCaret = true): void => {
-        const nextAccent = (((accent + step) % 3) + 3) % 3 as AccentValueType;
-        updateAccent(nextAccent);
-
-        if (!editable || !restoreTextCaret) {
+        if (event.detail !== 0) {
             return;
         }
 
-        window.requestAnimationFrame(() => {
-            const node = textRef.current;
-            if (!node) {
-                return;
-            }
-
-            setCaretPosition(node, 'end');
-        });
+        updateAccent(((accent + 1) % 3) as AccentValueType);
     };
 
     const handleAccentMouseDown = (event: MouseEvent<HTMLButtonElement>): void => {
-        event.preventDefault();
         event.stopPropagation();
     };
 
     const handleAccentKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            updateAccent(((accent + 1) % 3) as AccentValueType);
+            return;
+        }
+
         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
-            shiftAccent(event.key === 'ArrowUp' ? -1 : 1, false);
             return;
         }
 
-        if (event.key === 'ArrowLeft' && onArrowAtEdge?.('previous')) {
+        if (event.key === 'ArrowLeft' && onAccentArrowAtEdge?.('previous')) {
             event.preventDefault();
             return;
         }
 
-        if (event.key === 'ArrowRight' && onArrowAtEdge?.('next')) {
+        if (event.key === 'ArrowRight' && onAccentArrowAtEdge?.('next')) {
             event.preventDefault();
         }
     };
@@ -295,9 +288,8 @@ function Kana({
             return;
         }
 
-        if (isCaretAtEnd(target) && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+        if (event.key === 'ArrowUp' && onMoveToAccentRow?.()) {
             event.preventDefault();
-            shiftAccent(event.key === 'ArrowUp' ? -1 : 1);
             return;
         }
 
