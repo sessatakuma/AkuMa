@@ -87,10 +87,15 @@
 }
 
 .site-footer-email-link {
+    --footer-email-line-gap: var(--space-1);
+
+    position: relative;
+    display: inline-block;
     justify-self: end;
     width: fit-content;
     max-width: calc(100% - var(--footer-social-glyph-offset));
     margin-inline-end: var(--footer-social-glyph-offset);
+    padding-block-end: var(--footer-email-line-gap);
     color: var(--color-text-inverted);
     font-size: 1rem;
     font-weight: 400;
@@ -98,18 +103,39 @@
     overflow-wrap: normal;
     white-space: nowrap;
     text-align: right;
-    background-image: linear-gradient(currentColor, currentColor);
-    background-repeat: no-repeat;
-    background-position: 100% 70%;
-    background-size: 0 var(--stroke-width-thin);
-    transition:
-        background-size var(--duration-interaction-fast) ease,
-        opacity var(--duration-interaction-fast) ease;
+    transition: opacity var(--duration-interaction-fast) ease;
 }
 
-.site-footer-email-link:hover {
+.site-footer-email-link::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: var(--stroke-width-thin);
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform var(--duration-interaction-fast) ease;
+}
+
+.site-footer-email-link:active,
+.site-footer-email-link:focus-visible {
     font-weight: 400;
-    background-size: 100% var(--stroke-width-thin);
+}
+
+.site-footer-email-link:active::after,
+.site-footer-email-link:focus-visible::after {
+    transform: scaleX(1);
+}
+
+@media (hover: hover) {
+    .site-footer-email-link:hover {
+        font-weight: 400;
+    }
+
+    .site-footer-email-link:hover::after {
+        transform: scaleX(1);
+    }
 }
 
 .site-footer-email-link:focus-visible {
