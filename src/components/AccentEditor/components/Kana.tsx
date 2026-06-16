@@ -5,7 +5,6 @@ import {
     useRef,
     type CompositionEvent,
     type FocusEvent,
-    type FormEvent,
     type KeyboardEvent,
     type MouseEvent,
 } from 'react';
@@ -28,9 +27,9 @@ interface KanaProps {
     onDeleteAtStart?: (currentText: string) => boolean;
     onArrowAtEdge?: (direction: 'previous' | 'next') => boolean;
     editable?: boolean;
-    keyboardNavigable?: boolean;
     ghost?: boolean;
     onFocusChange?: (isFocused: boolean) => void;
+    registerAccentRef?: (node: HTMLButtonElement | null) => void;
     registerTextRef?: (node: HTMLSpanElement | null) => void;
     textIndex?: number;
     wordIndex?: number;
@@ -50,9 +49,9 @@ function Kana({
     onDeleteAtStart,
     onArrowAtEdge,
     editable = false,
-    keyboardNavigable = editable,
     ghost = false,
     onFocusChange,
+    registerAccentRef,
     registerTextRef,
     textIndex,
     wordIndex,
@@ -170,18 +169,22 @@ function Kana({
         return range.toString().length === 0;
     };
 
+    const updateAccent = (nextAccent: AccentValueType): void => {
+        onUpdate?.(getCurrentText(), nextAccent);
+    };
+
     const changeAccent = (event: MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault();
         event.stopPropagation();
         textRef.current?.blur();
-        onUpdate?.(getCurrentText(), ((accent + 1) % 3) as AccentValueType);
+        updateAccent(((accent + 1) % 3) as AccentValueType);
     };
 
-    const shiftAccent = (step: -1 | 1): void => {
+    const shiftAccent = (step: -1 | 1, restoreTextCaret = true): void => {
         const nextAccent = (((accent + step) % 3) + 3) % 3 as AccentValueType;
-        onUpdate?.(getCurrentText(), nextAccent);
+        updateAccent(nextAccent);
 
-        if (!editable) {
+        if (!editable || !restoreTextCaret) {
             return;
         }
 
@@ -198,6 +201,23 @@ function Kana({
     const handleAccentMouseDown = (event: MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault();
         event.stopPropagation();
+    };
+
+    const handleAccentKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
+        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            event.preventDefault();
+            shiftAccent(event.key === 'ArrowUp' ? -1 : 1, false);
+            return;
+        }
+
+        if (event.key === 'ArrowLeft' && onArrowAtEdge?.('previous')) {
+            event.preventDefault();
+            return;
+        }
+
+        if (event.key === 'ArrowRight' && onArrowAtEdge?.('next')) {
+            event.preventDefault();
+        }
     };
 
     const finishEditing = (event: FocusEvent<HTMLSpanElement>): void => {
@@ -223,7 +243,7 @@ function Kana({
     };
 
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>): void => {
-        if (!keyboardNavigable || event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) {
+        if (!editable || event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) {
             return;
         }
 
@@ -242,11 +262,6 @@ function Kana({
         }
 
         if ((event.metaKey || event.ctrlKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
-            return;
-        }
-
-        if (!editable && ['Backspace', 'Delete'].includes(event.key)) {
-            event.preventDefault();
             return;
         }
 
@@ -290,12 +305,6 @@ function Kana({
             event.preventDefault();
             if (target.innerText.length === 0) target.innerText = placeholder;
             target.blur();
-        }
-    };
-
-    const handleBeforeInput = (event: FormEvent<HTMLSpanElement>): void => {
-        if (!editable) {
-            event.preventDefault();
         }
     };
 
@@ -343,25 +352,28 @@ function Kana({
             data-ghost={ghost || undefined}
             data-interactive={interactive || undefined}
         >
-            <span className='kana-accent-lane' aria-hidden='true'>
+            <span className='kana-accent-lane'>
                 <span className='kana-accent-line' />
                 <span className='kana-accent-drop' />
                 <button
+                    ref={registerAccentRef}
                     type='button'
                     className='kana-accent-hitbox'
                     disabled={!interactive || !accentPhaseActive}
                     onClick={changeAccent}
+                    onKeyDown={handleAccentKeyDown}
                     onMouseDown={handleAccentMouseDown}
                     aria-label={t.switchAccent}
+                    data-text-index={textIndex}
+                    data-word-index={wordIndex}
                     title={t.switchAccent}
                 />
             </span>
             <span
                 ref={setTextNodeRef}
                 className={`kana-text ${editable ? 'furigana' : ''}`}
-                contentEditable={keyboardNavigable && interactive ? true : undefined}
+                contentEditable={editable && interactive ? true : undefined}
                 suppressContentEditableWarning
-                onBeforeInput={handleBeforeInput}
                 onBlur={finishEditing}
                 onCompositionEnd={handleCompositionEnd}
                 onCompositionStart={handleCompositionStart}
@@ -376,8 +388,8 @@ function Kana({
                 autoCorrect='off'
                 inputMode='text'
                 spellCheck={false}
-                data-text-index={keyboardNavigable ? textIndex : undefined}
-                data-word-index={keyboardNavigable ? wordIndex : undefined}
+                data-text-index={editable ? textIndex : undefined}
+                data-word-index={editable ? wordIndex : undefined}
                 data-text-visible={textVisible || undefined}
             >
                 {text}
@@ -394,7 +406,6 @@ function areKanaPropsEqual(previous: KanaProps, next: KanaProps): boolean {
         previous.editable === next.editable &&
         previous.ghost === next.ghost &&
         previous.interactive === next.interactive &&
-        previous.keyboardNavigable === next.keyboardNavigable &&
         previous.text === next.text &&
         previous.textVisible === next.textVisible &&
         previous.textIndex === next.textIndex &&

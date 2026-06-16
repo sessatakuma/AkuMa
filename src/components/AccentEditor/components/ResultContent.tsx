@@ -22,7 +22,7 @@ function renderKanaSegment(
     isPresenting: boolean,
     showAccent: boolean,
     moveFocusAcrossFurigana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean,
-    registerEditableKana: (wordIndex: number, textIndex: number, node: HTMLSpanElement | null) => void,
+    registerAccentControl: (wordIndex: number, textIndex: number, node: HTMLButtonElement | null) => void,
     onUpdate: (_ignore: string, newAccent: AccentValueType) => void,
 ) {
     return (
@@ -37,7 +37,6 @@ function renderKanaSegment(
                     accentPhaseActive={accentPhaseActive}
                     accentVisible={showAccent && accentVisible}
                     interactive={!isPresenting}
-                    keyboardNavigable
                     text={segment}
                     textIndex={textIndex}
                     textVisible
@@ -46,8 +45,8 @@ function renderKanaSegment(
                         moveFocusAcrossFurigana(wordIndex, textIndex, direction)
                     }
                     onUpdate={onUpdate}
-                    registerTextRef={node =>
-                        registerEditableKana(wordIndex, textIndex, node)
+                    registerAccentRef={node =>
+                        registerAccentControl(wordIndex, textIndex, node)
                     }
                 />
             </span>
@@ -64,6 +63,7 @@ interface ResultContentProps {
     moveFocusAcrossFurigana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean;
     onEditingChange: (isEditing: boolean) => void;
     paragraph: string;
+    registerAccentControl: (wordIndex: number, textIndex: number, node: HTMLButtonElement | null) => void;
     registerEditableKana: (wordIndex: number, textIndex: number, node: HTMLSpanElement | null) => void;
     revealedAccentUnits: number;
     revealedFuriganaUnits: number;
@@ -89,6 +89,7 @@ export default function ResultContent({
     moveFocusAcrossFurigana,
     onEditingChange,
     paragraph,
+    registerAccentControl,
     registerEditableKana,
     revealedAccentUnits,
     revealedFuriganaUnits,
@@ -177,7 +178,6 @@ export default function ResultContent({
                                             accent={kanaAccents[charIndex] ?? AccentValue.None}
                                             accentVisible={isAccentVisible}
                                             interactive={!isPresenting}
-                                            keyboardNavigable
                                             textIndex={charIndex}
                                             wordIndex={wordIndex}
                                             onArrowAtEdge={direction =>
@@ -186,8 +186,8 @@ export default function ResultContent({
                                             onUpdate={(_ignore, newAccent) =>
                                                 updateKana(wordIndex, charIndex, newAccent)
                                             }
-                                            registerTextRef={node =>
-                                                registerEditableKana(wordIndex, charIndex, node)
+                                            registerAccentRef={node =>
+                                                registerAccentControl(wordIndex, charIndex, node)
                                             }
                                         />
                                     </span>
@@ -228,7 +228,7 @@ export default function ResultContent({
                                 isPresenting,
                                 showAccent,
                                 moveFocusAcrossFurigana,
-                                registerEditableKana,
+                                registerAccentControl,
                                 (_ignore, newAccent) => updateKana(wordIndex, charIndex, newAccent),
                             );
                         })}
@@ -281,6 +281,9 @@ export default function ResultContent({
                                                         updateFurigana(wordIndex, charIndex, newText, newAccent)
                                                     }
                                                     onFocusChange={onEditingChange}
+                                                    registerAccentRef={node =>
+                                                        registerAccentControl(wordIndex, charIndex, node)
+                                                    }
                                                     registerTextRef={node =>
                                                         registerEditableKana(wordIndex, charIndex, node)
                                                     }
@@ -331,7 +334,7 @@ export default function ResultContent({
                                 isPresenting,
                                 showAccent,
                                 moveFocusAcrossFurigana,
-                                registerEditableKana,
+                                registerAccentControl,
                                 (_ignore, newAccent) => updateKana(wordIndex, charIndex, newAccent),
                             );
                         })}

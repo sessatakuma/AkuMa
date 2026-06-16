@@ -68,6 +68,7 @@ export default function Result({
         deleteBackwardAcrossFurigana,
         deleteForwardAcrossFurigana,
         moveFocusAcrossFurigana,
+        registerAccentControl,
         registerEditableKana,
         updateFurigana,
         updateKana,
@@ -97,6 +98,7 @@ export default function Result({
                     moveFocusAcrossFurigana={moveFocusAcrossFurigana}
                     onEditingChange={onEditingChange}
                     paragraph={paragraph}
+                    registerAccentControl={registerAccentControl}
                     registerEditableKana={registerEditableKana}
                     revealedAccentUnits={revealedAccentUnits}
                     revealedFuriganaUnits={revealedFuriganaUnits}

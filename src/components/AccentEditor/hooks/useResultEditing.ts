@@ -34,6 +34,7 @@ export function useResultEditing({
 }: UseResultEditingOptions) {
     const { t } = useI18n();
     const pendingFocusRef = useRef<PendingFocusTarget | null>(null);
+    const accentControlRefs = useRef(new Map<EditableKanaKey, HTMLButtonElement>());
     const editableKanaRefs = useRef(new Map<EditableKanaKey, HTMLSpanElement>());
 
     const getEditableKanaKey = (wordIndex: number, textIndex: number): EditableKanaKey =>
@@ -59,6 +60,19 @@ export function useResultEditing({
         [],
     );
 
+    const registerAccentControl = useCallback(
+        (wordIndex: number, textIndex: number, node: HTMLButtonElement | null): void => {
+            const key = getEditableKanaKey(wordIndex, textIndex);
+            if (node) {
+                accentControlRefs.current.set(key, node);
+                return;
+            }
+
+            accentControlRefs.current.delete(key);
+        },
+        [],
+    );
+
     const setCaretPosition = useCallback((element: HTMLElement, placement: FocusPlacement): void => {
         const selection = window.getSelection();
         if (!selection) return;
@@ -74,7 +88,7 @@ export function useResultEditing({
     const moveFocusAcrossFurigana = useCallback(
         (wordIndex: number, textIndex: number, direction: FocusDirection): boolean => {
             const currentKey = getEditableKanaKey(wordIndex, textIndex);
-            const registeredTargets = Array.from(editableKanaRefs.current.entries())
+            const registeredTargets = Array.from(accentControlRefs.current.entries())
                 .map(([key, node]) => {
                     const [targetWordIndex, targetTextIndex] = key.split(':').map(Number);
                     return { key, node, targetTextIndex, targetWordIndex };
@@ -89,7 +103,7 @@ export function useResultEditing({
             const target = registeredTargets[targetIndex];
 
             if (target) {
-                setCaretPosition(target.node, direction === 'next' ? 'end' : 'start');
+                target.node.focus();
                 return true;
             }
 
@@ -302,6 +316,7 @@ export function useResultEditing({
         deleteBackwardAcrossFurigana,
         deleteForwardAcrossFurigana,
         moveFocusAcrossFurigana,
+        registerAccentControl,
         registerEditableKana,
         updateFurigana,
         updateKana,
