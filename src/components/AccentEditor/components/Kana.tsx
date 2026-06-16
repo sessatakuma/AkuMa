@@ -106,7 +106,12 @@ function Kana({
             return;
         }
 
-        const nextReadingMinWidth = Math.max(textNode.scrollWidth, readingCell.clientWidth);
+        const nextReadingMinWidth = textNode.scrollWidth;
+        if (nextReadingMinWidth <= readingCell.clientWidth) {
+            clearLiveLayoutStyles();
+            return;
+        }
+
         readingCell.style.minWidth = `${nextReadingMinWidth}px`;
 
         const readingCells = Array.from(readingCell.parentElement?.children ?? []);
@@ -118,9 +123,9 @@ function Kana({
             baseCell?.style.setProperty('min-width', `${Math.max(nextReadingMinWidth, baseCell.clientWidth)}px`);
         }
 
-        const nextGroupMinWidth = Math.max(furiganaGroup.scrollWidth, baseRow.scrollWidth, wordStack.clientWidth);
+        const nextGroupMinWidth = Math.max(furiganaGroup.scrollWidth, baseRow.scrollWidth);
         wordStack.style.minWidth = `${nextGroupMinWidth}px`;
-    }, [editable]);
+    }, [clearLiveLayoutStyles, editable]);
 
     const getCurrentText = (): string => {
         const currentText = textRef.current?.innerText ?? text;
@@ -237,9 +242,6 @@ function Kana({
     const handleFocus = (): void => {
         isFocusedRef.current = true;
         onFocusChange?.(true);
-        window.requestAnimationFrame(() => {
-            syncLiveLayoutWidth();
-        });
     };
 
     const handleMouseDown = (event: MouseEvent<HTMLSpanElement>): void => {
