@@ -87,7 +87,7 @@
 }
 
 .site-footer-email-link {
-    --footer-email-line-gap: var(--space-1);
+    --footer-email-line-gap: var(--stroke-width-thin);
 
     position: relative;
     display: inline-block;
@@ -95,7 +95,6 @@
     width: fit-content;
     max-width: calc(100% - var(--footer-social-glyph-offset));
     margin-inline-end: var(--footer-social-glyph-offset);
-    padding-block-end: var(--footer-email-line-gap);
     color: var(--color-text-inverted);
     font-size: 1rem;
     font-weight: 400;
@@ -110,7 +109,7 @@
     content: '';
     position: absolute;
     inset-inline: 0;
-    inset-block-end: 0;
+    inset-block-end: calc(-1 * var(--footer-email-line-gap));
     block-size: var(--stroke-width-thin);
     background: currentColor;
     transform: scaleX(0);
