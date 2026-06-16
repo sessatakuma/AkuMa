@@ -124,6 +124,7 @@
 .usage-pitch-mark .kana-shell {
     width: 1.25em;
     justify-items: center;
+    transform: translateY(calc(-1 * var(--space-2)));
 }
 
 .usage-pitch-mark .kana-accent-lane {
