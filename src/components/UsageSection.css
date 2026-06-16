@@ -130,16 +130,6 @@
     inline-size: 1em;
 }
 
-.usage-pitch-mark .kana-accent-line {
-    top: 0;
-    bottom: auto;
-}
-
-.usage-pitch-mark .kana-accent-drop {
-    top: var(--accent-width);
-    bottom: auto;
-}
-
 .usage-guide {
     display: grid;
     gap: 0;
