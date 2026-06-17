@@ -42,8 +42,8 @@ export function buildLocaleMetadata(locale: Locale) {
         canonical,
         absoluteUrl: new URL(canonical, SITE_URL).toString(),
         languages: {
-            en: '/',
-            ja: '/?lang=ja',
+            'en': '/',
+            'ja': '/?lang=ja',
             'zh-Hant': '/?lang=zh',
             'x-default': '/',
         },
@@ -56,17 +56,17 @@ export function buildStructuredData(locale: Locale) {
     return {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
-        name: 'AkuMa',
-        url: metadata.absoluteUrl,
-        applicationCategory: 'EducationalApplication',
-        operatingSystem: 'Any',
-        description: metadata.description,
-        image: new URL('/images/logo.png', SITE_URL).toString(),
-        inLanguage: [metadata.localeCode],
-        offers: {
+        'name': 'AkuMa',
+        'url': metadata.absoluteUrl,
+        'applicationCategory': 'EducationalApplication',
+        'operatingSystem': 'Any',
+        'description': metadata.description,
+        'image': new URL('/images/logo.png', SITE_URL).toString(),
+        'inLanguage': [metadata.localeCode],
+        'offers': {
             '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
+            'price': '0',
+            'priceCurrency': 'USD',
         },
     };
 }

@@ -65,17 +65,16 @@ function renderKanaWord(word: Word, showAccent: boolean): string {
     }
 
     const readingCells = model.annotatedReading
-        .map(
-            (segment, charIndex) =>
-                [
-                    `        <span class="word-reading-cell" style="width:${model.baseCellWidthsEm[charIndex]}em">`,
-                    renderKanaShell(
-                        segment,
-                        model.kanaAccents?.[charIndex] ?? AccentValue.None,
-                        showAccent,
-                    ),
-                    '        </span>',
-                ].join('\n'),
+        .map((segment, charIndex) =>
+            [
+                `        <span class="word-reading-cell" style="width:${model.baseCellWidthsEm[charIndex]}em">`,
+                renderKanaShell(
+                    segment,
+                    model.kanaAccents?.[charIndex] ?? AccentValue.None,
+                    showAccent,
+                ),
+                '        </span>',
+            ].join('\n'),
         )
         .join('\n');
 
@@ -104,7 +103,9 @@ function renderAnnotatedWord(word: Word, showAccent: boolean): string {
                 }em">`,
                 renderKanaShell(
                     segment,
-                    showAccent ? word.furigana[charIndex]?.accent ?? AccentValue.None : AccentValue.None,
+                    showAccent
+                        ? (word.furigana[charIndex]?.accent ?? AccentValue.None)
+                        : AccentValue.None,
                     showAccent,
                 ),
                 '            </span>',
@@ -140,7 +141,11 @@ function renderAnnotatedWord(word: Word, showAccent: boolean): string {
         .join('\n');
 }
 
-export function buildHtmlExport(words: Word[], showAccent: boolean, options: HtmlExportOptions): string {
+export function buildHtmlExport(
+    words: Word[],
+    showAccent: boolean,
+    options: HtmlExportOptions,
+): string {
     const content = words
         .map((word, wordIndex) => {
             const lineBreakMarkup = renderLineBreaks(word, wordIndex);

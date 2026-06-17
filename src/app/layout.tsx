@@ -3,12 +3,7 @@ import type { ReactNode } from 'react';
 import { Noto_Sans_JP } from 'next/font/google';
 import { headers } from 'next/headers';
 
-import {
-    buildStructuredData,
-    LOCALE_HEADER,
-    resolveLocaleFromHeader,
-    SITE_URL,
-} from './locale';
+import { buildStructuredData, LOCALE_HEADER, resolveLocaleFromHeader, SITE_URL } from './locale';
 
 import type { Metadata, Viewport } from 'next';
 

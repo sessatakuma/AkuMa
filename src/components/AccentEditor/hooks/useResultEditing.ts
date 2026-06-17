@@ -32,11 +32,7 @@ function syncWordAccentWithFurigana(word: Word): void {
     word.accent = word.furigana.map(item => item.accent);
 }
 
-export function useResultEditing({
-    showFeedback,
-    updateWords,
-    words,
-}: UseResultEditingOptions) {
+export function useResultEditing({ showFeedback, updateWords, words }: UseResultEditingOptions) {
     const { t } = useI18n();
     const pendingFocusRef = useRef<PendingFocusTarget | null>(null);
     const accentControlRefs = useRef(new Map<EditableKanaKey, HTMLButtonElement>());
@@ -78,64 +74,77 @@ export function useResultEditing({
         [],
     );
 
-    const setCaretPosition = useCallback((element: HTMLElement, placement: FocusPlacement): void => {
-        const selection = window.getSelection();
-        if (!selection) return;
+    const setCaretPosition = useCallback(
+        (element: HTMLElement, placement: FocusPlacement): void => {
+            const selection = window.getSelection();
+            if (!selection) return;
 
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        range.collapse(placement === 'start');
-        selection.removeAllRanges();
-        selection.addRange(range);
-        element.focus();
-    }, []);
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            range.collapse(placement === 'start');
+            selection.removeAllRanges();
+            selection.addRange(range);
+            element.focus();
+        },
+        [],
+    );
 
-    const getOrderedTargets = useCallback(<T extends HTMLElement>(
-        targetRefs: Map<EditableKanaKey, T>,
-    ): RegisteredTarget<T>[] =>
-        Array.from(targetRefs.entries())
-            .map(([key, node]) => ({ key, node }))
-            .sort((left, right) => {
-                if (left.node === right.node) {
-                    return 0;
-                }
+    const getOrderedTargets = useCallback(
+        <T extends HTMLElement>(targetRefs: Map<EditableKanaKey, T>): RegisteredTarget<T>[] =>
+            Array.from(targetRefs.entries())
+                .map(([key, node]) => ({ key, node }))
+                .sort((left, right) => {
+                    if (left.node === right.node) {
+                        return 0;
+                    }
 
-                return left.node.compareDocumentPosition(right.node) & Node.DOCUMENT_POSITION_FOLLOWING
-                    ? -1
-                    : 1;
-            }), []);
+                    return left.node.compareDocumentPosition(right.node) &
+                        Node.DOCUMENT_POSITION_FOLLOWING
+                        ? -1
+                        : 1;
+                }),
+        [],
+    );
 
-    const getAdjacentTarget = useCallback(<T extends HTMLElement>(
-        targets: RegisteredTarget<T>[],
-        currentKey: EditableKanaKey,
-        direction: FocusDirection,
-    ): RegisteredTarget<T> | null => {
-        const step = direction === 'next' ? 1 : -1;
-        let currentIndex = targets.findIndex(target => target.key === currentKey);
-
-        if (currentIndex === -1) {
-            const activeElement = document.activeElement;
-
-            if (!activeElement) {
-                return null;
-            }
-
-            currentIndex = targets.findIndex(target => target.node === activeElement);
+    const getAdjacentTarget = useCallback(
+        <T extends HTMLElement>(
+            targets: RegisteredTarget<T>[],
+            currentKey: EditableKanaKey,
+            direction: FocusDirection,
+        ): RegisteredTarget<T> | null => {
+            const step = direction === 'next' ? 1 : -1;
+            let currentIndex = targets.findIndex(target => target.key === currentKey);
 
             if (currentIndex === -1) {
-                const activePrecedesTarget = (target: RegisteredTarget<T>) =>
-                    !!(activeElement.compareDocumentPosition(target.node) & Node.DOCUMENT_POSITION_FOLLOWING);
+                const activeElement = document.activeElement;
 
-                const insertionIndex = targets.findIndex(activePrecedesTarget);
-                currentIndex =
-                    direction === 'next'
-                        ? insertionIndex - 1
-                        : (insertionIndex === -1 ? targets.length : insertionIndex);
+                if (!activeElement) {
+                    return null;
+                }
+
+                currentIndex = targets.findIndex(target => target.node === activeElement);
+
+                if (currentIndex === -1) {
+                    const activePrecedesTarget = (target: RegisteredTarget<T>) =>
+                        !!(
+                            activeElement.compareDocumentPosition(target.node) &
+                            Node.DOCUMENT_POSITION_FOLLOWING
+                        );
+
+                    const insertionIndex = targets.findIndex(activePrecedesTarget);
+                    currentIndex =
+                        direction === 'next'
+                            ? insertionIndex - 1
+                            : insertionIndex === -1
+                              ? targets.length
+                              : insertionIndex;
+                }
             }
-        }
 
-        return targets[currentIndex + step] ?? null;
-    }, []);
+            return targets[currentIndex + step] ?? null;
+        },
+        [],
+    );
 
     const moveFocusAcrossFurigana = useCallback(
         (wordIndex: number, textIndex: number, direction: FocusDirection): boolean => {
@@ -175,18 +184,15 @@ export function useResultEditing({
         [getAdjacentTarget, getOrderedTargets, setCaretPosition],
     );
 
-    const focusAccentControl = useCallback(
-        (wordIndex: number, textIndex: number): boolean => {
-            const target = accentControlRefs.current.get(getEditableKanaKey(wordIndex, textIndex));
-            if (!target) {
-                return false;
-            }
+    const focusAccentControl = useCallback((wordIndex: number, textIndex: number): boolean => {
+        const target = accentControlRefs.current.get(getEditableKanaKey(wordIndex, textIndex));
+        if (!target) {
+            return false;
+        }
 
-            target.focus();
-            return true;
-        },
-        [],
-    );
+        target.focus();
+        return true;
+    }, []);
 
     const focusEditableKanaCell = useCallback(
         (wordIndex: number, textIndex: number): boolean => {
@@ -220,7 +226,12 @@ export function useResultEditing({
     );
 
     const updateFurigana = useCallback(
-        (wordIndex: number, textIndex: number, newFurigana: string, newAccent: AccentValueType): void => {
+        (
+            wordIndex: number,
+            textIndex: number,
+            newFurigana: string,
+            newAccent: AccentValueType,
+        ): void => {
             const trimmed = normalizeKanaText(newFurigana.trim());
 
             if (trimmed !== '' && !isKanaReading(trimmed)) {
@@ -283,7 +294,9 @@ export function useResultEditing({
                 }
 
                 const isCurrentEmpty = currentText.length === 0;
-                const currentUnits = splitKanaSyllables(currentItem.text.replaceAll(placeholder, '').trim());
+                const currentUnits = splitKanaSyllables(
+                    currentItem.text.replaceAll(placeholder, '').trim(),
+                );
 
                 if (isCurrentEmpty && word.furigana.length <= 1) {
                     return currentWords;
@@ -341,7 +354,9 @@ export function useResultEditing({
 
                 const previousIndex = textIndex - 1;
                 const previousItem = word.furigana[previousIndex];
-                const previousUnits = splitKanaSyllables(previousItem.text.replaceAll(placeholder, '').trim());
+                const previousUnits = splitKanaSyllables(
+                    previousItem.text.replaceAll(placeholder, '').trim(),
+                );
                 if (previousUnits.length === 0) {
                     return currentWords;
                 }
@@ -364,18 +379,26 @@ export function useResultEditing({
 
                 let focusIndex = textIndex;
                 if (isCurrentEmpty) {
-                    const currentIndex = word.furigana[previousIndex] === previousItem ? textIndex : textIndex - 1;
+                    const currentIndex =
+                        word.furigana[previousIndex] === previousItem ? textIndex : textIndex - 1;
                     if (word.furigana[currentIndex]) {
                         word.furigana.splice(currentIndex, 1);
                     }
                     focusIndex = Math.max(0, currentIndex - 1);
-                } else if (!word.furigana[previousIndex] || word.furigana[previousIndex] !== previousItem) {
+                } else if (
+                    !word.furigana[previousIndex] ||
+                    word.furigana[previousIndex] !== previousItem
+                ) {
                     focusIndex = textIndex - 1;
                 }
 
                 const boundedFocusIndex = Math.min(focusIndex, word.furigana.length - 1);
                 if (word.furigana[boundedFocusIndex]) {
-                    focusEditableKana(wordIndex, boundedFocusIndex, isCurrentEmpty ? 'end' : 'start');
+                    focusEditableKana(
+                        wordIndex,
+                        boundedFocusIndex,
+                        isCurrentEmpty ? 'end' : 'start',
+                    );
                 }
 
                 return nextWords;

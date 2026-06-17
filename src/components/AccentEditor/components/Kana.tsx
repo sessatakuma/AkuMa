@@ -85,7 +85,9 @@ function Kana({
 
         const readingCells = Array.from(readingCell.parentElement.children);
         const readingIndex = readingCells.indexOf(readingCell);
-        const baseCells = Array.from(wordStack.querySelectorAll('.word-base-row > .word-base-cell'));
+        const baseCells = Array.from(
+            wordStack.querySelectorAll('.word-base-row > .word-base-cell'),
+        );
         const baseCell = baseCells[readingIndex] as HTMLSpanElement | undefined;
 
         baseCell?.style.removeProperty('min-width');
@@ -120,7 +122,10 @@ function Kana({
 
         if (readingCells.length === baseCells.length && readingIndex >= 0) {
             const baseCell = baseCells[readingIndex] as HTMLSpanElement | undefined;
-            baseCell?.style.setProperty('min-width', `${Math.max(nextReadingMinWidth, baseCell.clientWidth)}px`);
+            baseCell?.style.setProperty(
+                'min-width',
+                `${Math.max(nextReadingMinWidth, baseCell.clientWidth)}px`,
+            );
         }
 
         const nextGroupMinWidth = Math.max(furiganaGroup.scrollWidth, baseRow.scrollWidth);
@@ -269,7 +274,10 @@ function Kana({
 
         if (event.key === 'Backspace') {
             const currentText = getSanitizedText();
-            if ((currentText.length === 0 || isCaretAtStart(target)) && onBackspaceAtStart?.(currentText)) {
+            if (
+                (currentText.length === 0 || isCaretAtStart(target)) &&
+                onBackspaceAtStart?.(currentText)
+            ) {
                 event.preventDefault();
                 return;
             }
@@ -277,7 +285,10 @@ function Kana({
 
         if (event.key === 'Delete') {
             const currentText = getSanitizedText();
-            if ((currentText.length === 0 || isCaretAtStart(target)) && onDeleteAtStart?.(currentText)) {
+            if (
+                (currentText.length === 0 || isCaretAtStart(target)) &&
+                onDeleteAtStart?.(currentText)
+            ) {
                 event.preventDefault();
                 return;
             }

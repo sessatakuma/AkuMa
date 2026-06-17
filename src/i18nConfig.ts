@@ -166,11 +166,9 @@ export const translations: Record<Locale, TranslationSet> = {
         usageHeading: 'Make Japanese pronunciation natural and clear',
         usageIntro:
             'AkuMa turns Japanese text into pronunciation material you can review, check, and share.',
-        usagePitchFallBody:
-            'Following words or attached particles shift to low pitch.',
+        usagePitchFallBody: 'Following words or attached particles shift to low pitch.',
         usagePitchFallTitle: 'High, then fall',
-        usagePitchFlatBody:
-            'The marked span stays high, with no fall inside the word.',
+        usagePitchFlatBody: 'The marked span stays high, with no fall inside the word.',
         usagePitchFlatTitle: 'High, no fall',
         usagePitchHeading: 'Why the accent line matters',
         usagePitchIntro:
@@ -272,19 +270,15 @@ export const translations: Record<Locale, TranslationSet> = {
         usageEyebrow: '使い方',
         usageGuideButton: '使い方',
         usageHeading: '日本語の発音を自然に、意味を明確に',
-        usageIntro:
-            'AkuMa は日本語テキストを、復習・確認・共有しやすい発音素材に整えます。',
-        usagePitchFallBody:
-            '後ろに続く語や助詞は低くなります。',
+        usageIntro: 'AkuMa は日本語テキストを、復習・確認・共有しやすい発音素材に整えます。',
+        usagePitchFallBody: '後ろに続く語や助詞は低くなります。',
         usagePitchFallTitle: '高く、あとで下がる',
-        usagePitchFlatBody:
-            '横線の範囲は高いまま続き、語の中では下がりません。',
+        usagePitchFlatBody: '横線の範囲は高いまま続き、語の中では下がりません。',
         usagePitchFlatTitle: '高いまま下がらない',
         usagePitchHeading: 'アクセント線を見る理由',
         usagePitchIntro:
             '自然さだけでなく、アクセントは語の意味にも関わります。正しい音調を身につければ、店員さんに「すみません、この店に橋はありますか？」と聞いてしまうこともなくなります。',
-        usagePitchNoneBody:
-            'の・で・は などの助詞は、自分ではなく前の語の高さに続きます。',
+        usagePitchNoneBody: 'の・で・は などの助詞は、自分ではなく前の語の高さに続きます。',
         usagePitchNoneTitle: '低音 / 前の音に続く',
         usageStepAccentBody:
             'ふりがなセルで上キーを押すと、対応するアクセント線に移動します。アクセント行では左右キーで移動し、Enter または Space で音調を切り替えます。',
@@ -315,8 +309,7 @@ export const translations: Record<Locale, TranslationSet> = {
         brandLabel: 'AkuMa',
         accentResultLabel: '音調分析結果',
         accentToggle: '音調',
-        temporaryIssuesBody:
-            '系統目前暫時無法進行分析，開發團隊正在積極搶救，請稍後再試一次。',
+        temporaryIssuesBody: '系統目前暫時無法進行分析，開發團隊正在積極搶救，請稍後再試一次。',
         temporaryIssuesClose: '關閉',
         temporaryIssuesTitle: '系統發生問題',
         collapseResult: '收合結果面板',
@@ -354,8 +347,7 @@ export const translations: Record<Locale, TranslationSet> = {
         inputPanelLabel: '輸入',
         inputPlaceholder: '輸入日語文字...',
         inputTools: '輸入工具',
-        pageDescription:
-            '貼上日語文字，自動加入振假名與音高音調標記，之後還可編輯並匯出結果。',
+        pageDescription: '貼上日語文字，自動加入振假名與音高音調標記，之後還可編輯並匯出結果。',
         pasteFromClipboard: '從剪貼簿貼上',
         randomSample: '插入隨機範文',
         randomSampleButtonLabel: '插入範文',
@@ -375,23 +367,19 @@ export const translations: Record<Locale, TranslationSet> = {
         statusUpdated: count => `分析結果已更新，目前顯示 ${count} 個詞語。`,
         switchAccent: '切換音調',
         title: 'AkuMa | 日文讀音與音調分析工具',
-        toggleImageTheme: isDarkResult =>
-            `將圖片主題切換為${isDarkResult ? '淺色' : '深色'}`,
+        toggleImageTheme: isDarkResult => `將圖片主題切換為${isDarkResult ? '淺色' : '深色'}`,
         usageEyebrow: '使用方式',
         usageGuideButton: '使用說明',
         usageHeading: '讓日語發音更自然、意思更清楚',
-        usageIntro:
-            'AkuMa 將日語文字整理成可複習、可校對、可分享的發音素材。',
+        usageIntro: 'AkuMa 將日語文字整理成可複習、可校對、可分享的發音素材。',
         usagePitchFallBody: '後段詞語或接續的助詞會轉為低音。',
         usagePitchFallTitle: '高音後下降',
-        usagePitchFlatBody:
-            '水平線範圍維持高音，詞內沒有下降。',
+        usagePitchFlatBody: '水平線範圍維持高音，詞內沒有下降。',
         usagePitchFlatTitle: '高音不下降',
         usagePitchHeading: '為什麼需要音調線',
         usagePitchIntro:
             '除了自然度，音調更會影響詞彙的含義。掌握正確音調，讓你不再詢問店員「不好意思，店裡有橋嗎？」',
-        usagePitchNoneBody:
-            '像 の、で、は 這類助詞，本身不帶高音標記，會接續前詞音高。',
+        usagePitchNoneBody: '像 の、で、は 這類助詞，本身不帶高音標記，會接續前詞音高。',
         usagePitchNoneTitle: '低音/接續前音',
         usageStepAccentBody:
             '在振假名格按上方向鍵可移到對應的音調線。進入音調列後，用左右方向鍵移動，再按 Enter 或 Space 切換音型。',
@@ -408,8 +396,7 @@ export const translations: Record<Locale, TranslationSet> = {
             '文字適合筆記或備忘稿，圖片適合分享或製作文件，HTML 輸出可以 Markdown 等形式進一步運用。',
         usageStepShareHint: '複製 / 圖片 / HTML',
         usageStepShareTitle: '依用途儲存',
-        usageStepStartBody:
-            '輸入詞句、貼上文章或插入隨機範文，系統會開始進行讀音與音調分析。',
+        usageStepStartBody: '輸入詞句、貼上文章或插入隨機範文，系統會開始進行讀音與音調分析。',
         usageStepStartHint: '貼上 / 隨機範文',
         usageStepStartTitle: '開始分析',
         usageStepOne: '貼上日語文字，或先插入隨機範文開始新的分析。',

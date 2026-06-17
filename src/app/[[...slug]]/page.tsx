@@ -1,8 +1,5 @@
 import App from '../../App';
-import {
-    buildLocaleMetadata,
-    resolveLocaleFromSearchParams,
-} from '../locale';
+import { buildLocaleMetadata, resolveLocaleFromSearchParams } from '../locale';
 
 import type { Metadata } from 'next';
 
@@ -23,8 +20,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
         },
         openGraph: {
             description: localeMetadata.description,
-            locale:
-                localeMetadata.localeCode === 'zh-Hant' ? 'zh_Hant' : localeMetadata.localeCode,
+            locale: localeMetadata.localeCode === 'zh-Hant' ? 'zh_Hant' : localeMetadata.localeCode,
             title: localeMetadata.title,
             url: localeMetadata.absoluteUrl,
         },

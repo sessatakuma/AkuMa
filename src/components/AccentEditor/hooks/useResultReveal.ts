@@ -17,11 +17,9 @@ function getRevealStepDelay(totalUnits: number, stepIndex: number, baseIntervalM
         return baseIntervalMs;
     }
 
-    const tailProgress =
-        (progress - REVEAL_ACCELERATION_START) / (1 - REVEAL_ACCELERATION_START);
+    const tailProgress = (progress - REVEAL_ACCELERATION_START) / (1 - REVEAL_ACCELERATION_START);
     const easedTailProgress = tailProgress * tailProgress;
-    const intervalMultiplier =
-        1 - (1 - REVEAL_MIN_INTERVAL_MULTIPLIER) * easedTailProgress;
+    const intervalMultiplier = 1 - (1 - REVEAL_MIN_INTERVAL_MULTIPLIER) * easedTailProgress;
 
     return Math.max(12, Math.round(baseIntervalMs * intervalMultiplier));
 }
@@ -329,8 +327,7 @@ export function useResultReveal({
         }
 
         setRevealState(currentState =>
-            currentState.analysisVersion !== analysisVersion ||
-            currentState.phase !== 'revealing'
+            currentState.analysisVersion !== analysisVersion || currentState.phase !== 'revealing'
                 ? currentState
                 : createCompleteRevealState(analysisVersion, accentUnits, furiganaUnits),
         );

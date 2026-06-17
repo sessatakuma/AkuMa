@@ -44,13 +44,16 @@ export default function SkeletonLoader({
                     return (
                         <p key={`${lineIndex}-${line}`} className='skeleton-line'>
                             {tokens.map(token => {
-                                const isVisible = !token.isSpace && token.currentIndex < revealedCharacterCount;
+                                const isVisible =
+                                    !token.isSpace && token.currentIndex < revealedCharacterCount;
 
                                 return (
                                     <span
                                         key={token.key}
                                         className={`skeleton-glyph ${token.isSpace ? 'skeleton-glyph-space' : ''} ${
-                                            isVisible ? 'skeleton-glyph-visible' : 'skeleton-glyph-pending'
+                                            isVisible
+                                                ? 'skeleton-glyph-visible'
+                                                : 'skeleton-glyph-pending'
                                         }`.trim()}
                                     >
                                         {token.character}

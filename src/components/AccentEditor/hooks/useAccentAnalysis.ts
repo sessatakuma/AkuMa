@@ -154,7 +154,14 @@ export function useAccentAnalysis({
             setIsStreaming(false);
             setIsLoading(false);
         },
-        [abortInFlightRequest, clearVisibleLoadingTimeout, onTemporaryIssue, replaceWords, streamReplaceWords, t],
+        [
+            abortInFlightRequest,
+            clearVisibleLoadingTimeout,
+            onTemporaryIssue,
+            replaceWords,
+            streamReplaceWords,
+            t,
+        ],
     );
 
     useEffect(() => {

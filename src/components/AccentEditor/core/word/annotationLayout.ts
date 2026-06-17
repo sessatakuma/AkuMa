@@ -70,8 +70,14 @@ function splitAnnotatedWord(surfaceSegments: string[], readingSegments: string[]
         suffixCount += 1;
     }
 
-    const annotatedSurface = surfaceSegments.slice(prefixCount, surfaceSegments.length - suffixCount);
-    const annotatedReading = readingSegments.slice(prefixCount, readingSegments.length - suffixCount);
+    const annotatedSurface = surfaceSegments.slice(
+        prefixCount,
+        surfaceSegments.length - suffixCount,
+    );
+    const annotatedReading = readingSegments.slice(
+        prefixCount,
+        readingSegments.length - suffixCount,
+    );
 
     if (annotatedSurface.length === 0 || annotatedReading.length === 0) {
         return {
@@ -126,12 +132,18 @@ function getWordLayoutMetrics(baseSegments: string[], readingSegments: string[])
         baseCellWidthsEm:
             alignedSegmentCounts || !readingIsLongerOrEqual
                 ? distributeWidths(baseWeights, groupWidthEm)
-                : Array.from({ length: safeBaseSegments.length }, () => groupWidthEm / safeBaseSegments.length),
+                : Array.from(
+                      { length: safeBaseSegments.length },
+                      () => groupWidthEm / safeBaseSegments.length,
+                  ),
         groupWidthEm,
         readingCellWidthsEm:
             alignedSegmentCounts || readingIsLongerOrEqual
                 ? distributeWidths(readingWeights, groupWidthEm)
-                : Array.from({ length: safeReadingSegments.length }, () => groupWidthEm / safeReadingSegments.length),
+                : Array.from(
+                      { length: safeReadingSegments.length },
+                      () => groupWidthEm / safeReadingSegments.length,
+                  ),
     };
 }
 

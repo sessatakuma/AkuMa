@@ -102,7 +102,10 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
             return {
                 baseWords: state.baseWords,
                 futureWords: [],
-                pastWords: [...state.pastWords.slice(-(HISTORY_LIMIT - 1)), cloneWords(state.words)],
+                pastWords: [
+                    ...state.pastWords.slice(-(HISTORY_LIMIT - 1)),
+                    cloneWords(state.words),
+                ],
                 replaceVersion: state.replaceVersion,
                 words: nextWords,
             };
@@ -115,7 +118,10 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
             return {
                 baseWords: state.baseWords,
                 futureWords: [],
-                pastWords: [...state.pastWords.slice(-(HISTORY_LIMIT - 1)), cloneWords(state.words)],
+                pastWords: [
+                    ...state.pastWords.slice(-(HISTORY_LIMIT - 1)),
+                    cloneWords(state.words),
+                ],
                 replaceVersion: state.replaceVersion,
                 words: cloneWords(state.baseWords),
             };
@@ -128,7 +134,10 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
 
             return {
                 baseWords: state.baseWords,
-                futureWords: [cloneWords(state.words), ...state.futureWords].slice(0, HISTORY_LIMIT),
+                futureWords: [cloneWords(state.words), ...state.futureWords].slice(
+                    0,
+                    HISTORY_LIMIT,
+                ),
                 pastWords: state.pastWords.slice(0, -1),
                 replaceVersion: state.replaceVersion,
                 words: cloneWords(previousWords),
@@ -143,7 +152,10 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
             return {
                 baseWords: state.baseWords,
                 futureWords: state.futureWords.slice(1),
-                pastWords: [...state.pastWords.slice(-(HISTORY_LIMIT - 1)), cloneWords(state.words)],
+                pastWords: [
+                    ...state.pastWords.slice(-(HISTORY_LIMIT - 1)),
+                    cloneWords(state.words),
+                ],
                 replaceVersion: state.replaceVersion,
                 words: cloneWords(nextWords),
             };
@@ -154,35 +166,26 @@ function wordHistoryReducer(state: WordHistoryState, action: WordHistoryAction):
 export function useWordHistory() {
     const [state, dispatch] = useReducer(wordHistoryReducer, INITIAL_STATE);
 
-    const replaceWords = useCallback(
-        (nextWords: Word[]): void => {
-            dispatch({
-                type: 'replace',
-                words: nextWords,
-            });
-        },
-        [],
-    );
+    const replaceWords = useCallback((nextWords: Word[]): void => {
+        dispatch({
+            type: 'replace',
+            words: nextWords,
+        });
+    }, []);
 
-    const streamReplaceWords = useCallback(
-        (nextWords: Word[]): void => {
-            dispatch({
-                type: 'streamReplace',
-                words: nextWords,
-            });
-        },
-        [],
-    );
+    const streamReplaceWords = useCallback((nextWords: Word[]): void => {
+        dispatch({
+            type: 'streamReplace',
+            words: nextWords,
+        });
+    }, []);
 
-    const updateWords = useCallback(
-        (updater: Word[] | ((current: Word[]) => Word[])): void => {
-            dispatch({
-                type: 'update',
-                updater,
-            });
-        },
-        [],
-    );
+    const updateWords = useCallback((updater: Word[] | ((current: Word[]) => Word[])): void => {
+        dispatch({
+            type: 'update',
+            updater,
+        });
+    }, []);
 
     const undoWords = useCallback((): void => {
         dispatch({

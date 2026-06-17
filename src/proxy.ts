@@ -5,8 +5,7 @@ import { DEFAULT_LOCALE, normalizeLocale } from './i18nConfig';
 
 export function proxy(request: NextRequest) {
     const requestHeaders = new Headers(request.headers);
-    const locale =
-        normalizeLocale(request.nextUrl.searchParams.get('lang')) ?? DEFAULT_LOCALE;
+    const locale = normalizeLocale(request.nextUrl.searchParams.get('lang')) ?? DEFAULT_LOCALE;
 
     requestHeaders.set(LOCALE_HEADER, locale);
 

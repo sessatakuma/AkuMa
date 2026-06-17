@@ -75,12 +75,11 @@ export default function Result({
         registerEditableKana,
         updateFurigana,
         updateKana,
-    } =
-        useResultEditing({
-            showFeedback,
-            updateWords,
-            words,
-        });
+    } = useResultEditing({
+        showFeedback,
+        updateWords,
+        words,
+    });
 
     return (
         <div

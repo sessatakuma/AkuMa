@@ -305,7 +305,8 @@
     }
 }
 
-.input-panel, .result-panel {
+.input-panel,
+.result-panel {
     background-color: var(--color-bg-secondary);
     border-radius: var(--radius-xl);
     border: 1px solid var(--color-border);
@@ -324,7 +325,6 @@
     .input-panel-stack {
         padding-block: 0;
     }
-
 }
 
 @media (max-width: 768px) {
@@ -354,7 +354,6 @@
     .temporary-issues-dialog {
         padding: var(--space-5);
     }
-
 }
 
 @keyframes result-panel-status-dot-wave {

@@ -6,13 +6,18 @@
 }
 
 .input-area {
-    --input-actions-reserve-height: calc(var(--editor-action-control-size) + var(--editor-panel-padding));
-    --input-result-baseline-offset: calc((1em * var(--kana-ruby-font-scale)) + var(--kana-accent-gap));
+    --input-actions-reserve-height: calc(
+        var(--editor-action-control-size) + var(--editor-panel-padding)
+    );
+    --input-result-baseline-offset: calc(
+        (1em * var(--kana-ruby-font-scale)) + var(--kana-accent-gap)
+    );
 
     width: 100%;
     flex: none;
     min-height: calc(var(--editor-panel-min-height) - var(--input-actions-reserve-height));
-    padding: calc(var(--editor-panel-padding) + var(--input-result-baseline-offset)) var(--editor-panel-padding) var(--editor-panel-padding);
+    padding: calc(var(--editor-panel-padding) + var(--input-result-baseline-offset))
+        var(--editor-panel-padding) var(--editor-panel-padding);
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);

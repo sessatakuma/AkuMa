@@ -2,7 +2,11 @@ import type { CSSProperties } from 'react';
 
 import { useI18n } from '../../../i18n';
 import { AccentValue, type AccentValueType, type Word } from '../core/word/accentTypes';
-import { buildWordAnnotationModel, getLineBreakCount, rubyScale } from '../core/word/annotationLayout';
+import {
+    buildWordAnnotationModel,
+    getLineBreakCount,
+    rubyScale,
+} from '../core/word/annotationLayout';
 
 import Kana from './Kana';
 import SkeletonLoader from './SkeletonLoader';
@@ -21,8 +25,16 @@ function renderKanaSegment(
     accentVisible: boolean,
     isPresenting: boolean,
     showAccent: boolean,
-    moveFocusAcrossFurigana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean,
-    registerAccentControl: (wordIndex: number, textIndex: number, node: HTMLButtonElement | null) => void,
+    moveFocusAcrossFurigana: (
+        wordIndex: number,
+        textIndex: number,
+        direction: 'previous' | 'next',
+    ) => boolean,
+    registerAccentControl: (
+        wordIndex: number,
+        textIndex: number,
+        node: HTMLButtonElement | null,
+    ) => void,
     onUpdate: (_ignore: string, newAccent: AccentValueType) => void,
 ) {
     return (
@@ -31,7 +43,10 @@ function renderKanaSegment(
             className='word-inline-cluster word-group-kana'
             style={createWidthStyle(Math.max([...segment].length, 1))}
         >
-            <span className='word-reading-cell' style={createWidthStyle(Math.max([...segment].length, 1))}>
+            <span
+                className='word-reading-cell'
+                style={createWidthStyle(Math.max([...segment].length, 1))}
+            >
                 <Kana
                     accent={accent}
                     accentPhaseActive={accentPhaseActive}
@@ -45,9 +60,7 @@ function renderKanaSegment(
                         moveFocusAcrossFurigana(wordIndex, textIndex, direction)
                     }
                     onUpdate={onUpdate}
-                    registerAccentRef={node =>
-                        registerAccentControl(wordIndex, textIndex, node)
-                    }
+                    registerAccentRef={node => registerAccentControl(wordIndex, textIndex, node)}
                 />
             </span>
         </span>
@@ -56,18 +69,42 @@ function renderKanaSegment(
 
 interface ResultContentProps {
     accentPhaseActive: boolean;
-    deleteBackwardAcrossFurigana: (wordIndex: number, textIndex: number, currentText: string) => boolean;
-    deleteForwardAcrossFurigana: (wordIndex: number, textIndex: number, currentText: string) => boolean;
+    deleteBackwardAcrossFurigana: (
+        wordIndex: number,
+        textIndex: number,
+        currentText: string,
+    ) => boolean;
+    deleteForwardAcrossFurigana: (
+        wordIndex: number,
+        textIndex: number,
+        currentText: string,
+    ) => boolean;
     focusAccentControl: (wordIndex: number, textIndex: number) => boolean;
     focusEditableKanaCell: (wordIndex: number, textIndex: number) => boolean;
     isLoading: boolean;
     isPresenting: boolean;
-    moveFocusAcrossEditableKana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean;
-    moveFocusAcrossFurigana: (wordIndex: number, textIndex: number, direction: 'previous' | 'next') => boolean;
+    moveFocusAcrossEditableKana: (
+        wordIndex: number,
+        textIndex: number,
+        direction: 'previous' | 'next',
+    ) => boolean;
+    moveFocusAcrossFurigana: (
+        wordIndex: number,
+        textIndex: number,
+        direction: 'previous' | 'next',
+    ) => boolean;
     onEditingChange: (isEditing: boolean) => void;
     paragraph: string;
-    registerAccentControl: (wordIndex: number, textIndex: number, node: HTMLButtonElement | null) => void;
-    registerEditableKana: (wordIndex: number, textIndex: number, node: HTMLSpanElement | null) => void;
+    registerAccentControl: (
+        wordIndex: number,
+        textIndex: number,
+        node: HTMLButtonElement | null,
+    ) => void;
+    registerEditableKana: (
+        wordIndex: number,
+        textIndex: number,
+        node: HTMLSpanElement | null,
+    ) => void;
     revealedAccentUnits: number;
     revealedFuriganaUnits: number;
     revealedLoadingCharacters: number;
@@ -187,7 +224,11 @@ export default function ResultContent({
                                             textIndex={charIndex}
                                             wordIndex={wordIndex}
                                             onAccentArrowAtEdge={direction =>
-                                                moveFocusAcrossFurigana(wordIndex, charIndex, direction)
+                                                moveFocusAcrossFurigana(
+                                                    wordIndex,
+                                                    charIndex,
+                                                    direction,
+                                                )
                                             }
                                             onUpdate={(_ignore, newAccent) =>
                                                 updateKana(wordIndex, charIndex, newAccent)
@@ -238,14 +279,19 @@ export default function ResultContent({
                                 (_ignore, newAccent) => updateKana(wordIndex, charIndex, newAccent),
                             );
                         })}
-                        <span className='word-stack word-stack-annotated' style={createWidthStyle(model.groupWidthEm)}>
+                        <span
+                            className='word-stack word-stack-annotated'
+                            style={createWidthStyle(model.groupWidthEm)}
+                        >
                             <span className='word-reading-row'>
                                 <span className='furigana-group'>
                                     {model.annotatedReading.map((segment, annotatedIndex) => {
-                                        const charIndex = model.annotatedStartIndex + annotatedIndex;
+                                        const charIndex =
+                                            model.annotatedStartIndex + annotatedIndex;
                                         const char = word.furigana[charIndex];
                                         const hasApiAccent = charIndex < accentLength;
-                                        const isFuriganaVisible = furiganaRevealIndex < revealedFuriganaUnits;
+                                        const isFuriganaVisible =
+                                            furiganaRevealIndex < revealedFuriganaUnits;
                                         const isAccentVisible =
                                             accentPhaseActive &&
                                             hasApiAccent &&
@@ -261,7 +307,8 @@ export default function ResultContent({
                                                 key={`${wordIndex}-${charIndex}`}
                                                 className='word-reading-cell'
                                                 style={createWidthStyle(
-                                                    model.readingCellWidthsEm[annotatedIndex] / rubyScale,
+                                                    model.readingCellWidthsEm[annotatedIndex] /
+                                                        rubyScale,
                                                 )}
                                             >
                                                 <Kana
@@ -275,32 +322,61 @@ export default function ResultContent({
                                                     textVisible={isFuriganaVisible}
                                                     wordIndex={wordIndex}
                                                     onAccentArrowAtEdge={direction =>
-                                                        moveFocusAcrossFurigana(wordIndex, charIndex, direction)
+                                                        moveFocusAcrossFurigana(
+                                                            wordIndex,
+                                                            charIndex,
+                                                            direction,
+                                                        )
                                                     }
                                                     onMoveToFuriganaRow={() =>
                                                         focusEditableKanaCell(wordIndex, charIndex)
                                                     }
                                                     onBackspaceAtStart={currentText =>
-                                                        deleteBackwardAcrossFurigana(wordIndex, charIndex, currentText)
+                                                        deleteBackwardAcrossFurigana(
+                                                            wordIndex,
+                                                            charIndex,
+                                                            currentText,
+                                                        )
                                                     }
                                                     onDeleteAtStart={currentText =>
-                                                        deleteForwardAcrossFurigana(wordIndex, charIndex, currentText)
+                                                        deleteForwardAcrossFurigana(
+                                                            wordIndex,
+                                                            charIndex,
+                                                            currentText,
+                                                        )
                                                     }
                                                     onArrowAtEdge={direction =>
-                                                        moveFocusAcrossEditableKana(wordIndex, charIndex, direction)
+                                                        moveFocusAcrossEditableKana(
+                                                            wordIndex,
+                                                            charIndex,
+                                                            direction,
+                                                        )
                                                     }
                                                     onMoveToAccentRow={() =>
                                                         focusAccentControl(wordIndex, charIndex)
                                                     }
                                                     onUpdate={(newText, newAccent) =>
-                                                        updateFurigana(wordIndex, charIndex, newText, newAccent)
+                                                        updateFurigana(
+                                                            wordIndex,
+                                                            charIndex,
+                                                            newText,
+                                                            newAccent,
+                                                        )
                                                     }
                                                     onFocusChange={onEditingChange}
                                                     registerAccentRef={node =>
-                                                        registerAccentControl(wordIndex, charIndex, node)
+                                                        registerAccentControl(
+                                                            wordIndex,
+                                                            charIndex,
+                                                            node,
+                                                        )
                                                     }
                                                     registerTextRef={node =>
-                                                        registerEditableKana(wordIndex, charIndex, node)
+                                                        registerEditableKana(
+                                                            wordIndex,
+                                                            charIndex,
+                                                            node,
+                                                        )
                                                     }
                                                 />
                                             </span>
@@ -313,7 +389,9 @@ export default function ResultContent({
                                     <span
                                         key={`${wordIndex}-${annotatedIndex}`}
                                         className='word-base-cell'
-                                        style={createWidthStyle(model.baseCellWidthsEm[annotatedIndex])}
+                                        style={createWidthStyle(
+                                            model.baseCellWidthsEm[annotatedIndex],
+                                        )}
                                     >
                                         {segment}
                                     </span>
