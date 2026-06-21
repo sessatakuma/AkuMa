@@ -3,3 +3,5 @@
 dist/*
 node_modules/*
 bun.lock
+.open-next/*
+.dev.vars*

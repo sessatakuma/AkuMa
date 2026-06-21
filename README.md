@@ -33,10 +33,46 @@ bun dev
 
 ## Local API Setup (Internal Development)
 
-Production on Vercel manages the upstream API key server-side.
+Production on Cloudflare manages the upstream API key server-side.
 
-If you run the app locally with `bun dev`, the Next.js route handler for `/api/mark-accent/stream` needs an API key in `.env`:
+If you run the app locally, the Next.js route handler for `/api/mark-accent/stream`
+needs an API key. Copy `.dev.vars.example` to `.dev.vars` and fill it in:
 
 ```bash
-MARK_ACCENT_API_KEY=<your_api_key>
+cp .dev.vars.example .dev.vars
+# then set MARK_ACCENT_API_KEY=<your_api_key>
 ```
+
+`.dev.vars` is loaded both by `bun dev` (via the OpenNext dev hook) and by
+`bun run preview` (the Workers runtime preview).
+
+## Deployment (Cloudflare Workers)
+
+The app is deployed to **Cloudflare Workers** using the
+[`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) adapter.
+
+Useful scripts:
+
+```bash
+bun run preview   # build with OpenNext + run locally on the Workers runtime
+bun run deploy    # build + deploy to Cloudflare from your machine
+```
+
+### Continuous deployment (Workers Builds)
+
+CD is handled by **Cloudflare Workers Builds** (connect this Git repo in the
+Cloudflare dashboard → Workers & Pages → the `akuma` Worker → Settings → Builds):
+
+- **Build command:** `bunx opennextjs-cloudflare build`
+- **Deploy command:** `bunx opennextjs-cloudflare deploy`
+- **Production branch:** `main` (other branches deploy as preview Workers)
+
+### Secrets & environment variables (Cloudflare)
+
+Set these on the Worker (dashboard → Settings → Variables, or `wrangler secret put`):
+
+| Name                          | Type   | Required | Notes                                                        |
+| ----------------------------- | ------ | -------- | ------------------------------------------------------------ |
+| `MARK_ACCENT_API_KEY`         | Secret | Yes      | Upstream API key for the stream proxy.                       |
+| `MARK_ACCENT_UPSTREAM_URL`    | Var    | No       | Overrides the default upstream URL.                          |
+| `NEXT_PUBLIC_CF_BEACON_TOKEN` | Var    | No       | Cloudflare Web Analytics token; enables the beacon when set. |

@@ -1,0 +1,15 @@
+# Local development bindings for `next dev` / `opennextjs-cloudflare preview`.
+# Copy to `.dev.vars` (gitignored) and fill in real values.
+
+# Controls which Next.js `.env*` files load during local dev.
+NEXTJS_ENV=development
+
+# Upstream mark-accent API key (required for /api/mark-accent/stream).
+MARK_ACCENT_API_KEY=
+
+# Optional: override the upstream URL (defaults to https://api.sessatakuma.dev/v1/mark-accent).
+# MARK_ACCENT_UPSTREAM_URL=
+
+# Optional: Cloudflare Web Analytics beacon token. When set, the analytics
+# beacon is injected; leave empty to disable analytics.
+# NEXT_PUBLIC_CF_BEACON_TOKEN=

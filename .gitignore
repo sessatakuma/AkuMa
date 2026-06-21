@@ -1,5 +1,6 @@
 # Environment variables
 .env
+.dev.vars
 
 # Dependencies
 node_modules/
@@ -11,3 +12,8 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 .DS_Store
 .vercel
+
+# Cloudflare / OpenNext
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
