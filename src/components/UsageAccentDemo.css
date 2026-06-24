@@ -12,6 +12,13 @@
     --kana-accent-lane-height: 0.5em;
     --kana-accent-gap: 2px;
     --kana-accent-hitbox-height: 0.5rem;
+    --usage-cursor-move-duration: 280ms;
+    --usage-cursor-reveal-duration: 600ms;
+    --usage-cursor-press-duration: 250ms;
+    --usage-highlight-duration: 150ms;
+    --usage-cursor-enter-distance: calc(-1 * ((var(--space-7) * 5) + var(--space-2)));
+    --usage-cursor-exit-distance: calc((var(--space-7) * 8) + var(--space-4));
+    --usage-cursor-press-distance: var(--space-1);
 
     position: relative;
     display: inline-flex;
@@ -29,20 +36,22 @@
     width: 0;
     height: 0;
     transform: translateX(var(--cursor-x, 0));
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--usage-cursor-move-duration) cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 3;
 }
 
 .usage-accent-cursor-state-entering .usage-cursor-track {
-    animation: usage-cursor-slide-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: usage-cursor-slide-in var(--usage-cursor-reveal-duration)
+        cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .usage-accent-cursor-state-exiting .usage-cursor-track {
-    animation: usage-cursor-slide-out 0.6s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    animation: usage-cursor-slide-out var(--usage-cursor-reveal-duration)
+        cubic-bezier(0.7, 0, 0.84, 0) forwards;
 }
 
 .usage-accent-cursor-state-click .usage-cursor-icon {
-    animation: usage-cursor-press 0.25s ease both;
+    animation: usage-cursor-press var(--usage-cursor-press-duration) ease both;
 }
 
 .usage-accent-kana-cell {
@@ -114,19 +123,19 @@
 .usage-accent-cursor-state-result .usage-accent-kana-cell[data-cursor-target],
 .usage-accent-cursor-state-moving .usage-accent-kana-cell[data-cursor-target] {
     background-color: var(--kana-edit-hover-bg);
-    transition: background-color 0.15s ease;
+    transition: background-color var(--usage-highlight-duration) ease;
 }
 
 .usage-accent-cursor-state-click .usage-accent-kana-cell[data-cursor-target] {
-    transform: scale(0.94);
+    scale: var(--scale-press);
     background-color: var(--kana-edit-hover-bg);
-    transition: transform 0.1s ease;
+    transition: scale var(--duration-press) ease;
 }
 
 .usage-accent-word .kana-accent-lane,
 .usage-accent-word .kana-accent-line,
 .usage-accent-word .kana-accent-drop {
-    transition: opacity 0.2s ease;
+    transition: opacity var(--duration-interaction-fast) ease;
 }
 
 .usage-accent-word .kana-accent-line {
@@ -142,7 +151,7 @@
 
 @keyframes usage-cursor-slide-in {
     from {
-        transform: translateX(calc(var(--cursor-x, 0) - 250px));
+        transform: translateX(calc(var(--cursor-x, 0) + var(--usage-cursor-enter-distance)));
         opacity: 0;
     }
 
@@ -159,7 +168,7 @@
     }
 
     to {
-        transform: translateX(calc(var(--cursor-x, 0) + 400px));
+        transform: translateX(calc(var(--cursor-x, 0) + var(--usage-cursor-exit-distance)));
         opacity: 0;
     }
 }
@@ -170,7 +179,7 @@
     }
 
     40% {
-        transform: translateY(3px);
+        transform: translateY(var(--usage-cursor-press-distance));
     }
 
     100% {

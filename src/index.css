@@ -106,12 +106,18 @@ h6 {
     font-family: var(--font-display);
     font-weight: 700;
     color: var(--color-text-primary);
+    text-wrap: balance;
+}
+
+p,
+li {
+    text-wrap: pretty;
 }
 
 a {
     text-decoration: none;
     color: inherit;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--duration-interaction-fast) ease;
 }
 
 button {

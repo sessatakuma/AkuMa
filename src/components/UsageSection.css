@@ -3,6 +3,11 @@
     --usage-font-size-title: 1.125rem;
     --usage-font-size-body: 1rem;
     --usage-font-size-showcase: 3rem;
+    --usage-size-pitch-mark: var(--nav-height);
+    --usage-size-action-icon: calc((var(--space-7) * 2) + var(--space-4));
+    --usage-size-action-glyph: calc(var(--space-7) + var(--space-2));
+    --usage-size-action-icon-mobile: calc(var(--space-7) + var(--space-6));
+    --usage-size-action-glyph-mobile: calc(var(--space-6) + var(--space-2));
 
     padding: calc(var(--space-7) + var(--space-4)) 0;
     border-top: 1px solid var(--color-border);
@@ -25,6 +30,7 @@
     font-weight: 700;
     line-height: 1.2;
     color: var(--color-text-primary);
+    text-wrap: balance;
 }
 
 .usage-heading-segment {
@@ -45,6 +51,7 @@
     font-weight: 400;
     color: var(--color-text-secondary);
     line-height: 1.75;
+    text-wrap: pretty;
 }
 
 .usage-pitch-primer {
@@ -72,6 +79,7 @@
     font-weight: 700;
     line-height: 1.3;
     color: var(--color-text-primary);
+    text-wrap: balance;
 }
 
 .usage-pitch-state h4 {
@@ -113,8 +121,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 64px;
-    height: 64px;
+    width: var(--usage-size-pitch-mark);
+    height: var(--usage-size-pitch-mark);
     font-size: var(--usage-font-size-showcase);
     font-weight: 400;
     line-height: 1;
@@ -162,7 +170,7 @@
     border: 0;
     border-radius: var(--radius-lg);
     background: var(--color-bg-secondary);
-    box-shadow: none;
+    box-shadow: var(--shadow-border);
 }
 
 .usage-action-showcase {
@@ -176,14 +184,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 112px;
-    height: 112px;
+    width: var(--usage-size-action-icon);
+    height: var(--usage-size-action-icon);
     color: var(--color-text-primary);
 }
 
 .usage-action-icon svg {
-    width: 56px;
-    height: 56px;
+    width: var(--usage-size-action-glyph);
+    height: var(--usage-size-action-glyph);
 }
 
 .usage-guide-copy {
@@ -307,12 +315,12 @@
     }
 
     .usage-action-icon {
-        width: 80px;
-        height: 80px;
+        width: var(--usage-size-action-icon-mobile);
+        height: var(--usage-size-action-icon-mobile);
     }
 
     .usage-action-icon svg {
-        width: 40px;
-        height: 40px;
+        width: var(--usage-size-action-glyph-mobile);
+        height: var(--usage-size-action-glyph-mobile);
     }
 }

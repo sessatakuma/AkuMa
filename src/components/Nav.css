@@ -21,7 +21,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    transition: opacity 0.2s;
+    transition: opacity var(--duration-interaction-fast) ease;
 }
 
 .nav .nav-title:hover {
@@ -54,7 +54,8 @@
     color: var(--color-text-inverted);
     transition:
         background-color var(--duration-interaction-fast) ease,
-        opacity var(--duration-interaction-fast) ease;
+        opacity var(--duration-interaction-fast) ease,
+        scale var(--duration-press) ease;
 }
 
 .nav-guide-button-label {
@@ -66,6 +67,10 @@
 .nav-guide-button:hover {
     background-color: color-mix(in srgb, var(--color-text-inverted) 16%, transparent);
     opacity: 0.9;
+}
+
+.nav-guide-button:active {
+    scale: var(--scale-press);
 }
 
 .nav-guide-button:focus-visible {

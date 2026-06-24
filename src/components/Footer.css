@@ -74,11 +74,18 @@
     border-radius: var(--radius-md);
     background: transparent;
     font: inherit;
+    transition:
+        background-color var(--duration-interaction-fast) ease,
+        scale var(--duration-press) ease;
 }
 
 .site-footer-social-link:hover {
     opacity: 1;
     background: color-mix(in srgb, var(--color-text-inverted) 12%, transparent);
+}
+
+.site-footer-social-link:active {
+    scale: var(--scale-press);
 }
 
 .site-footer-social-link:focus-visible {
