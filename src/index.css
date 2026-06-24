@@ -41,6 +41,13 @@
     --color-feedback-warning: var(--color-accent-red);
     --color-feedback-text: var(--color-text-inverted);
 
+    --shadow-border:
+        0 0 0 var(--stroke-width-thin) rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06),
+        0 2px 4px 0 rgba(0, 0, 0, 0.04);
+    --shadow-border-hover:
+        0 0 0 var(--stroke-width-thin) rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08),
+        0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    --shadow-border-dark: 0 0 0 var(--stroke-width-thin) rgba(255, 255, 255, 0.08);
     --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     --shadow-soft-floating: 0 8px 16px -8px rgba(0, 0, 0, 0.14), 0 2px 6px 0 rgba(0, 0, 0, 0.06);
     --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
@@ -52,7 +59,9 @@
     --radius-xl: 1.5rem;
 
     --duration-interaction-fast: 200ms;
+    --duration-press: 150ms;
     --duration-overlay-dot-wave: 900ms;
+    --scale-press: 0.96;
     --stroke-width-thin: 0.125rem;
 }
 

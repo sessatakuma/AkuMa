@@ -25,7 +25,9 @@
     line-height: 2.5; /* Match Result panel for alignment */
     color: var(--color-text-primary);
     outline: none;
-    transition: all 0.2s ease;
+    transition:
+        color var(--duration-interaction-fast) ease,
+        outline-color var(--duration-interaction-fast) ease;
     resize: none;
     font-family: inherit; /* Ensure font matches */
     field-sizing: content;
@@ -75,7 +77,10 @@
     justify-content: center;
     gap: var(--space-2);
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    transition:
+        background-color var(--duration-interaction-fast) ease,
+        color var(--duration-interaction-fast) ease,
+        scale var(--duration-press) ease;
     cursor: pointer;
 }
 
@@ -96,7 +101,7 @@
 
 .generate-button-icon {
     display: inline-flex;
-    transition: transform 0.2s ease;
+    transition: transform var(--duration-interaction-fast) ease;
 }
 
 .generate-button:hover,
@@ -115,6 +120,11 @@
     transform: rotate(15deg);
 }
 
+.generate-button:active,
+.paste-button:active {
+    scale: var(--scale-press);
+}
+
 /* Paste Button - Mobile Only */
 .paste-button {
     display: none; /* Hidden by default (desktop) */
@@ -127,6 +137,5 @@
 
     .paste-button:active {
         background-color: var(--color-bg-secondary-hover);
-        transform: scale(0.95);
     }
 }

@@ -7,8 +7,8 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
+        background-color var(--duration-interaction-fast) ease,
+        color var(--duration-interaction-fast) ease;
 }
 
 .result-container-inner.dark-result {
@@ -22,22 +22,22 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin-top: auto;
-    padding-top: 1rem;
+    padding-top: var(--space-4);
 }
 
 .action-group-right {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .export-group {
     display: flex;
-    gap: 0.5rem;
-    padding-left: 0.5rem;
-    margin-left: 0.5rem;
+    gap: var(--space-2);
+    padding-left: var(--space-2);
+    margin-left: var(--space-2);
     border-left: 1px solid var(--color-border);
     align-items: center;
 }
@@ -46,13 +46,16 @@
     background-color: transparent;
     border: none;
     color: var(--color-text-secondary);
-    padding: 0.5rem 0.75rem;
+    padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-md);
-    transition: all 0.2s ease;
+    transition:
+        background-color var(--duration-interaction-fast) ease,
+        color var(--duration-interaction-fast) ease,
+        scale var(--duration-press) ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     font-weight: 500;
     font-size: 0.9rem;
 }
@@ -77,6 +80,13 @@
 .action-button:disabled:hover {
     background-color: transparent;
     color: var(--color-text-secondary);
+}
+
+.action-button:not(:disabled):active,
+.accent-toggle:active,
+.menu-item:active,
+.theme-pill-button:active {
+    scale: var(--scale-press);
 }
 
 .action-button:focus-visible,
@@ -166,8 +176,8 @@
     margin: 0;
     border-radius: var(--radius-md);
     transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
+        background-color var(--duration-interaction-fast) ease,
+        color var(--duration-interaction-fast) ease;
 }
 
 .result-container-inner.dark-result .result-area {
@@ -285,7 +295,7 @@
     left: -0.125rem;
     border-radius: calc(var(--radius-sm) + 2px);
     background-color: transparent;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--duration-interaction-fast) ease;
     pointer-events: none;
     z-index: -1;
 }
@@ -322,10 +332,10 @@
     position: absolute;
     bottom: 100%;
     left: 50%;
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
     background-color: var(--color-feedback-success);
     color: var(--color-feedback-text);
-    padding: 8px 16px;
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-md);
     font-size: 0.875rem;
     white-space: nowrap;
@@ -362,14 +372,14 @@
 .action-group-left {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     position: relative;
 }
 
 .action-group-right {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .copy-action-container {
@@ -380,14 +390,15 @@
 .accent-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-md);
     color: var(--color-text-secondary);
     cursor: pointer;
     transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
+        background-color var(--duration-interaction-fast) ease,
+        color var(--duration-interaction-fast) ease,
+        scale var(--duration-press) ease;
 }
 
 .accent-toggle:hover {
@@ -413,16 +424,16 @@
     right: 0;
     min-width: 176px;
     background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
+    border: 0;
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-soft-floating);
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
+    box-shadow: var(--shadow-border), var(--shadow-soft-floating);
+    padding: var(--space-2);
+    margin-bottom: var(--space-2);
     z-index: 20;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.25rem;
+    gap: var(--space-1);
     color: var(--color-text-menu-fixed);
     text-align: left;
 }
@@ -434,7 +445,7 @@
 
 .result-container-inner.dark-result .save-menu-dropdown {
     background-color: var(--color-bg-dark-panel);
-    border-color: var(--color-border-dark);
+    box-shadow: var(--shadow-border-dark);
     color: var(--color-text-dark-primary);
 }
 
@@ -442,12 +453,12 @@
     display: flex;
     align-items: center;
     width: 100%;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .menu-divider {
     border-top: 1px solid var(--color-border);
-    margin: 0.25rem 0;
+    margin: var(--space-1) 0;
 }
 
 .result-container-inner.dark-result .menu-divider {
@@ -475,7 +486,7 @@
     right: 0;
     bottom: 0;
     background-color: var(--color-switch-track);
-    transition: 0.4s;
+    transition: background-color var(--duration-interaction-fast) ease;
     border-radius: 32px;
     width: 32px;
 }
@@ -488,7 +499,7 @@
     left: 3px;
     bottom: 3px;
     background-color: var(--color-switch-thumb);
-    transition: 0.4s;
+    transition: transform var(--duration-interaction-fast) ease;
     border-radius: 50%;
 }
 
@@ -497,7 +508,7 @@ input:checked + .slider {
 }
 
 input:focus-visible + .slider {
-    box-shadow: 0 0 1px var(--color-accent-green);
+    box-shadow: 0 0 0 var(--stroke-width-thin) var(--color-accent-green);
 }
 
 input:checked + .slider:before {
@@ -509,13 +520,16 @@ input:checked + .slider:before {
     border: none;
     color: var(--color-text-secondary);
     width: 100%;
-    padding: 0.5rem 0.75rem;
+    padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-md);
-    transition: all 0.2s ease;
+    transition:
+        background-color var(--duration-interaction-fast) ease,
+        color var(--duration-interaction-fast) ease,
+        scale var(--duration-press) ease;
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.5rem;
+    gap: var(--space-2);
     font-weight: 500;
     font-size: 0.9rem;
 }
@@ -533,15 +547,16 @@ input:checked + .slider:before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: var(--editor-action-control-size);
+    height: var(--editor-action-control-size);
     border: none;
     border-radius: 999px;
     background-color: transparent;
     color: var(--color-text-secondary);
     transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
+        background-color var(--duration-interaction-fast) ease,
+        color var(--duration-interaction-fast) ease,
+        scale var(--duration-press) ease;
 }
 
 .theme-pill-button:hover {
