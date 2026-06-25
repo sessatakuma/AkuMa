@@ -424,9 +424,9 @@
     right: 0;
     min-width: 176px;
     background-color: var(--color-bg-secondary);
-    border: 0;
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-border), var(--shadow-soft-floating);
+    box-shadow: var(--shadow-soft-floating);
     padding: var(--space-2);
     margin-bottom: var(--space-2);
     z-index: 20;
@@ -445,7 +445,7 @@
 
 .result-container-inner.dark-result .save-menu-dropdown {
     background-color: var(--color-bg-dark-panel);
-    box-shadow: var(--shadow-border-dark);
+    border-color: var(--color-border-dark);
     color: var(--color-text-dark-primary);
 }
 
