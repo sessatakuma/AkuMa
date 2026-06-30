@@ -192,9 +192,6 @@ function Kana({
     const changeAccent = (event: MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault();
         event.stopPropagation();
-        if (event.detail !== 0) {
-            return;
-        }
 
         updateAccent(((accent + 1) % 3) as AccentValueType);
     };
