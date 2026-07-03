@@ -19,6 +19,7 @@ export function middleware(request: NextRequest) {
     // 301 first so crawlers see the canonical URL without intermediate headers.
     if (request.headers.get('host') === LEGACY_HOST) {
         const targetUrl = new URL(request.url);
+        targetUrl.protocol = 'https:';
         targetUrl.host = PRODUCTION_HOST;
         return NextResponse.redirect(targetUrl, 301);
     }
