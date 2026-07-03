@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Noto_Sans_JP } from 'next/font/google';
 import { headers } from 'next/headers';
+import Script from 'next/script';
 
 import { buildStructuredData, LOCALE_HEADER, resolveLocaleFromHeader, SITE_URL } from './locale';
 
@@ -95,6 +96,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     const requestHeaders = await headers();
     const locale = resolveLocaleFromHeader(requestHeaders.get(LOCALE_HEADER));
     const structuredDataForLocale = structuredData[locale];
+    // Only report analytics from the production domain; skip preview/workers.dev/local.
+    const isProductionHost = requestHeaders.get('host') === new URL(SITE_URL).host;
+    const cfBeaconToken = isProductionHost ? process.env.NEXT_PUBLIC_CF_BEACON_TOKEN : undefined;
 
     return (
         <html lang={structuredDataForLocale.inLanguage[0]} className={notoSansJp.variable}>
@@ -106,6 +110,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                     }}
                 />
                 <div id='root'>{children}</div>
+                {cfBeaconToken ? (
+                    <Script
+                        src='https://static.cloudflareinsights.com/beacon.min.js'
+                        strategy='afterInteractive'
+                        data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}
+                    />
+                ) : null}
             </body>
         </html>
     );
