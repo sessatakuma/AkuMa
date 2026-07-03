@@ -36,15 +36,14 @@ bun dev
 Production on Cloudflare manages the upstream API key server-side.
 
 If you run the app locally, the Next.js route handler for `/api/mark-accent/stream`
-needs an API key. Copy `.dev.vars.example` to `.dev.vars` and fill it in:
+needs an API key in `.env`:
 
 ```bash
-cp .dev.vars.example .dev.vars
-# then set MARK_ACCENT_API_KEY=<your_api_key>
+MARK_ACCENT_API_KEY=<your_api_key>
 ```
 
-`.dev.vars` is loaded both by `bun dev` (via the OpenNext dev hook) and by
-`bun run preview` (the Workers runtime preview).
+`.env` is picked up on `process.env` both by `bun dev` and by `bun run preview`
+(the Workers runtime), so one file covers both local modes.
 
 ## Deployment (Cloudflare Workers)
 
