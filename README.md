@@ -63,15 +63,24 @@ CD is handled by **Cloudflare Workers Builds** (connect this Git repo in the
 Cloudflare dashboard → Workers & Pages → the `akuma` Worker → Settings → Builds):
 
 - **Build command:** `bunx opennextjs-cloudflare build`
-- **Deploy command:** `bunx opennextjs-cloudflare deploy`
-- **Production branch:** `main` (other branches deploy as preview Workers)
+- **Deploy command (production):** `npx wrangler deploy --keep-vars`
+- **Version command (non-production branches):** `npx wrangler versions upload`
+- **Production branch:** `main` (other branches upload preview versions)
+
+`--keep-vars` stops each deploy from wiping runtime vars/secrets set in the
+dashboard, since they are not declared in `wrangler.jsonc`.
 
 ### Secrets & environment variables (Cloudflare)
 
-Set these on the Worker (dashboard → Settings → Variables, or `wrangler secret put`):
+Runtime (dashboard → the Worker → Settings → Variables, or `wrangler secret put`):
 
-| Name                          | Type   | Required | Notes                                                        |
-| ----------------------------- | ------ | -------- | ------------------------------------------------------------ |
-| `MARK_ACCENT_API_KEY`         | Secret | Yes      | Upstream API key for the stream proxy.                       |
-| `MARK_ACCENT_UPSTREAM_URL`    | Var    | No       | Overrides the default upstream URL.                          |
-| `NEXT_PUBLIC_CF_BEACON_TOKEN` | Var    | No       | Cloudflare Web Analytics token; enables the beacon when set. |
+| Name                       | Type   | Required | Notes                                  |
+| -------------------------- | ------ | -------- | -------------------------------------- |
+| `MARK_ACCENT_API_KEY`      | Secret | Yes      | Upstream API key for the stream proxy. |
+| `MARK_ACCENT_UPSTREAM_URL` | Var    | No       | Overrides the default upstream URL.    |
+
+Build-time (dashboard → Settings → Builds → Build variables), inlined at build:
+
+| Name                          | Required | Notes                                                                                      |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_CF_BEACON_TOKEN` | No       | Cloudflare Web Analytics token; the beacon is injected only on the production host if set. |
