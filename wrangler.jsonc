@@ -19,18 +19,16 @@
         "logs": { "enabled": true, "head_sampling_rate": 1 },
         "traces": { "enabled": false },
     },
-    // ── Cutover (intentionally commented out in this PR) ──────────────────
-    // Uncomment the `routes` block in the cutover PR (#117). Until then the
-    // production hosts keep serving from Vercel and only `akuma-cf.*` points
-    // at this Worker. Because `custom_domain: true` lets Cloudflare
-    // auto-provision DNS at the zone, deploying with this block enabled is a
-    // one-way door — it flips `akuma.sessatakuma.dev` from Vercel to this
-    // Worker on the next `main` deploy. Keep it commented until sign-off.
-    //
-    // "routes": [
-    //     { "pattern": "akuma.sessatakuma.dev", "custom_domain": true },
-    //     { "pattern": "accent-marker.sessatakuma.dev", "custom_domain": true },
-    // ],
+    // Production cutover (#117): `custom_domain: true` lets Cloudflare
+    // auto-provision DNS + managed TLS at the `sessatakuma.dev` zone. The next
+    // `main` deploy via Workers Builds will overwrite the `akuma.*` and
+    // `accent-marker.*` CNAMEs from `vercel-dns-017.com` → this Worker, flipping
+    // production from Vercel to Cloudflare. This is a one-way door — see #117
+    // for the pre/post-cutover checklists.
+    "routes": [
+        { "pattern": "akuma.sessatakuma.dev", "custom_domain": true },
+        { "pattern": "accent-marker.sessatakuma.dev", "custom_domain": true },
+    ],
     // Secrets (set via `wrangler secret put` or the dashboard, NOT here):
     //   MARK_ACCENT_API_KEY        (required)
     //   MARK_ACCENT_UPSTREAM_URL   (optional; defaults to api.sessatakuma.dev)
