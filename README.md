@@ -70,6 +70,26 @@ Cloudflare dashboard → Workers & Pages → the `akuma` Worker → Settings →
 `--keep-vars` stops each deploy from wiping runtime vars/secrets set in the
 dashboard, since they are not declared in `wrangler.jsonc`.
 
+### Cloudflare routing
+
+Routing is declared in `wrangler.jsonc` (not the dashboard) so the full route
+table is reviewable in-repo:
+
+| Host                            | Source                                    | Behaviour                                                                                                                                             |
+| ------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `akuma.sessatakuma.dev`         | `custom_domain: true` in `wrangler.jsonc` | Production origin (Worker = sole origin).                                                                                                             |
+| `accent-marker.sessatakuma.dev` | `custom_domain: true` in `wrangler.jsonc` | Bound to the same Worker; middleware 301-redirects to `akuma.sessatakuma.dev`, preserving path + query.                                               |
+| `akuma-cf.sessatakuma.dev`      | Ad-hoc test binding (dashboard)           | Ephemeral. To be torn down after the production cutover — tracked in [the cf-cutover cleanup issue](https://github.com/sessatakuma/AkuMa/issues/116). |
+| `*.workers.dev`                 | Cloudflare default (preview deployments)  | Workers Builds preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.                                                     |
+
+`custom_domain: true` tells Cloudflare to provision the required DNS record and
+managed TLS certificate automatically when the Worker is first deployed — no
+manual DNS setup is required for the two in-repo hosts.
+
+The legacy-host 301 redirect is implemented in `src/middleware.ts` (Edge
+runtime) rather than a Cloudflare Redirect Rule so the routing table stays
+declarative in the repo and survives across accounts/zones.
+
 ### Secrets & environment variables (Cloudflare)
 
 Runtime (dashboard → the Worker → Settings → Variables, or `wrangler secret put`):
