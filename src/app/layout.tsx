@@ -96,7 +96,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     const requestHeaders = await headers();
     const locale = resolveLocaleFromHeader(requestHeaders.get(LOCALE_HEADER));
     const structuredDataForLocale = structuredData[locale];
-    const cfBeaconToken = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
+    // Only report analytics from the production domain; skip preview/workers.dev/local.
+    const isProductionHost = requestHeaders.get('host') === new URL(SITE_URL).host;
+    const cfBeaconToken = isProductionHost ? process.env.NEXT_PUBLIC_CF_BEACON_TOKEN : undefined;
 
     return (
         <html lang={structuredDataForLocale.inLanguage[0]} className={notoSansJp.variable}>
