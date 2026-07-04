@@ -72,19 +72,19 @@ dashboard, since they are not declared in `wrangler.jsonc`.
 
 ### Cloudflare routing
 
-The `routes` block is **declared in `wrangler.jsonc` but intentionally
-commented out** until the production cutover (see [#117](https://github.com/sessatakuma/AkuMa/issues/117)).
-Until then the production hosts keep serving from Vercel and only the
-ephemeral `akuma-cf.*` host points at this Worker. Uncommenting the block
-in the cutover PR is the one-way door that flips the production CNAME from
-Vercel to Cloudflare on the next `main` deploy.
+The `routes` block in `wrangler.jsonc` declares the production custom domains
+and is live as of the production cutover ([#118](https://github.com/sessatakuma/AkuMa/pull/118),
+tracked in [#117](https://github.com/sessatakuma/AkuMa/issues/117)). Deploying
+with that block un-commented was the one-way door that flipped the `akuma.*`
+and `accent-marker.*` CNAMEs from Vercel to this Worker on the next `main`
+deploy. The temporary `akuma-cf.*` validation host has been torn down
+([#116](https://github.com/sessatakuma/AkuMa/issues/116)).
 
-| Host                            | Source                                                                                                                                 | Behaviour                                                                                                     |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `akuma.sessatakuma.dev`         | Currently Vercel; cutover in [#117](https://github.com/sessatakuma/AkuMa/issues/117) → `custom_domain: true` in `wrangler.jsonc`       | Production origin (Worker = sole origin).                                                                     |
-| `accent-marker.sessatakuma.dev` | Currently Vercel (307); cutover in [#117](https://github.com/sessatakuma/AkuMa/issues/117) → `custom_domain: true` in `wrangler.jsonc` | Bound to the same Worker; middleware 301-redirects to `akuma.sessatakuma.dev`, preserving path + query.       |
-| `akuma-cf.sessatakuma.dev`      | Ad-hoc test binding (dashboard)                                                                                                        | Ephemeral. To be torn down post-cutover — tracked in [#116](https://github.com/sessatakuma/AkuMa/issues/116). |
-| `*.workers.dev`                 | Cloudflare default (preview deployments)                                                                                               | Workers Builds preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.             |
+| Host                            | Source                                                                                                       | Behaviour                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `akuma.sessatakuma.dev`         | `custom_domain: true` in `wrangler.jsonc` (cutover in [#118](https://github.com/sessatakuma/AkuMa/pull/118)) | Production origin (Worker = sole origin).                                                               |
+| `accent-marker.sessatakuma.dev` | `custom_domain: true` in `wrangler.jsonc` (cutover in [#118](https://github.com/sessatakuma/AkuMa/pull/118)) | Bound to the same Worker; middleware 301-redirects to `akuma.sessatakuma.dev`, preserving path + query. |
+| `*.workers.dev`                 | Cloudflare default (preview deployments)                                                                     | Workers Builds preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.       |
 
 `custom_domain: true` tells Cloudflare to provision the required DNS record and
 managed TLS certificate automatically when the Worker is first deployed — no
