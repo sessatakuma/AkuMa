@@ -27,6 +27,12 @@ APP_PATH="${IOS_APP_PATH:-$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-iphon
 [[ -d "$APP_PATH" ]] || ios_die "Built app not found at $APP_PATH."
 
 xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
-xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE"
+
+LAUNCH_ARGS=()
+if [[ "${IOS_SHOWCASE_DATA:-0}" == "1" ]]; then
+    LAUNCH_ARGS+=(--showcase-data)
+fi
+
+xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE" "${LAUNCH_ARGS[@]}"
 
 echo "Updated and launched $IOS_BUNDLE_ID_VALUE on simulator $SIMULATOR_ID."
