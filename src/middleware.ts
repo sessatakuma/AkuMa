@@ -16,12 +16,21 @@ const LEGACY_HOST = 'accent-marker.sessatakuma.dev';
 // the @opennextjs/cloudflare adapter requires Edge middleware, and Next 16's
 // proxy runtime is Node.js-only and cannot be configured to Edge.
 export function middleware(request: NextRequest) {
+    // Applied to every response (redirect, SSR page, API proxy) so MIME-sniffing
+    // protection matches the posture Vercel provided by default. Cloudflare's
+    // `public/_headers` file only decorates static-asset responses served by the
+    // asset handler, not Worker-generated SSR/redirect responses, so the header
+    // must also be set here in the Edge middleware.
+    const NO_SNIFF = 'nosniff';
+
     // 301 first so crawlers see the canonical URL without intermediate headers.
     if (request.headers.get('host') === LEGACY_HOST) {
         const targetUrl = new URL(request.url);
         targetUrl.protocol = 'https:';
         targetUrl.host = PRODUCTION_HOST;
-        return NextResponse.redirect(targetUrl, 301);
+        const redirect = NextResponse.redirect(targetUrl, 301);
+        redirect.headers.set('X-Content-Type-Options', NO_SNIFF);
+        return redirect;
     }
 
     const requestHeaders = new Headers(request.headers);
@@ -34,6 +43,8 @@ export function middleware(request: NextRequest) {
             headers: requestHeaders,
         },
     });
+
+    response.headers.set('X-Content-Type-Options', NO_SNIFF);
 
     if (request.headers.get('host') !== PRODUCTION_HOST) {
         response.headers.set('X-Robots-Tag', 'noindex, nofollow');
