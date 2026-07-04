@@ -1,0 +1,85 @@
+# Deployment & Local Setup
+
+Internal development and operations notes for AkuMa. The [README](../README.md)
+covers what the app does and how to get it running; this doc holds the
+Cloudflare-specific details.
+
+## Local API Setup
+
+Production on Cloudflare manages the upstream API key server-side.
+
+If you run the app locally, the Next.js route handler for `/api/mark-accent/stream`
+needs an API key in `.env`:
+
+```bash
+MARK_ACCENT_API_KEY=<your_api_key>
+```
+
+`.env` is picked up on `process.env` both by `bun dev` and by `bun run preview`
+(the Workers runtime), so one file covers both local modes.
+
+## Deployment (Cloudflare Workers)
+
+The app is deployed to **Cloudflare Workers** using the
+[`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) adapter.
+
+Useful scripts:
+
+```bash
+bun run preview   # build with OpenNext + run locally on the Workers runtime
+bun run deploy    # build + deploy to Cloudflare from your machine
+```
+
+### Continuous deployment (Workers Builds)
+
+CD is handled by **Cloudflare Workers Builds** (connect this Git repo in the
+Cloudflare dashboard → Workers & Pages → the `akuma` Worker → Settings → Builds):
+
+- **Build command:** `bunx opennextjs-cloudflare build`
+- **Deploy command (production):** `npx wrangler deploy --keep-vars`
+- **Version command (non-production branches):** `npx wrangler versions upload`
+- **Production branch:** `main` (other branches upload preview versions)
+
+`--keep-vars` stops each deploy from wiping runtime vars/secrets set in the
+dashboard, since they are not declared in `wrangler.jsonc`.
+
+### Cloudflare routing
+
+The `routes` block in `wrangler.jsonc` declares the production custom domains
+and is live as of the production cutover ([#118](https://github.com/sessatakuma/AkuMa/pull/118),
+tracked in [#117](https://github.com/sessatakuma/AkuMa/issues/117)). The temporary
+`akuma-cf.*` validation host has been torn down
+([#116](https://github.com/sessatakuma/AkuMa/issues/116)).
+
+| Host                            | Source                                    | Behaviour                                                                                               |
+| ------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `akuma.sessatakuma.dev`         | `custom_domain: true` in `wrangler.jsonc` | Production origin (Worker = sole origin).                                                               |
+| `accent-marker.sessatakuma.dev` | `custom_domain: true` in `wrangler.jsonc` | Bound to the same Worker; middleware 301-redirects to `akuma.sessatakuma.dev`, preserving path + query. |
+| `<version>-akuma.*.workers.dev` | `preview_urls` (default on)               | Per-version preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.          |
+
+The fixed `akuma.*.workers.dev` route is disabled (`workers_dev: false`) so
+production is served only through the custom domains; per-version preview URLs
+stay on via `preview_urls`.
+
+`custom_domain: true` tells Cloudflare to provision the required DNS record and
+managed TLS certificate automatically when the Worker is first deployed — no
+manual DNS setup is required for the two in-repo hosts.
+
+The legacy-host 301 redirect is implemented in `src/middleware.ts` (Edge
+runtime) rather than a Cloudflare Redirect Rule so the routing table stays
+declarative in the repo and survives across accounts/zones.
+
+### Secrets & environment variables
+
+Runtime (dashboard → the Worker → Settings → Variables, or `wrangler secret put`):
+
+| Name                       | Type   | Required | Notes                                  |
+| -------------------------- | ------ | -------- | -------------------------------------- |
+| `MARK_ACCENT_API_KEY`      | Secret | Yes      | Upstream API key for the stream proxy. |
+| `MARK_ACCENT_UPSTREAM_URL` | Var    | No       | Overrides the default upstream URL.    |
+
+Build-time (dashboard → Settings → Builds → Build variables), inlined at build:
+
+| Name                          | Required | Notes                                                                                      |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_CF_BEACON_TOKEN` | No       | Cloudflare Web Analytics token; the beacon is injected only on the production host if set. |
