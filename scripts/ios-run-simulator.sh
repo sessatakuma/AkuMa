@@ -28,11 +28,10 @@ APP_PATH="${IOS_APP_PATH:-$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-iphon
 
 xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
 
-LAUNCH_ARGS=()
 if [[ "${IOS_SHOWCASE_DATA:-0}" == "1" ]]; then
-    LAUNCH_ARGS+=(--showcase-data)
+    xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE" --showcase-data
+else
+    xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE"
 fi
-
-xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE" "${LAUNCH_ARGS[@]}"
 
 echo "Updated and launched $IOS_BUNDLE_ID_VALUE on simulator $SIMULATOR_ID."
