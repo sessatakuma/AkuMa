@@ -72,19 +72,15 @@ dashboard, since they are not declared in `wrangler.jsonc`.
 
 ### Cloudflare routing
 
-The `routes` block is **declared in `wrangler.jsonc` but intentionally
-commented out** until the production cutover (see [#117](https://github.com/sessatakuma/AkuMa/issues/117)).
-Until then the production hosts keep serving from Vercel and only the
-ephemeral `akuma-cf.*` host points at this Worker. Uncommenting the block
-in the cutover PR is the one-way door that flips the production CNAME from
-Vercel to Cloudflare on the next `main` deploy.
+The `routes` block in `wrangler.jsonc` declares two production hosts as
+Cloudflare Custom Domains (`custom_domain: true`):
 
-| Host                            | Source                                                                                                                                 | Behaviour                                                                                                     |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `akuma.sessatakuma.dev`         | Currently Vercel; cutover in [#117](https://github.com/sessatakuma/AkuMa/issues/117) → `custom_domain: true` in `wrangler.jsonc`       | Production origin (Worker = sole origin).                                                                     |
-| `accent-marker.sessatakuma.dev` | Currently Vercel (307); cutover in [#117](https://github.com/sessatakuma/AkuMa/issues/117) → `custom_domain: true` in `wrangler.jsonc` | Bound to the same Worker; middleware 301-redirects to `akuma.sessatakuma.dev`, preserving path + query.       |
-| `akuma-cf.sessatakuma.dev`      | Ad-hoc test binding (dashboard)                                                                                                        | Ephemeral. To be torn down post-cutover — tracked in [#116](https://github.com/sessatakuma/AkuMa/issues/116). |
-| `*.workers.dev`                 | Cloudflare default (preview deployments)                                                                                               | Workers Builds preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.             |
+| Host                            | Source                                    | Behaviour                                                                                                             |
+| ------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `akuma.sessatakuma.dev`         | `custom_domain: true` in `wrangler.jsonc` | Production origin (Worker = sole origin). Cutover tracked in [#117](https://github.com/sessatakuma/AkuMa/issues/117). |
+| `accent-marker.sessatakuma.dev` | `custom_domain: true` in `wrangler.jsonc` | Bound to the same Worker; middleware 301-redirects to `akuma.sessatakuma.dev`, preserving path + query.               |
+| `akuma-cf.sessatakuma.dev`      | Ad-hoc test binding (dashboard)           | Ephemeral. To be torn down post-cutover — tracked in [#116](https://github.com/sessatakuma/AkuMa/issues/116).         |
+| `*.workers.dev`                 | Cloudflare default (preview deployments)  | Workers Builds preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.                     |
 
 `custom_domain: true` tells Cloudflare to provision the required DNS record and
 managed TLS certificate automatically when the Worker is first deployed — no
@@ -93,6 +89,53 @@ manual DNS setup is required for the two in-repo hosts.
 The legacy-host 301 redirect is implemented in `src/middleware.ts` (Edge
 runtime) rather than a Cloudflare Redirect Rule so the routing table stays
 declarative in the repo and survives across accounts/zones.
+
+### Workers Builds token permissions
+
+`wrangler deploy` on `main` calls `PUT /accounts/{account_id}/workers/scripts/{name}/domains/records`
+to provision the Custom Domains declared in `routes`. If the Workers Builds
+service token lacks the scope to call that endpoint, the deploy fails with:
+
+```
+✘ [ERROR] Some triggers failed to deploy for akuma:
+    - A request to the Cloudflare API (/accounts/{id}/workers/scripts/{name}/domains/records) failed.
+```
+
+The token must permit (Cloudflare native names → OAuth scope names seen by
+`wrangler whoami`):
+
+| Required permission              | OAuth scope                                                                        | Why                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Account › Workers Scripts › Edit | `workers_scripts (write)`                                                          | Upload and trigger deploy of the Worker.                             |
+| Zone › Workers Routes › Edit     | `workers_routes (write)`                                                           | Bind the Custom Domain route to the script at the zone.              |
+| Zone › DNS › Edit                | (no OAuth equivalent surfaced by `wrangler whoami`; per-zone API token permission) | Auto-provision / overwrite the DNS CNAME when `custom_domain: true`. |
+
+Verification: run `bun run check-cf-scopes` locally with a `wrangler login`
+session (or `CLOUDFLARE_API_TOKEN` set). The script reads `routes` from
+`wrangler.jsonc`, resolves the zone for each `custom_domain: true` entry, and
+probes the Cloudflare API to confirm the current token can list existing
+Custom Domain records and read the zone + DNS records. It does **not** mutate
+anything — the failing PUT call is only exercised by an actual `wrangler deploy`.
+
+Mitigation paths when CI deploy fails on `/domains/records`:
+
+1. Grant the missing scope to the Workers Builds integration in the Cloudflare
+   dashboard (Account › API Tokens, or Account › Members & Roles depending on
+   how the GitHub/GitLab integration was authorised), then push a no-op commit
+   on `main` (e.g. `git commit --allow-empty -m "ci: retry cutover deploy"`)
+   to re-trigger Workers Builds.
+2. Run `bun run deploy` locally with a `wrangler login` session that has the
+   required scopes. The custom*domain records are provisioned on the first
+   successful deploy; subsequent `main` CI deploys only need to \_update* the
+   existing records and may succeed even under the narrower Workers Builds
+   token.
+3. Switch the production branch's deploy command (`npx wrangler deploy
+--keep-vars`) to `npx wrangler versions upload` (code only, no triggers) and
+   run `wrangler triggers deploy` separately with a verified-scoped token.
+
+See the [Cloudflare Workers Builds documentation](https://developers.cloudflare.com/workers/ci-cd/builds/)
+for dashboard-side configuration. The token-scope failure mode is also tracked
+upstream at `cloudflare/workers-sdk`.
 
 ### Secrets & environment variables (Cloudflare)
 

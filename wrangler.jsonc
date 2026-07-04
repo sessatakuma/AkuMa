@@ -19,12 +19,11 @@
         "logs": { "enabled": true, "head_sampling_rate": 1 },
         "traces": { "enabled": false },
     },
-    // Production cutover (#117): `custom_domain: true` lets Cloudflare
-    // auto-provision DNS + managed TLS at the `sessatakuma.dev` zone. The next
-    // `main` deploy via Workers Builds will overwrite the `akuma.*` and
-    // `accent-marker.*` CNAMEs from `vercel-dns-017.com` → this Worker, flipping
-    // production from Vercel to Cloudflare. This is a one-way door — see #117
-    // for the pre/post-cutover checklists.
+    // Production custom domains. `custom_domain: true` lets Cloudflare
+    // auto-provision DNS + managed TLS at the `sessatakuma.dev` zone.
+    // Workers Builds (CI) must have a token with the scopes documented in
+    // README → "Workers Builds token permissions"; otherwise the deploy
+    // fails on `PUT .../workers/scripts/akuma/domains/records`. See #117.
     "routes": [
         { "pattern": "akuma.sessatakuma.dev", "custom_domain": true },
         { "pattern": "accent-marker.sessatakuma.dev", "custom_domain": true },
