@@ -2,6 +2,12 @@
     "$schema": "node_modules/wrangler/config-schema.json",
     "name": "akuma",
     "main": ".open-next/worker.js",
+    // Disable the auto-provisioned `akuma.*.workers.dev` route so production is
+    // served ONLY via the `custom_domain` routes below (#116 cleanup).
+    // `preview_urls` stays on (default) so per-version `<version>-akuma.*.workers.dev`
+    // preview deploys from Workers Builds keep working.
+    "workers_dev": false,
+    "preview_urls": true,
     "compatibility_date": "2025-03-25",
     "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
     "assets": {
