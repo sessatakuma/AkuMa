@@ -10,8 +10,10 @@ struct ContentView: View {
     @State private var isResultExpanded = false
     @State private var isAnalyzing = false
     @State private var resultStatusOverride: String?
+    @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
 
+    private static let analysisDebounceNanoseconds: UInt64 = 800_000_000
     private let text = AppText.current
 
     var body: some View {
@@ -57,35 +59,72 @@ struct ContentView: View {
         .onChange(of: paragraph) { _, newValue in
             resultStatusOverride = nil
             words = MockAccentAnalyzer.analyze(newValue)
+            scheduleAnalysis(for: newValue)
+        }
+        .onDisappear {
+            analysisTask?.cancel()
         }
     }
 
     private func analyzeParagraph() {
-        let sourceParagraph = paragraph
-        guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !isAnalyzing else {
+        scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+    }
+
+    private func scheduleAnalysis(
+        for sourceParagraph: String,
+        debounceNanoseconds: UInt64 = Self.analysisDebounceNanoseconds
+    ) {
+        analysisTask?.cancel()
+        isAnalyzing = false
+
+        guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            words = []
+            return
+        }
+
+        analysisTask = Task {
+            if debounceNanoseconds > 0 {
+                do {
+                    try await Task.sleep(nanoseconds: debounceNanoseconds)
+                } catch {
+                    return
+                }
+            }
+
+            if Task.isCancelled {
+                return
+            }
+
+            await fetchAnalysis(for: sourceParagraph)
+        }
+    }
+
+    @MainActor
+    private func fetchAnalysis(for sourceParagraph: String) async {
+        guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
 
         isAnalyzing = true
         resultStatusOverride = nil
 
-        Task {
-            do {
-                let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph)
-                await MainActor.run {
-                    if paragraph == sourceParagraph {
-                        words = analyzedWords
-                    }
-                    isAnalyzing = false
-                }
-            } catch {
-                await MainActor.run {
-                    if paragraph == sourceParagraph {
-                        words = MockAccentAnalyzer.analyze(sourceParagraph)
-                        resultStatusOverride = text.analysisFailed
-                    }
-                    isAnalyzing = false
-                }
+        do {
+            let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph)
+            guard paragraph == sourceParagraph, !Task.isCancelled else {
+                return
+            }
+
+            words = analyzedWords
+            isAnalyzing = false
+        } catch is CancellationError {
+            if paragraph == sourceParagraph {
+                isAnalyzing = false
+            }
+        } catch {
+            if paragraph == sourceParagraph, !Task.isCancelled {
+                words = MockAccentAnalyzer.analyze(sourceParagraph)
+                resultStatusOverride = text.analysisFailed
+                isAnalyzing = false
             }
         }
     }
@@ -1042,21 +1081,27 @@ private enum MarkAccentAPI {
             throw APIError.invalidResponse
         }
 
-        var latestWords: [AccentWord] = []
+        var accumulatedWords: [AccentWord] = []
+        var lastChunkIndex = -1
         for try await line in lines.lines {
             guard let chunk = try? JSONDecoder().decode(MarkAccentStreamChunk.self, from: Data(line.utf8)),
                   chunk.status == 200 else {
                 continue
             }
 
-            latestWords = chunk.result.map(Self.mapWord)
+            if chunk.subchunk == 0 {
+                let lineBreaks = lastChunkIndex < 0 ? chunk.chunk : chunk.chunk - lastChunkIndex
+                accumulatedWords.append(contentsOf: Self.lineBreakWords(count: lineBreaks))
+            }
+            lastChunkIndex = chunk.chunk
+            accumulatedWords.append(contentsOf: chunk.result.map(Self.mapWord))
         }
 
-        guard !latestWords.isEmpty else {
+        guard !accumulatedWords.isEmpty else {
             throw APIError.emptyResult
         }
 
-        return latestWords
+        return accumulatedWords
     }
 
     private static func streamEndpoint() throws -> URL {
@@ -1111,6 +1156,14 @@ private enum MarkAccentAPI {
         return 0
     }
 
+    private static func lineBreakWords(count: Int) -> [AccentWord] {
+        guard count > 0 else {
+            return []
+        }
+
+        return Array(repeating: AccentWord(surface: "", reading: "", accent: .none, isLineBreak: true), count: count)
+    }
+
     private enum APIError: Error {
         case invalidResponse
         case invalidURL
@@ -1119,6 +1172,8 @@ private enum MarkAccentAPI {
 }
 
 private struct MarkAccentStreamChunk: Decodable {
+    let chunk: Int
+    let subchunk: Int
     let status: Int
     let result: [MarkAccentResultWord]
 }
