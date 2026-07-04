@@ -15,6 +15,7 @@
         "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --keep-vars",
         "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
         "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+        "check-cf-scopes": "node scripts/check-cf-token-scopes.mjs",
         "typecheck": "tsc --noEmit"
     },
     "lint-staged": {
