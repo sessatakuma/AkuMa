@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import UIKit
 
@@ -7,51 +8,42 @@ struct ContentView: View {
     @State private var showAccent = true
     @State private var isDarkResult = false
     @State private var isResultExpanded = false
+    @State private var isAnalyzing = false
+    @State private var resultStatusOverride: String?
     @State private var lastSampleIndex: Int?
 
     private let text = AppText.current
 
     var body: some View {
         GeometryReader { geometry in
-            ScrollViewReader { scrollProxy in
-                VStack(spacing: 0) {
-                    NavigationBar(text: text, isCompact: geometry.size.width <= 768) {
-                        withAnimation(.snappy(duration: 0.32, extraBounce: 0)) {
-                            scrollProxy.scrollTo(AppAnchor.usageGuide, anchor: .top)
-                        }
-                    }
+            VStack(spacing: 0) {
+                NavigationBar(text: text)
 
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            EditorSection(
-                                paragraph: $paragraph,
-                                words: words,
-                                showAccent: $showAccent,
-                                isDarkResult: $isDarkResult,
-                                isResultExpanded: $isResultExpanded,
-                                text: text,
-                                viewportSize: CGSize(
-                                    width: geometry.size.width,
-                                    height: max(geometry.size.height - AkumaTheme.navHeight, 0)
-                                ),
-                                onPaste: pasteFromClipboard,
-                                onInsertSample: insertSample
-                            )
-                            .id(AppAnchor.editor)
-
-                            UsageSection(text: text)
-                                .id(AppAnchor.usageGuide)
-
-                            SiteFooter(text: text)
-                        }
-                        .frame(width: geometry.size.width)
-                    }
-                    .background(AkumaTheme.background)
-                    .scrollIndicators(.hidden)
+                ScrollView {
+                    EditorSection(
+                        paragraph: $paragraph,
+                        words: words,
+                        showAccent: $showAccent,
+                        isDarkResult: $isDarkResult,
+                        isResultExpanded: $isResultExpanded,
+                        isAnalyzing: isAnalyzing,
+                        statusText: resultStatusOverride,
+                        text: text,
+                        viewportSize: CGSize(
+                            width: geometry.size.width,
+                            height: max(geometry.size.height - AkumaTheme.navHeight, 0)
+                        ),
+                        onAnalyze: analyzeParagraph,
+                        onPaste: pasteFromClipboard,
+                        onInsertSample: insertSample
+                    )
+                    .frame(width: geometry.size.width)
                 }
-                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
                 .background(AkumaTheme.background)
+                .scrollIndicators(.hidden)
             }
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+            .background(AkumaTheme.background)
         }
         .sheet(isPresented: $isResultExpanded) {
             ExpandedResultView(
@@ -63,7 +55,38 @@ struct ContentView: View {
             )
         }
         .onChange(of: paragraph) { _, newValue in
+            resultStatusOverride = nil
             words = MockAccentAnalyzer.analyze(newValue)
+        }
+    }
+
+    private func analyzeParagraph() {
+        let sourceParagraph = paragraph
+        guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !isAnalyzing else {
+            return
+        }
+
+        isAnalyzing = true
+        resultStatusOverride = nil
+
+        Task {
+            do {
+                let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph)
+                await MainActor.run {
+                    if paragraph == sourceParagraph {
+                        words = analyzedWords
+                    }
+                    isAnalyzing = false
+                }
+            } catch {
+                await MainActor.run {
+                    if paragraph == sourceParagraph {
+                        words = MockAccentAnalyzer.analyze(sourceParagraph)
+                        resultStatusOverride = text.analysisFailed
+                    }
+                    isAnalyzing = false
+                }
+            }
         }
     }
 
@@ -105,11 +128,6 @@ struct ContentView: View {
         "図書館で偶然見つけた本が面白すぎて、気づいたら3時間も経っていた。",
         "雨の中を歩いていたら、傘を持っていない猫と目が合って、思わず傘を貸したくなった。",
     ]
-}
-
-private enum AppAnchor {
-    static let editor = "editor"
-    static let usageGuide = "usage-guide"
 }
 
 private enum AkumaTheme {
@@ -162,8 +180,10 @@ private extension Color {
 
 private struct AppText {
     let brandLabel: String
-    let usageButton: String
     let inputPlaceholder: String
+    let analyze: String
+    let analyzing: String
+    let analysisFailed: String
     let pasteFromClipboard: String
     let randomSample: String
     let insertSample: String
@@ -177,22 +197,6 @@ private struct AppText {
     let darkResult: String
     let lightResult: String
     let resultHint: String
-    let usageHeading: String
-    let usagePitchIntro: String
-    let usagePitchNoneTitle: String
-    let usagePitchNoneBody: String
-    let usagePitchFlatTitle: String
-    let usagePitchFlatBody: String
-    let usagePitchFallTitle: String
-    let usagePitchFallBody: String
-    let usageStepStartTitle: String
-    let usageStepStartBody: String
-    let usageStepEditTitle: String
-    let usageStepEditBody: String
-    let usageStepShareTitle: String
-    let usageStepShareBody: String
-    let footerBody: String
-    let email: String
 
     static var current: AppText {
         let languageCode = Locale.current.language.languageCode?.identifier.lowercased()
@@ -210,8 +214,10 @@ private struct AppText {
 
     static let en = AppText(
         brandLabel: "AkuMa",
-        usageButton: "Guide",
         inputPlaceholder: "Enter Japanese text...",
+        analyze: "Analyze",
+        analyzing: "Analyzing...",
+        analysisFailed: "API unavailable. Showing a local preview.",
         pasteFromClipboard: "Paste from clipboard",
         randomSample: "Insert random sample",
         insertSample: "Insert sample",
@@ -224,29 +230,15 @@ private struct AppText {
         share: "Share",
         darkResult: "Dark result",
         lightResult: "Light result",
-        resultHint: "Analysis complete. Tap accent marks to review",
-        usageHeading: "Make Japanese pronunciation natural and clear",
-        usagePitchIntro: "Beyond naturalness, pitch accent can also affect word meaning. Master the right pitch so the sentence you practice sounds intentional.",
-        usagePitchNoneTitle: "Low / follows previous pitch",
-        usagePitchNoneBody: "Particles like no, de, and wa follow the previous word instead of carrying their own high mark.",
-        usagePitchFlatTitle: "High, no fall",
-        usagePitchFlatBody: "The marked span stays high, with no fall inside the word.",
-        usagePitchFallTitle: "High, then fall",
-        usagePitchFallBody: "Following words or attached particles shift to low pitch.",
-        usageStepStartTitle: "Start analysis",
-        usageStepStartBody: "Enter words or sentences, paste an article, or insert a random sample to start reading and accent analysis.",
-        usageStepEditTitle: "Check readings and accent",
-        usageStepEditBody: "Review generated furigana and pitch marks in a layout that matches the web editor rhythm.",
-        usageStepShareTitle: "Save in the right format",
-        usageStepShareBody: "Copy or share the native result when you want to move it into notes, drafts, or study material.",
-        footerBody: "Sessatakuma builds Japanese learning tools and is planning a Japanese speaking practice community.",
-        email: "contact@sessatakuma.dev"
+        resultHint: "Analysis complete"
     )
 
     static let ja = AppText(
         brandLabel: "AkuMa",
-        usageButton: "使い方",
         inputPlaceholder: "文章を入力...",
+        analyze: "解析",
+        analyzing: "解析中...",
+        analysisFailed: "API に接続できません。ローカルプレビューを表示しています。",
         pasteFromClipboard: "クリップボードから貼り付け",
         randomSample: "ランダム例文を挿入",
         insertSample: "例文を挿入",
@@ -259,29 +251,15 @@ private struct AppText {
         share: "共有",
         darkResult: "ダーク表示",
         lightResult: "ライト表示",
-        resultHint: "分析完了。アクセントを確認できます",
-        usageHeading: "日本語の発音を自然に、意味を明確に",
-        usagePitchIntro: "自然さだけでなく、アクセントは語の意味にも関わります。正しい音調を身につけて、練習文を意図どおりに響かせます。",
-        usagePitchNoneTitle: "低音 / 前の音に続く",
-        usagePitchNoneBody: "の・で・は などの助詞は、自分ではなく前の語の高さに続きます。",
-        usagePitchFlatTitle: "高いまま下がらない",
-        usagePitchFlatBody: "横線の範囲は高いまま続き、語の中では下がりません。",
-        usagePitchFallTitle: "高く、あとで下がる",
-        usagePitchFallBody: "後ろに続く語や助詞は低くなります。",
-        usageStepStartTitle: "解析を始める",
-        usageStepStartBody: "単語や文を入力するか、文章を貼り付けるか、ランダムな例文を入れると解析が始まります。",
-        usageStepEditTitle: "読みとアクセントを確認",
-        usageStepEditBody: "Web 版のリズムに近いレイアウトで、生成されたふりがなとアクセントを確認できます。",
-        usageStepShareTitle: "用途に合わせて保存",
-        usageStepShareBody: "ネイティブの結果をコピーまたは共有して、メモや下書き、学習素材へ移せます。",
-        footerBody: "Sessatakuma は日本語学習ツールを開発しながら、日本語の会話練習コミュニティの立ち上げを計画しています。",
-        email: "contact@sessatakuma.dev"
+        resultHint: "解析完了"
     )
 
     static let zh = AppText(
         brandLabel: "AkuMa",
-        usageButton: "使用說明",
         inputPlaceholder: "輸入日語文字...",
+        analyze: "分析",
+        analyzing: "分析中...",
+        analysisFailed: "API 無法連線，正在顯示本機預覽。",
         pasteFromClipboard: "從剪貼簿貼上",
         randomSample: "插入隨機範文",
         insertSample: "插入範文",
@@ -294,30 +272,12 @@ private struct AppText {
         share: "分享",
         darkResult: "深色結果",
         lightResult: "淺色結果",
-        resultHint: "分析完成，可查看音調標記",
-        usageHeading: "讓日語發音更自然、意思更清楚",
-        usagePitchIntro: "除了自然度，音調更會影響詞彙的含義。掌握正確音調，讓練習句聽起來更有意識。",
-        usagePitchNoneTitle: "低音/接續前音",
-        usagePitchNoneBody: "像 の、で、は 這類助詞，本身不帶高音標記，會接續前詞音高。",
-        usagePitchFlatTitle: "高音不下降",
-        usagePitchFlatBody: "水平線範圍維持高音，詞內沒有下降。",
-        usagePitchFallTitle: "高音後下降",
-        usagePitchFallBody: "後段詞語或接續的助詞會轉為低音。",
-        usageStepStartTitle: "開始分析",
-        usageStepStartBody: "輸入詞句、貼上文章或插入隨機範文，系統會開始進行讀音與音調分析。",
-        usageStepEditTitle: "確認讀音與音調",
-        usageStepEditBody: "以接近 Web 版節奏的版面，確認產生的振假名與音調標記。",
-        usageStepShareTitle: "依用途儲存",
-        usageStepShareBody: "將原生結果複製或分享，方便整理到筆記、草稿或學習素材。",
-        footerBody: "Sessatakuma 正在開發日語學習相關工具，也正計劃創立一個日文口說練習社群。",
-        email: "contact@sessatakuma.dev"
+        resultHint: "分析完成"
     )
 }
 
 private struct NavigationBar: View {
     let text: AppText
-    let isCompact: Bool
-    let onGuideTapped: () -> Void
 
     var body: some View {
         HStack(spacing: AkumaTheme.space2) {
@@ -332,25 +292,6 @@ private struct NavigationBar: View {
                 .foregroundStyle(AkumaTheme.invertedText)
 
             Spacer(minLength: AkumaTheme.space4)
-
-            Button(action: onGuideTapped) {
-                if isCompact {
-                    Image(systemName: "book.pages")
-                        .font(.system(size: 20, weight: .semibold))
-                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-                        .foregroundStyle(AkumaTheme.invertedText)
-                } else {
-                    Label(text.usageButton, systemImage: "book.pages")
-                        .font(.system(size: 14, weight: .semibold))
-                        .labelStyle(.titleAndIcon)
-                        .lineLimit(1)
-                        .frame(minHeight: 32)
-                        .padding(.horizontal, AkumaTheme.space3)
-                        .foregroundStyle(AkumaTheme.invertedText)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(text.usageButton): \(text.usageHeading)")
         }
         .padding(.horizontal, AkumaTheme.space5)
         .frame(maxWidth: .infinity)
@@ -370,8 +311,11 @@ private struct EditorSection: View {
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
     @Binding var isResultExpanded: Bool
+    let isAnalyzing: Bool
+    let statusText: String?
     let text: AppText
     let viewportSize: CGSize
+    let onAnalyze: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
 
@@ -391,6 +335,8 @@ private struct EditorSection: View {
                         paragraph: $paragraph,
                         text: text,
                         isCompact: false,
+                        isAnalyzing: isAnalyzing,
+                        onAnalyze: onAnalyze,
                         onPaste: onPaste,
                         onInsertSample: onInsertSample
                     )
@@ -401,6 +347,8 @@ private struct EditorSection: View {
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
+                        isAnalyzing: isAnalyzing,
+                        statusText: statusText,
                         text: text,
                         isCompact: false
                     )
@@ -415,6 +363,8 @@ private struct EditorSection: View {
                         paragraph: $paragraph,
                         text: text,
                         isCompact: isCompact,
+                        isAnalyzing: isAnalyzing,
+                        onAnalyze: onAnalyze,
                         onPaste: onPaste,
                         onInsertSample: onInsertSample
                     )
@@ -426,6 +376,8 @@ private struct EditorSection: View {
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
+                        isAnalyzing: isAnalyzing,
+                        statusText: statusText,
                         text: text,
                         isCompact: isCompact
                     )
@@ -453,8 +405,14 @@ private struct InputPanel: View {
     @Binding var paragraph: String
     let text: AppText
     let isCompact: Bool
+    let isAnalyzing: Bool
+    let onAnalyze: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
+
+    private var canAnalyze: Bool {
+        !paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnalyzing
+    }
 
     var body: some View {
         PanelContainer(isCompact: isCompact) {
@@ -493,6 +451,28 @@ private struct InputPanel: View {
                         )
                     }
 
+                    Button(action: onAnalyze) {
+                        if isAnalyzing {
+                            ProgressView()
+                                .controlSize(.small)
+                                .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                        } else if isCompact {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                        } else {
+                            Label(text.analyze, systemImage: "sparkles")
+                                .font(.system(size: 14, weight: .semibold))
+                                .lineLimit(1)
+                                .frame(height: AkumaTheme.actionControlSize)
+                                .padding(.horizontal, AkumaTheme.space3)
+                        }
+                    }
+                    .buttonStyle(PanelButtonStyle(isActive: canAnalyze))
+                    .disabled(!canAnalyze)
+                    .opacity(canAnalyze || isAnalyzing ? 1 : 0.5)
+                    .accessibilityLabel(isAnalyzing ? text.analyzing : text.analyze)
+
                     Button(action: onInsertSample) {
                         if isCompact {
                             Image(systemName: "dice")
@@ -522,6 +502,8 @@ private struct ResultPanel: View {
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
     @Binding var isResultExpanded: Bool
+    let isAnalyzing: Bool
+    let statusText: String?
     let text: AppText
     let isCompact: Bool
     @State private var copyFeedbackVisible = false
@@ -553,10 +535,32 @@ private struct ResultPanel: View {
             }
         }
         .overlay(alignment: .top) {
-            if !words.isEmpty {
-                ResultStatusChip(text: text.resultHint, isDark: isDarkResult)
+            if isAnalyzing || !words.isEmpty {
+                ResultStatusChip(text: isAnalyzing ? text.analyzing : (statusText ?? text.resultHint), isDark: isDarkResult)
                     .padding(.top, AkumaTheme.space3)
                     .opacity(isCompact ? 0 : 1)
+            }
+        }
+        .overlay {
+            if isAnalyzing {
+                VStack(spacing: AkumaTheme.space3) {
+                    ProgressView()
+                        .controlSize(.regular)
+                        .tint(AkumaTheme.green)
+
+                    Text(text.analyzing)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(isDarkResult ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText)
+                }
+                .padding(AkumaTheme.space4)
+                .background(
+                    RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
+                        .fill(isDarkResult ? AkumaTheme.darkPanel.opacity(0.92) : AkumaTheme.surface.opacity(0.92))
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
+                        .stroke(isDarkResult ? AkumaTheme.darkBorder : AkumaTheme.border, lineWidth: 1)
+                }
             }
         }
         .overlay(alignment: .bottom) {
@@ -577,7 +581,7 @@ private struct ResultPanel: View {
     }
 
     private func copyResult() {
-        UIPasteboard.general.string = words.map(\.surface).joined()
+        UIPasteboard.general.string = ResultExporter.plainText(words: words, showAccent: showAccent)
 
         withAnimation(.snappy(duration: 0.24, extraBounce: 0)) {
             copyFeedbackVisible = true
@@ -726,7 +730,7 @@ private struct ResultActions: View {
     let onCopy: () -> Void
 
     private var exportText: String {
-        words.map(\.surface).joined()
+        ResultExporter.plainText(words: words, showAccent: showAccent)
     }
 
     var body: some View {
@@ -914,212 +918,6 @@ private struct ExpandedResultView: View {
     }
 }
 
-private struct UsageSection: View {
-    let text: AppText
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: AkumaTheme.space6) {
-                Text(text.usageHeading)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(AkumaTheme.text)
-                    .lineSpacing(2)
-
-                Text(text.usagePitchIntro)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(AkumaTheme.secondaryText)
-                    .lineSpacing(8)
-            }
-            .padding(.vertical, AkumaTheme.space7)
-
-            VStack(spacing: AkumaTheme.space5) {
-                PitchStateRow(
-                    accent: .none,
-                    title: text.usagePitchNoneTitle,
-                    description: text.usagePitchNoneBody
-                )
-                PitchStateRow(
-                    accent: .flat,
-                    title: text.usagePitchFlatTitle,
-                    description: text.usagePitchFlatBody
-                )
-                PitchStateRow(
-                    accent: .drop,
-                    title: text.usagePitchFallTitle,
-                    description: text.usagePitchFallBody
-                )
-            }
-            .padding(.bottom, AkumaTheme.space7)
-
-            VStack(spacing: 0) {
-                UsageGuideRow(
-                    systemNames: ["keyboard", "doc.on.clipboard", "dice"],
-                    title: text.usageStepStartTitle,
-                    description: text.usageStepStartBody
-                )
-                UsageGuideRow(
-                    systemNames: ["textformat", "waveform.path.ecg", "cursorarrow.click"],
-                    title: text.usageStepEditTitle,
-                    description: text.usageStepEditBody
-                )
-                UsageGuideRow(
-                    systemNames: ["doc.on.doc", "square.and.arrow.up", "note.text"],
-                    title: text.usageStepShareTitle,
-                    description: text.usageStepShareBody
-                )
-            }
-        }
-        .padding(.horizontal, AkumaTheme.space5)
-        .frame(maxWidth: AkumaTheme.maxContentWidth)
-        .frame(maxWidth: .infinity)
-        .background(AkumaTheme.background)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(AkumaTheme.border)
-                .frame(height: 1)
-        }
-    }
-}
-
-private struct PitchStateRow: View {
-    let accent: AccentKind
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .center, spacing: AkumaTheme.space4) {
-            ZStack {
-                AccentWordView(
-                    word: AccentWord(surface: accent == .none ? "は" : "あ", reading: accent == .none ? "は" : "あ", accent: accent),
-                    showAccent: true,
-                    isDarkResult: false
-                )
-                .scaleEffect(1.35)
-            }
-            .frame(width: 64, height: 64)
-
-            VStack(alignment: .leading, spacing: AkumaTheme.space1) {
-                Text(title)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(AkumaTheme.text)
-
-                Text(description)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(AkumaTheme.secondaryText)
-                    .lineSpacing(6)
-            }
-        }
-    }
-}
-
-private struct UsageGuideRow: View {
-    let systemNames: [String]
-    let title: String
-    let description: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AkumaTheme.space4) {
-            HStack(spacing: AkumaTheme.space4) {
-                ForEach(systemNames, id: \.self) { systemName in
-                    Image(systemName: systemName)
-                        .font(.system(size: 40, weight: .regular))
-                        .foregroundStyle(AkumaTheme.text)
-                        .frame(width: 72, height: 72)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(AkumaTheme.space5)
-            .background(
-                RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
-                    .fill(AkumaTheme.surface)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
-                    .stroke(AkumaTheme.border, lineWidth: 1)
-            }
-
-            VStack(alignment: .leading, spacing: AkumaTheme.space2) {
-                Text(title)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(AkumaTheme.text)
-
-                Text(description)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(AkumaTheme.secondaryText)
-                    .lineSpacing(6)
-            }
-        }
-        .padding(.vertical, AkumaTheme.space6)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(AkumaTheme.border)
-                .frame(height: 1)
-        }
-    }
-}
-
-private struct SiteFooter: View {
-    let text: AppText
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AkumaTheme.space6) {
-            HStack(alignment: .top, spacing: AkumaTheme.space7) {
-                Image("Logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 96, height: 96)
-                    .accessibilityHidden(true)
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: AkumaTheme.space3) {
-                    HStack(spacing: AkumaTheme.space1) {
-                        FooterIcon(systemName: "camera")
-                        FooterIcon(systemName: "at")
-                        FooterIcon(systemName: "f.circle")
-                        FooterIcon(systemName: "chevron.left.forwardslash.chevron.right")
-                    }
-
-                    Text(text.email)
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(AkumaTheme.invertedText)
-                }
-            }
-
-            Text(text.footerBody)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(AkumaTheme.invertedText.opacity(0.88))
-                .lineSpacing(8)
-
-            HStack(alignment: .bottom, spacing: 0) {
-                Text("Sessa")
-                Text("takuma")
-            }
-            .font(.system(size: 56, weight: .bold))
-            .minimumScaleFactor(0.5)
-            .lineLimit(1)
-            .foregroundStyle(AkumaTheme.invertedText)
-        }
-        .padding(.top, AkumaTheme.space7)
-        .padding(.horizontal, AkumaTheme.space5)
-        .padding(.bottom, AkumaTheme.space4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AkumaTheme.green)
-    }
-}
-
-private struct FooterIcon: View {
-    let systemName: String
-
-    var body: some View {
-        Image(systemName: systemName)
-            .font(.system(size: 22, weight: .regular))
-            .foregroundStyle(AkumaTheme.invertedText)
-            .frame(width: 48, height: 48)
-            .background(Color.clear)
-    }
-}
-
 private struct FlowLayout: Layout {
     var spacing: CGFloat
     var lineSpacing: CGFloat
@@ -1183,13 +981,172 @@ private struct AccentWord: Equatable {
     let surface: String
     let reading: String
     let accent: AccentKind
+    let accentIndex: Int
     var isLineBreak = false
+
+    init(surface: String, reading: String, accent: AccentKind, accentIndex: Int? = nil, isLineBreak: Bool = false) {
+        self.surface = surface
+        self.reading = reading
+        self.accent = accent
+        self.accentIndex = accentIndex ?? (accent == .drop ? 1 : 0)
+        self.isLineBreak = isLineBreak
+    }
 }
 
 private enum AccentKind: Equatable {
     case none
     case flat
     case drop
+}
+
+private enum ResultExporter {
+    static func plainText(words: [AccentWord], showAccent: Bool) -> String {
+        words.map { word in
+            if word.isLineBreak {
+                return "\n"
+            }
+
+            let reading = word.reading.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !showAccent {
+                if !reading.isEmpty, reading != word.surface {
+                    return "\(word.surface)（\(reading)）"
+                }
+
+                return word.surface
+            }
+
+            if !reading.isEmpty, reading != word.surface {
+                return "\(word.surface)（\(reading)｜\(word.accentIndex)）"
+            }
+
+            return "\(word.surface)（\(word.accentIndex)）"
+        }
+        .joined()
+    }
+}
+
+private enum MarkAccentAPI {
+    private static let productionOrigin = "https://akuma.sessatakuma.dev"
+    private static let streamPath = "/api/mark-accent/stream"
+
+    static func analyze(_ text: String) async throws -> [AccentWord] {
+        let endpoint = try streamEndpoint()
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(origin(for: endpoint), forHTTPHeaderField: "Origin")
+        request.httpBody = try JSONEncoder().encode(["text": text])
+
+        let (lines, response) = try await URLSession.shared.bytes(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+
+        var latestWords: [AccentWord] = []
+        for try await line in lines.lines {
+            guard let chunk = try? JSONDecoder().decode(MarkAccentStreamChunk.self, from: Data(line.utf8)),
+                  chunk.status == 200 else {
+                continue
+            }
+
+            latestWords = chunk.result.map(Self.mapWord)
+        }
+
+        guard !latestWords.isEmpty else {
+            throw APIError.emptyResult
+        }
+
+        return latestWords
+    }
+
+    private static func streamEndpoint() throws -> URL {
+        let configuredOrigin = ProcessInfo.processInfo.environment["AKUMA_API_ORIGIN"] ?? productionOrigin
+        let origin = configuredOrigin.trimmingCharacters(in: .whitespacesAndNewlines).trimmingTrailingSlash()
+        guard let url = URL(string: "\(origin)\(streamPath)") else {
+            throw APIError.invalidURL
+        }
+
+        return url
+    }
+
+    private static func origin(for url: URL) -> String {
+        var components = URLComponents()
+        components.scheme = url.scheme
+        components.host = url.host
+        components.port = url.port
+        return components.string ?? productionOrigin
+    }
+
+    private static func mapWord(_ word: MarkAccentResultWord) -> AccentWord {
+        let accentValues = word.accent.map(\.accentMarkingType)
+        let accentIndex = accentIndex(for: accentValues)
+        let accentKind: AccentKind
+        if accentValues.contains(2) {
+            accentKind = .drop
+        } else if accentValues.contains(1) {
+            accentKind = .flat
+        } else {
+            accentKind = .none
+        }
+
+        let reading = word.furigana.isEmpty ? word.accent.map(\.furigana).joined() : word.furigana
+        return AccentWord(
+            surface: word.surface,
+            reading: reading == word.surface ? "" : reading,
+            accent: accentKind,
+            accentIndex: accentIndex
+        )
+    }
+
+    private static func accentIndex(for values: [Int]) -> Int {
+        if let dropIndex = values.firstIndex(of: 2) {
+            return dropIndex + 1
+        }
+
+        let highIndices = values.indices.filter { values[$0] == 1 }
+        if highIndices.count == 1, highIndices.first == 0 {
+            return 1
+        }
+
+        return 0
+    }
+
+    private enum APIError: Error {
+        case invalidResponse
+        case invalidURL
+        case emptyResult
+    }
+}
+
+private struct MarkAccentStreamChunk: Decodable {
+    let status: Int
+    let result: [MarkAccentResultWord]
+}
+
+private struct MarkAccentResultWord: Decodable {
+    let surface: String
+    let furigana: String
+    let accent: [MarkAccentEntry]
+}
+
+private struct MarkAccentEntry: Decodable {
+    let furigana: String
+    let accentMarkingType: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case furigana
+        case accentMarkingType = "accent_marking_type"
+    }
+}
+
+private extension String {
+    func trimmingTrailingSlash() -> String {
+        var value = self
+        while value.hasSuffix("/") {
+            value.removeLast()
+        }
+        return value
+    }
 }
 
 private enum MockAccentAnalyzer {
