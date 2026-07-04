@@ -1,8 +1,6 @@
 # Deployment & Local Setup
 
-Internal development and operations notes for AkuMa. The [README](../README.md)
-covers what the app does and how to get it running; this doc holds the
-Cloudflare-specific details.
+Internal development and operations notes for AkuMa.
 
 ## Local API Setup
 
@@ -45,21 +43,11 @@ dashboard, since they are not declared in `wrangler.jsonc`.
 
 ### Cloudflare routing
 
-The `routes` block in `wrangler.jsonc` declares the production custom domains
-and is live as of the production cutover ([#118](https://github.com/sessatakuma/AkuMa/pull/118),
-tracked in [#117](https://github.com/sessatakuma/AkuMa/issues/117)). The temporary
-`akuma-cf.*` validation host has been torn down
-([#116](https://github.com/sessatakuma/AkuMa/issues/116)).
-
 | Host                            | Source                                    | Behaviour                                                                                               |
 | ------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `akuma.sessatakuma.dev`         | `custom_domain: true` in `wrangler.jsonc` | Production origin (Worker = sole origin).                                                               |
 | `accent-marker.sessatakuma.dev` | `custom_domain: true` in `wrangler.jsonc` | Bound to the same Worker; middleware 301-redirects to `akuma.sessatakuma.dev`, preserving path + query. |
-| `<version>-akuma.*.workers.dev` | `preview_urls` (default on)               | Per-version preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.          |
-
-The fixed `akuma.*.workers.dev` route is disabled (`workers_dev: false`) so
-production is served only through the custom domains; per-version preview URLs
-stay on via `preview_urls`.
+| `<version>-akuma.*.workers.dev` | `preview_urls`                            | Per-version preview deployments for non-`main` branches. Auto-tagged `noindex` via middleware.          |
 
 `custom_domain: true` tells Cloudflare to provision the required DNS record and
 managed TLS certificate automatically when the Worker is first deployed — no
