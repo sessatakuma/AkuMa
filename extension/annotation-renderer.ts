@@ -66,18 +66,21 @@
             return document.createTextNode(surface);
         }
 
-        const ruby = document.createElement('ruby');
+        const ruby = document.createElement('span');
         ruby.className = 'akuma-crx-ruby';
-        ruby.append(document.createTextNode(surface));
 
-        const rt = document.createElement('rt');
-        rt.className = 'akuma-crx-reading';
+        const base = document.createElement('span');
+        base.className = 'akuma-crx-ruby-base';
+        base.textContent = surface;
+
+        const readingNode = document.createElement('span');
+        readingNode.className = 'akuma-crx-reading';
         if (options.showAccent) {
-            rt.append(renderKana(reading, accent, true));
+            readingNode.append(renderKana(reading, accent, true));
         } else {
-            rt.textContent = reading;
+            readingNode.textContent = reading;
         }
-        ruby.append(rt);
+        ruby.append(base, readingNode);
 
         return ruby;
     }
