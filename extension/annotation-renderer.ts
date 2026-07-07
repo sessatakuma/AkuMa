@@ -62,13 +62,17 @@
     }
 
     function renderRuby(surface: string, reading: string, accent: AkumaAccentValue, options: AkumaAnnotateOptions) {
+        if (reading.length === 0) {
+            return document.createTextNode(surface);
+        }
+
         const ruby = document.createElement('ruby');
         ruby.className = 'akuma-crx-ruby';
         ruby.append(document.createTextNode(surface));
 
         const rt = document.createElement('rt');
         rt.className = 'akuma-crx-reading';
-        if (options.showAccent && reading.length > 0) {
+        if (options.showAccent) {
             rt.append(renderKana(reading, accent, true));
         } else {
             rt.textContent = reading;
