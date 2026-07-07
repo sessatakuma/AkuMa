@@ -104,6 +104,10 @@
     display: inline;
 }
 
+.akuma-crx-annotation-flow {
+    line-height: 1.7;
+}
+
 .akuma-crx-ruby {
     position: relative;
     display: inline-grid;
@@ -145,6 +149,15 @@
     white-space: nowrap;
 }
 
+.akuma-crx-annotation-flow .akuma-crx-ruby {
+    padding-top: 1em;
+}
+
+.akuma-crx-annotation-flow .akuma-crx-ruby > .akuma-crx-reading {
+    top: 0.36em;
+    bottom: auto;
+}
+
 .akuma-crx-kana {
     position: relative;
     display: inline-block;
@@ -152,6 +165,15 @@
     min-width: 1em;
     text-align: center;
     vertical-align: baseline;
+}
+
+.akuma-crx-annotation-flow .akuma-crx-kana-word > .akuma-crx-kana {
+    padding-top: 0.58em;
+}
+
+.akuma-crx-annotation-flow .akuma-crx-kana-word > .akuma-crx-kana > .akuma-crx-accent-lane {
+    top: 0;
+    bottom: auto;
 }
 
 .akuma-crx-accent-lane {

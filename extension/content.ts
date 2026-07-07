@@ -393,11 +393,13 @@
         }
 
         try {
+            const layoutClass = getAnnotationLayoutClass(textNode);
             const leading = text.match(/^\s*/u)?.[0] ?? '';
             const trailing = text.match(/\s*$/u)?.[0] ?? '';
             const coreText = text.slice(leading.length, text.length - trailing.length);
             const fragment = await namespace.annotate.annotateText(coreText, options);
             const wrapper = document.createElement('span');
+            wrapper.className = `akuma-crx-annotation-run ${layoutClass}`;
             wrapper.setAttribute(ANNOTATED_ATTR, 'true');
             wrapper.append(document.createTextNode(leading));
             wrapper.append(fragment);
@@ -406,6 +408,15 @@
         } catch (error) {
             console.error('AkuMa annotation failed:', error);
         }
+    }
+
+    function getAnnotationLayoutClass(textNode: Text) {
+        const range = document.createRange();
+        range.selectNodeContents(textNode);
+        const visibleRects = [...range.getClientRects()].filter(rect => rect.width > 0 && rect.height > 0);
+        range.detach();
+
+        return visibleRects.length > 1 ? 'akuma-crx-annotation-flow' : 'akuma-crx-annotation-compact';
     }
 
     function handleSelectionChange() {
@@ -491,6 +502,9 @@
 
         const fragment = await namespace.annotate.annotateText(text, options);
         const wrapper = document.createElement('span');
+        wrapper.className = range.getClientRects().length > 1
+            ? 'akuma-crx-annotation-run akuma-crx-annotation-flow'
+            : 'akuma-crx-annotation-run akuma-crx-annotation-compact';
         wrapper.setAttribute(ANNOTATED_ATTR, 'true');
         wrapper.append(fragment);
         range.deleteContents();
