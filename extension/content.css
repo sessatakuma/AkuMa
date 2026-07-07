@@ -106,13 +106,29 @@
 
 .akuma-crx-ruby {
     position: relative;
-    display: inline-block;
+    display: inline-grid;
     line-height: inherit;
+    text-align: center;
     vertical-align: baseline;
 }
 
 .akuma-crx-ruby-base {
-    display: inline;
+    grid-area: 1 / 1;
+    justify-self: center;
+}
+
+.akuma-crx-reading-spacer {
+    grid-area: 1 / 1;
+    height: 0;
+    overflow: hidden;
+    padding-inline: 0.04em;
+    color: transparent;
+    font-size: 0.62em;
+    line-height: 0;
+    pointer-events: none;
+    user-select: none;
+    visibility: hidden;
+    white-space: nowrap;
 }
 
 .akuma-crx-reading {

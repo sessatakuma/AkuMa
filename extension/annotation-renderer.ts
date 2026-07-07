@@ -73,6 +73,10 @@
         base.className = 'akuma-crx-ruby-base';
         base.textContent = surface;
 
+        const spacer = document.createElement('span');
+        spacer.className = 'akuma-crx-reading-spacer';
+        spacer.textContent = reading;
+
         const readingNode = document.createElement('span');
         readingNode.className = 'akuma-crx-reading';
         if (options.showAccent) {
@@ -80,7 +84,7 @@
         } else {
             readingNode.textContent = reading;
         }
-        ruby.append(base, readingNode);
+        ruby.append(base, spacer, readingNode);
 
         return ruby;
     }
