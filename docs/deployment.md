@@ -68,6 +68,7 @@ Runtime (dashboard → the Worker → Settings → Variables, or `wrangler secre
 
 Build-time (dashboard → Settings → Builds → Build variables), inlined at build:
 
-| Name                          | Required | Notes                                                                                      |
-| ----------------------------- | -------- | ------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_CF_BEACON_TOKEN` | No       | Cloudflare Web Analytics token; the beacon is injected only on the production host if set. |
+| Name                                | Required | Notes                                                                                      |
+| ----------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_CF_BEACON_TOKEN`       | No       | Cloudflare Web Analytics token; the beacon is injected only on the production host if set. |
+| `NEXT_PUBLIC_MS_CLARITY_PROJECT_ID` | No       | Microsoft Clarity project ID; Clarity is injected only on the production host if set.      |

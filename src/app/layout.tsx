@@ -99,6 +99,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     // Only report analytics from the production domain; skip preview/workers.dev/local.
     const isProductionHost = requestHeaders.get('host') === new URL(SITE_URL).host;
     const cfBeaconToken = isProductionHost ? process.env.NEXT_PUBLIC_CF_BEACON_TOKEN : undefined;
+    const msClarityProjectId = isProductionHost
+        ? process.env.NEXT_PUBLIC_MS_CLARITY_PROJECT_ID
+        : undefined;
 
     return (
         <html lang={structuredDataForLocale.inLanguage[0]} className={notoSansJp.variable}>
@@ -116,6 +119,17 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                         strategy='afterInteractive'
                         data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}
                     />
+                ) : null}
+                {msClarityProjectId ? (
+                    <Script id='ms-clarity' strategy='afterInteractive'>
+                        {`
+                            (function(c,l,a,r,i,t,y){
+                                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+                            })(window, document, "clarity", "script", ${JSON.stringify(msClarityProjectId)});
+                        `}
+                    </Script>
                 ) : null}
             </body>
         </html>
