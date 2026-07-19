@@ -21,7 +21,7 @@ const STORAGE_KEY = 'akuma-locale';
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-function resolveBrowserLocale(initialLocale: Locale): Locale {
+export function resolveBrowserLocale(initialLocale: Locale): Locale {
     if (typeof window === 'undefined') {
         return initialLocale;
     }

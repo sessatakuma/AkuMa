@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 
 import Script from 'next/script';
 
+import { resolveBrowserLocale } from '../i18n';
+import { DEFAULT_LOCALE, translations, type Locale } from '../i18nConfig';
+
 import {
     readConsent,
     shouldReloadAfterConsentChange,
@@ -20,8 +23,6 @@ declare global {
 }
 
 const OPEN_PREFERENCES_EVENT = 'akuma:open-analytics-preferences';
-const WITHDRAWAL_CONFIRMATION =
-    'Withdrawing analytics consent reloads this page. Your current input and analysis will be lost. Continue?';
 
 function hasEditorWork(): boolean {
     return (document.querySelector<HTMLTextAreaElement>('#accent-input')?.value.length ?? 0) > 0;
@@ -31,9 +32,12 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
     const [consent, setConsent] = useState<Consent>('pending');
     const [isReady, setIsReady] = useState(false);
     const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+    const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
+    const t = translations[locale];
 
     useEffect(() => {
         setConsent(readConsent([() => window.sessionStorage, () => window.localStorage]));
+        setLocale(resolveBrowserLocale(DEFAULT_LOCALE));
         setIsReady(true);
 
         const openPreferences = () => setIsPreferencesOpen(true);
@@ -44,7 +48,7 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
 
     const saveConsent = (value: Exclude<Consent, 'pending'>) => {
         const shouldReload = shouldReloadAfterConsentChange(consent, value);
-        if (shouldReload && hasEditorWork() && !window.confirm(WITHDRAWAL_CONFIRMATION)) {
+        if (shouldReload && hasEditorWork() && !window.confirm(t.analyticsConsentWithdrawConfirm)) {
             return;
         }
 
@@ -96,31 +100,27 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
                     role='region'
                 >
                     <div className='analytics-consent__content'>
-                        <h2 id='analytics-consent-title'>Analytics cookies</h2>
-                        <p>
-                            We use Microsoft Clarity only if you agree, to understand how people use
-                            this site through session recordings and heatmaps. You can change your
-                            choice at any time.
-                        </p>
-                        <a href='/privacy'>Privacy &amp; Cookie Policy</a>
+                        <h2 id='analytics-consent-title'>{t.analyticsConsentTitle}</h2>
+                        <p>{t.analyticsConsentBody}</p>
+                        <a href='/privacy'>{t.analyticsConsentPrivacyLink}</a>
                         {isPreferencesOpen ? (
                             <p className='analytics-consent__current' role='status'>
-                                Current preference:{' '}
+                                {t.analyticsConsentCurrentLabel}{' '}
                                 <strong>
                                     {consent === 'granted'
-                                        ? 'Analytics enabled'
+                                        ? t.analyticsConsentStatusEnabled
                                         : consent === 'denied'
-                                          ? 'Analytics disabled'
-                                          : 'Not selected'}
+                                          ? t.analyticsConsentStatusDisabled
+                                          : t.analyticsConsentStatusNotSelected}
                                 </strong>
                             </p>
                         ) : null}
                         <div className='analytics-consent__actions'>
                             <button type='button' onClick={() => saveConsent('denied')}>
-                                Reject analytics
+                                {t.analyticsConsentReject}
                             </button>
                             <button type='button' onClick={() => saveConsent('granted')}>
-                                Accept analytics
+                                {t.analyticsConsentAccept}
                             </button>
                         </div>
                     </div>

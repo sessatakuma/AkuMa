@@ -4,6 +4,16 @@ export interface TranslationSet {
     brandLabel: string;
     accentResultLabel: string;
     accentToggle: string;
+    analyticsConsentTitle: string;
+    analyticsConsentBody: string;
+    analyticsConsentPrivacyLink: string;
+    analyticsConsentCurrentLabel: string;
+    analyticsConsentStatusEnabled: string;
+    analyticsConsentStatusDisabled: string;
+    analyticsConsentStatusNotSelected: string;
+    analyticsConsentReject: string;
+    analyticsConsentAccept: string;
+    analyticsConsentWithdrawConfirm: string;
     temporaryIssuesBody: string;
     temporaryIssuesClose: string;
     temporaryIssuesTitle: string;
@@ -98,6 +108,18 @@ export const translations: Record<Locale, TranslationSet> = {
         brandLabel: 'AkuMa',
         accentResultLabel: 'Pitch accent analysis result',
         accentToggle: 'Accent',
+        analyticsConsentTitle: 'Analytics cookies',
+        analyticsConsentBody:
+            'We use Microsoft Clarity only if you agree, to understand how people use this site through session recordings and heatmaps. You can change your choice at any time.',
+        analyticsConsentPrivacyLink: 'Privacy & Cookie Policy',
+        analyticsConsentCurrentLabel: 'Current preference:',
+        analyticsConsentStatusEnabled: 'Analytics enabled',
+        analyticsConsentStatusDisabled: 'Analytics disabled',
+        analyticsConsentStatusNotSelected: 'Not selected',
+        analyticsConsentReject: 'Reject analytics',
+        analyticsConsentAccept: 'Accept analytics',
+        analyticsConsentWithdrawConfirm:
+            'Withdrawing analytics consent reloads this page. Your current input and analysis will be lost. Continue?',
         temporaryIssuesBody:
             'The system is temporarily unable to analyze text. The development team is actively working on it, so please try again later.',
         temporaryIssuesClose: 'Close',
@@ -205,6 +227,18 @@ export const translations: Record<Locale, TranslationSet> = {
         brandLabel: 'AkuMa',
         accentResultLabel: 'アクセント解析結果',
         accentToggle: 'アクセント',
+        analyticsConsentTitle: '分析用Cookie',
+        analyticsConsentBody:
+            'ご同意いただいた場合のみ Microsoft Clarity を使用し、セッション記録やヒートマップを通じてサイトの利用状況を把握します。設定はいつでも変更できます。',
+        analyticsConsentPrivacyLink: 'プライバシー・Cookieポリシー',
+        analyticsConsentCurrentLabel: '現在の設定：',
+        analyticsConsentStatusEnabled: '分析を有効化',
+        analyticsConsentStatusDisabled: '分析を無効化',
+        analyticsConsentStatusNotSelected: '未選択',
+        analyticsConsentReject: '分析を拒否',
+        analyticsConsentAccept: '分析を許可',
+        analyticsConsentWithdrawConfirm:
+            '分析への同意を取り消すと、このページが再読み込みされます。現在の入力内容と解析結果は失われます。続行しますか？',
         temporaryIssuesBody:
             '現在システムで一時的に分析を実行できません。開発チームが対応中ですので、少し時間をおいて再度お試しください。',
         temporaryIssuesClose: '閉じる',
@@ -309,6 +343,18 @@ export const translations: Record<Locale, TranslationSet> = {
         brandLabel: 'AkuMa',
         accentResultLabel: '音調分析結果',
         accentToggle: '音調',
+        analyticsConsentTitle: '分析 Cookie',
+        analyticsConsentBody:
+            '只有在您同意的情況下，我們才會使用 Microsoft Clarity，透過工作階段錄製與熱區圖了解使用者如何使用本網站。您可以隨時變更選擇。',
+        analyticsConsentPrivacyLink: '隱私權與 Cookie 政策',
+        analyticsConsentCurrentLabel: '目前設定：',
+        analyticsConsentStatusEnabled: '已啟用分析',
+        analyticsConsentStatusDisabled: '已停用分析',
+        analyticsConsentStatusNotSelected: '尚未選擇',
+        analyticsConsentReject: '拒絕分析',
+        analyticsConsentAccept: '接受分析',
+        analyticsConsentWithdrawConfirm:
+            '取消分析同意會重新載入本頁面，目前的輸入內容與分析結果將會遺失。要繼續嗎？',
         temporaryIssuesBody: '系統目前暫時無法進行分析，開發團隊正在積極搶救，請稍後再試一次。',
         temporaryIssuesClose: '關閉',
         temporaryIssuesTitle: '系統發生問題',
