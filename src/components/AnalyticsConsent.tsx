@@ -4,9 +4,14 @@ import { useEffect, useState } from 'react';
 
 import Script from 'next/script';
 
-import './AnalyticsConsent.css';
+import {
+    readConsent,
+    shouldReloadAfterConsentChange,
+    writeConsent,
+    type Consent,
+} from './analyticsConsentState';
 
-type Consent = 'granted' | 'denied' | 'pending';
+import './AnalyticsConsent.css';
 
 declare global {
     interface Window {
@@ -14,13 +19,12 @@ declare global {
     }
 }
 
-const CONSENT_STORAGE_KEY = 'akuma-analytics-consent';
 const OPEN_PREFERENCES_EVENT = 'akuma:open-analytics-preferences';
+const WITHDRAWAL_CONFIRMATION =
+    'Withdrawing analytics consent reloads this page. Your current input and analysis will be lost. Continue?';
 
-function readConsent(): Consent {
-    const value = window.localStorage.getItem(CONSENT_STORAGE_KEY);
-
-    return value === 'granted' || value === 'denied' ? value : 'pending';
+function hasEditorWork(): boolean {
+    return (document.querySelector<HTMLTextAreaElement>('#accent-input')?.value.length ?? 0) > 0;
 }
 
 export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProjectId?: string }) {
@@ -29,7 +33,7 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
     const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
 
     useEffect(() => {
-        setConsent(readConsent());
+        setConsent(readConsent([() => window.sessionStorage, () => window.localStorage]));
         setIsReady(true);
 
         const openPreferences = () => setIsPreferencesOpen(true);
@@ -39,7 +43,16 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
     }, []);
 
     const saveConsent = (value: Exclude<Consent, 'pending'>) => {
-        window.localStorage.setItem(CONSENT_STORAGE_KEY, value);
+        const shouldReload = shouldReloadAfterConsentChange(consent, value);
+        if (shouldReload && hasEditorWork() && !window.confirm(WITHDRAWAL_CONFIRMATION)) {
+            return;
+        }
+
+        const isStored = writeConsent(
+            value,
+            () => window.localStorage,
+            () => window.sessionStorage,
+        );
 
         if (value === 'denied') {
             window.clarity?.('consentv2', {
@@ -51,7 +64,7 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
         setConsent(value);
         setIsPreferencesOpen(false);
 
-        if (value === 'denied' && consent === 'granted') {
+        if (shouldReload && isStored) {
             window.location.reload();
         }
     };
@@ -80,7 +93,7 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
                 <section
                     aria-labelledby='analytics-consent-title'
                     className='analytics-consent'
-                    role='dialog'
+                    role='region'
                 >
                     <div className='analytics-consent__content'>
                         <h2 id='analytics-consent-title'>Analytics cookies</h2>
@@ -90,12 +103,24 @@ export default function AnalyticsConsent({ msClarityProjectId }: { msClarityProj
                             choice at any time.
                         </p>
                         <a href='/privacy'>Privacy &amp; Cookie Policy</a>
+                        {isPreferencesOpen ? (
+                            <p className='analytics-consent__current' role='status'>
+                                Current preference:{' '}
+                                <strong>
+                                    {consent === 'granted'
+                                        ? 'Analytics enabled'
+                                        : consent === 'denied'
+                                          ? 'Analytics disabled'
+                                          : 'Not selected'}
+                                </strong>
+                            </p>
+                        ) : null}
                         <div className='analytics-consent__actions'>
                             <button type='button' onClick={() => saveConsent('denied')}>
-                                Reject
+                                Reject analytics
                             </button>
                             <button type='button' onClick={() => saveConsent('granted')}>
-                                {isPreferencesOpen ? 'Save preference' : 'Accept analytics'}
+                                Accept analytics
                             </button>
                         </div>
                     </div>

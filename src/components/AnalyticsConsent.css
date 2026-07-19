@@ -24,6 +24,10 @@
     color: var(--color-text-secondary);
 }
 
+.analytics-consent .analytics-consent__current {
+    color: var(--color-text-primary);
+}
+
 .analytics-consent a {
     width: fit-content;
     color: var(--color-accent-green-hover);
