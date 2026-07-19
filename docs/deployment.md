@@ -68,7 +68,22 @@ Runtime (dashboard → the Worker → Settings → Variables, or `wrangler secre
 
 Build-time (dashboard → Settings → Builds → Build variables), inlined at build:
 
-| Name                                | Required | Notes                                                                                      |
-| ----------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_CF_BEACON_TOKEN`       | No       | Cloudflare Web Analytics token; the beacon is injected only on the production host if set. |
-| `NEXT_PUBLIC_MS_CLARITY_PROJECT_ID` | No       | Microsoft Clarity project ID; Clarity is injected only on the production host if set.      |
+| Name                                | Required | Notes                                                                                               |
+| ----------------------------------- | -------- | --------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_CF_BEACON_TOKEN`       | No       | Cloudflare Web Analytics token; the beacon is injected only on the production host if set.          |
+| `NEXT_PUBLIC_MS_CLARITY_PROJECT_ID` | No       | Microsoft Clarity project ID; loaded only on the production host after a visitor accepts analytics. |
+
+## Microsoft Clarity consent
+
+Clarity is globally opt-in. The production site does not load Clarity until a visitor accepts
+analytics, and an accepted session grants analytics storage while keeping advertising storage denied.
+
+Before enabling `NEXT_PUBLIC_MS_CLARITY_PROJECT_ID` in Workers Builds:
+
+1. Review the [Privacy & Cookie Policy](/privacy) content and the intended audience.
+2. In Clarity, enable Consent Mode so the project also respects consent signals.
+3. Rebuild the production branch after changing the build variable.
+
+Visitors can reject analytics or change their choice using the control in the site footer. This
+preference is stored locally in their browser; withdrawing consent reloads the page so Clarity is
+not loaded again. The text input and analysis result also use Clarity element-level masking.

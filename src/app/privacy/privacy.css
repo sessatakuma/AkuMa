@@ -1,0 +1,32 @@
+.privacy-page {
+    display: grid;
+    gap: var(--space-5);
+    max-width: 48rem;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: var(--space-7) var(--space-5);
+    background: var(--color-bg-secondary);
+}
+
+.privacy-page__back {
+    width: fit-content;
+    color: var(--color-accent-green-hover);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.privacy-page section {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.privacy-page p {
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}
+
+.privacy-page a:not(.privacy-page__back) {
+    color: var(--color-accent-green-hover);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}

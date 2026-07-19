@@ -4,6 +4,8 @@ import { Noto_Sans_JP } from 'next/font/google';
 import { headers } from 'next/headers';
 import Script from 'next/script';
 
+import AnalyticsConsent from '../components/AnalyticsConsent';
+
 import { buildStructuredData, LOCALE_HEADER, resolveLocaleFromHeader, SITE_URL } from './locale';
 
 import type { Metadata, Viewport } from 'next';
@@ -120,17 +122,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                         data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}
                     />
                 ) : null}
-                {msClarityProjectId ? (
-                    <Script id='ms-clarity' strategy='afterInteractive'>
-                        {`
-                            (function(c,l,a,r,i,t,y){
-                                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-                            })(window, document, "clarity", "script", ${JSON.stringify(msClarityProjectId)});
-                        `}
-                    </Script>
-                ) : null}
+                <AnalyticsConsent msClarityProjectId={msClarityProjectId} />
             </body>
         </html>
     );

@@ -71,6 +71,9 @@ export default function Footer() {
     const showPendingAccountDialog = () => {
         window.alert(t.footerSocialPendingMessage);
     };
+    const openAnalyticsPreferences = () => {
+        window.dispatchEvent(new Event('akuma:open-analytics-preferences'));
+    };
 
     return (
         <footer className='site-footer'>
@@ -130,6 +133,12 @@ export default function Footer() {
                 <section className='site-footer-about' aria-label={t.faviconAltBrand}>
                     <p>{t.footerWhatBody}</p>
                 </section>
+                <nav className='site-footer-legal' aria-label='Legal and privacy'>
+                    <a href='/privacy'>Privacy &amp; Cookie Policy</a>
+                    <button type='button' onClick={openAnalyticsPreferences}>
+                        Manage analytics
+                    </button>
+                </nav>
             </div>
             <p className='site-footer-wordmark' aria-label='Sessatakuma'>
                 <span>Sessa</span>

@@ -135,7 +135,11 @@ export default function AccentEditor() {
                     aria-label={t.resultsAndInput}
                 >
                     <div className='input-panel-stack'>
-                        <section className='input-panel' aria-label={t.inputPanelLabel}>
+                        <section
+                            className='input-panel'
+                            aria-label={t.inputPanelLabel}
+                            data-clarity-mask='true'
+                        >
                             <Input
                                 paragraph={paragraph}
                                 setParagraph={setParagraph}
@@ -172,6 +176,7 @@ export default function AccentEditor() {
                             className={`result-panel ${isResultExpanded ? 'result-panel-expanded' : ''}`}
                             aria-label={t.resultPanelLabel}
                             aria-busy={isBusy}
+                            data-clarity-mask='true'
                         >
                             <Result
                                 accentPhaseActive={accentPhaseActive}
