@@ -360,6 +360,10 @@ private struct AppText {
     let restoreAllEdits: String
     let temporaryIssuesTitle: String
     let temporaryIssuesBody: String
+    let exportOptions: String
+    let exportText: String
+    let exportImage: String
+    let exportHTML: String
 
     static var current: AppText {
         let languageCode = Locale.current.language.languageCode?.identifier.lowercased()
@@ -405,7 +409,11 @@ private struct AppText {
         redo: "Redo edit",
         restoreAllEdits: "Restore all edits",
         temporaryIssuesTitle: "System issue",
-        temporaryIssuesBody: "The system is temporarily unable to analyze text. A simplified local result is shown; please try again later."
+        temporaryIssuesBody: "The system is temporarily unable to analyze text. A simplified local result is shown; please try again later.",
+        exportOptions: "Share or export",
+        exportText: "Share text",
+        exportImage: "Share image",
+        exportHTML: "Share HTML"
     )
 
     static let ja = AppText(
@@ -438,7 +446,11 @@ private struct AppText {
         redo: "編集をやり直す",
         restoreAllEdits: "すべての編集を元に戻す",
         temporaryIssuesTitle: "システムの問題",
-        temporaryIssuesBody: "現在システムで一時的に分析を実行できません。簡易結果を表示していますので、少し時間をおいて再度お試しください。"
+        temporaryIssuesBody: "現在システムで一時的に分析を実行できません。簡易結果を表示していますので、少し時間をおいて再度お試しください。",
+        exportOptions: "共有・書き出し",
+        exportText: "テキストを共有",
+        exportImage: "画像を共有",
+        exportHTML: "HTMLを共有"
     )
 
     static let zh = AppText(
@@ -471,7 +483,11 @@ private struct AppText {
         redo: "重做編輯",
         restoreAllEdits: "還原所有編輯",
         temporaryIssuesTitle: "系統問題",
-        temporaryIssuesBody: "系統目前暫時無法分析文字，已顯示簡化的本機結果，請稍後再試。"
+        temporaryIssuesBody: "系統目前暫時無法分析文字，已顯示簡化的本機結果，請稍後再試。",
+        exportOptions: "分享或匯出",
+        exportText: "分享文字",
+        exportImage: "分享圖片",
+        exportHTML: "分享 HTML"
     )
 }
 
@@ -1062,6 +1078,7 @@ private struct ResultActions: View {
     let onRedo: () -> Void
     let onRestore: () -> Void
     @State private var isRestoreConfirmationVisible = false
+    @State private var sharePayload: SharePayload?
 
     private var exportText: String {
         ResultExporter.plainText(words: words, showAccent: showAccent)
@@ -1143,13 +1160,23 @@ private struct ResultActions: View {
                 isDarkResult.toggle()
             }
 
-            ShareLink(item: exportText) {
+            Menu {
+                Button(action: shareText) {
+                    Label(text.exportText, systemImage: "doc.text")
+                }
+                Button(action: shareImage) {
+                    Label(text.exportImage, systemImage: "photo")
+                }
+                Button(action: shareHTML) {
+                    Label(text.exportHTML, systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+            } label: {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 18, weight: .semibold))
                     .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
             }
             .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
-            .accessibilityLabel(text.share)
+            .accessibilityLabel(text.exportOptions)
 
             IconButton(
                 title: isResultExpanded ? text.collapseResult : text.expandResult,
@@ -1168,6 +1195,43 @@ private struct ResultActions: View {
         .confirmationDialog(text.restoreAllEdits, isPresented: $isRestoreConfirmationVisible) {
             Button(text.restoreAllEdits, role: .destructive, action: onRestore)
             Button(text.cancel, role: .cancel) {}
+        }
+        .sheet(item: $sharePayload) { payload in
+            ActivityShareSheet(items: payload.items)
+                .presentationDetents([.medium, .large])
+        }
+    }
+
+    private func shareText() {
+        sharePayload = SharePayload(items: [exportText])
+    }
+
+    @MainActor
+    private func shareImage() {
+        let content = ExportResultSnapshot(
+            words: words,
+            showAccent: showAccent,
+            isDarkResult: isDarkResult
+        )
+        .frame(width: 720, alignment: .topLeading)
+
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 2
+        if let image = renderer.uiImage {
+            sharePayload = SharePayload(items: [image])
+        }
+    }
+
+    private func shareHTML() {
+        let html = ResultExporter.html(words: words, showAccent: showAccent, isDark: isDarkResult)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("akuma-accented-text-\(UUID().uuidString).html")
+
+        do {
+            try html.write(to: url, atomically: true, encoding: .utf8)
+            sharePayload = SharePayload(items: [url])
+        } catch {
+            sharePayload = SharePayload(items: [html])
         }
     }
 }
@@ -1203,6 +1267,88 @@ private struct ResultStatusChip: View {
                 .fill(isDark ? AkumaTheme.darkPanel : AkumaTheme.surface)
         )
         .shadow(color: Color.black.opacity(isDark ? 0 : 0.08), radius: 6, y: 2)
+    }
+}
+
+private struct SharePayload: Identifiable {
+    let id = UUID()
+    let items: [Any]
+}
+
+private struct ActivityShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private struct ExportResultSnapshot: View {
+    let words: [AccentWord]
+    let showAccent: Bool
+    let isDarkResult: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AkumaTheme.space5) {
+            HStack(spacing: AkumaTheme.space2) {
+                Image("Logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
+                Text("AkuMa")
+                    .font(.system(size: 20, weight: .bold))
+            }
+
+            FlowLayout(spacing: 0, lineSpacing: AkumaTheme.space4) {
+                ForEach(Array(words.enumerated()), id: \.offset) { _, word in
+                    ExportAccentWordView(
+                        word: word,
+                        showAccent: showAccent,
+                        isDarkResult: isDarkResult
+                    )
+                }
+            }
+        }
+        .foregroundStyle(isDarkResult ? AkumaTheme.darkText : AkumaTheme.text)
+        .padding(AkumaTheme.space6)
+        .background(isDarkResult ? AkumaTheme.darkPanel : AkumaTheme.surface)
+    }
+}
+
+private struct ExportAccentWordView: View {
+    let word: AccentWord
+    let showAccent: Bool
+    let isDarkResult: Bool
+
+    var body: some View {
+        if word.isLineBreak {
+            Color.clear.frame(width: 1, height: 64)
+        } else {
+            VStack(spacing: 2) {
+                HStack(spacing: 0) {
+                    ForEach(Array(word.units.enumerated()), id: \.offset) { _, unit in
+                        VStack(spacing: 2) {
+                            AccentLineView(accent: unit.accent, isVisible: showAccent)
+                                .frame(height: 16)
+                            Text(unit.reading.isEmpty ? "　" : unit.reading)
+                                .font(.system(size: 14))
+                                .foregroundStyle(
+                                    isDarkResult
+                                        ? AkumaTheme.darkSecondaryText
+                                        : AkumaTheme.secondaryText
+                                )
+                        }
+                        .frame(minWidth: CGFloat(max(unit.reading.count, 1)) * 18)
+                    }
+                }
+                Text(word.surface)
+                    .font(.system(size: 24))
+                    .foregroundStyle(isDarkResult ? AkumaTheme.darkText : AkumaTheme.text)
+            }
+            .padding(.horizontal, 1)
+        }
     }
 }
 
@@ -1527,6 +1673,61 @@ private enum ResultExporter {
             return "\(word.surface)（\(word.accentIndex)）"
         }
         .joined()
+    }
+
+    static func html(words: [AccentWord], showAccent: Bool, isDark: Bool) -> String {
+        let wordMarkup = words.map { word in
+            if word.isLineBreak {
+                return "<span class=\"line-break\"></span>"
+            }
+
+            let readingMarkup = word.units.map { unit in
+                let accentClass: String
+                switch unit.accent {
+                case .none: accentClass = "none"
+                case .flat: accentClass = "high"
+                case .drop: accentClass = "drop"
+                }
+                let visibleClass = showAccent ? accentClass : "none"
+                return "<span class=\"unit \(visibleClass)\">\(escape(unit.reading))</span>"
+            }.joined()
+
+            return "<span class=\"word\"><span class=\"reading\">\(readingMarkup)</span><span class=\"surface\">\(escape(word.surface))</span></span>"
+        }.joined()
+
+        let background = isDark ? "#1f2937" : "#ffffff"
+        let foreground = isDark ? "#f9fafb" : "#1f2937"
+        let secondary = isDark ? "#9ca3af" : "#6b7280"
+
+        return """
+        <!doctype html>
+        <html lang="ja">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>AkuMa Export</title>
+          <style>
+            body{margin:0;padding:32px;background:\(background);color:\(foreground);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif}
+            .result{display:flex;flex-wrap:wrap;align-items:flex-end;line-height:1.15}
+            .word{display:inline-flex;flex-direction:column;align-items:center;margin:0 1px 12px}
+            .reading{display:flex;color:\(secondary);font-size:14px;min-height:30px}
+            .unit{min-width:18px;text-align:center;padding-top:10px;border-top:2px solid transparent}
+            .unit.high{border-top-color:#9e4145}.unit.drop{border-top-color:#9e4145;border-right:2px solid #9e4145}
+            .surface{font-size:24px}.line-break{flex-basis:100%;height:1px}
+          </style>
+        </head>
+        <body><main class="result" aria-label="Pitch accent analysis result">\(wordMarkup)</main></body>
+        </html>
+        """
+    }
+
+    private static func escape(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
     }
 }
 
