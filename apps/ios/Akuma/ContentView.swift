@@ -371,6 +371,8 @@ private struct AppText {
     let exportText: String
     let exportImage: String
     let exportHTML: String
+    let dismissHint: String
+    let cycleAccentHint: String
 
     static var current: AppText {
         let languageCode = Locale.current.language.languageCode?.identifier.lowercased()
@@ -420,7 +422,9 @@ private struct AppText {
         exportOptions: "Share or export",
         exportText: "Share text",
         exportImage: "Share image",
-        exportHTML: "Share HTML"
+        exportHTML: "Share HTML",
+        dismissHint: "Dismiss edit hint",
+        cycleAccentHint: "Tap to change pitch accent"
     )
 
     static let ja = AppText(
@@ -457,7 +461,9 @@ private struct AppText {
         exportOptions: "共有・書き出し",
         exportText: "テキストを共有",
         exportImage: "画像を共有",
-        exportHTML: "HTMLを共有"
+        exportHTML: "HTMLを共有",
+        dismissHint: "編集ヒントを閉じる",
+        cycleAccentHint: "タップしてアクセントを切り替え"
     )
 
     static let zh = AppText(
@@ -494,7 +500,9 @@ private struct AppText {
         exportOptions: "分享或匯出",
         exportText: "分享文字",
         exportImage: "分享圖片",
-        exportHTML: "分享 HTML"
+        exportHTML: "分享 HTML",
+        dismissHint: "關閉編輯提示",
+        cycleAccentHint: "點按以切換音調"
     )
 }
 
@@ -1044,7 +1052,11 @@ private struct ResultPanel: View {
             VStack(spacing: 0) {
                 Group {
                     if isAnalyzing {
-                        SkeletonResultView(paragraph: paragraph, isDarkResult: isDarkResult)
+                        SkeletonResultView(
+                            paragraph: paragraph,
+                            isDarkResult: isDarkResult,
+                            analyzingText: text.analyzing
+                        )
                     } else {
                         ResultContentView(
                             words: words,
@@ -1085,6 +1097,7 @@ private struct ResultPanel: View {
                 ResultStatusChip(
                     text: isAnalyzing || isStreaming ? text.analyzing : (statusText ?? text.resultHint),
                     isDark: isDarkResult,
+                    dismissLabel: text.dismissHint,
                     onDismiss: isAnalyzing || isStreaming ? nil : { isStatusDismissed = true }
                 )
                     .padding(.top, AkumaTheme.space3)
@@ -1180,6 +1193,7 @@ private struct ResultContentView: View {
                         AccentWordView(
                             word: word,
                             wordIndex: wordIndex,
+                            text: text,
                             showAccent: showAccent,
                             isDarkResult: isDarkResult,
                             onCycleAccent: { unitIndex in
@@ -1218,6 +1232,7 @@ private struct ResultContentView: View {
 private struct AccentWordView: View {
     let word: AccentWord
     let wordIndex: Int
+    let text: AppText
     let showAccent: Bool
     let isDarkResult: Bool
     let onCycleAccent: (Int) -> Void
@@ -1241,7 +1256,7 @@ private struct AccentWordView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel(textForAccent(unit.accent))
-                            .accessibilityHint("Tap to change pitch accent")
+                            .accessibilityHint(text.cycleAccentHint)
 
                             Button {
                                 onEditReading(unitIndex)
@@ -1253,7 +1268,7 @@ private struct AccentWordView: View {
                             }
                             .buttonStyle(.plain)
                             .frame(minHeight: 24)
-                            .accessibilityLabel(unit.reading.isEmpty ? "Edit reading" : unit.reading)
+                            .accessibilityLabel(unit.reading.isEmpty ? text.editReading : unit.reading)
                         }
                         .frame(minWidth: unitWidth(unit))
                     }
@@ -1287,9 +1302,9 @@ private struct AccentWordView: View {
 
     private func textForAccent(_ accent: AccentKind) -> String {
         switch accent {
-        case .none: "Low pitch"
-        case .flat: "High pitch"
-        case .drop: "Pitch drop"
+        case .none: text.accentNone
+        case .flat: text.accentHigh
+        case .drop: text.accentDrop
         }
     }
 }
@@ -1555,6 +1570,7 @@ private struct ResultActions: View {
 private struct ResultStatusChip: View {
     let text: String
     let isDark: Bool
+    let dismissLabel: String
     let onDismiss: (() -> Void)?
 
     var body: some View {
@@ -1571,7 +1587,7 @@ private struct ResultStatusChip: View {
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Dismiss")
+                .accessibilityLabel(dismissLabel)
             }
         }
         .foregroundStyle(isDark ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText)
@@ -1671,6 +1687,7 @@ private struct ExportAccentWordView: View {
 private struct SkeletonResultView: View {
     let paragraph: String
     let isDarkResult: Bool
+    let analyzingText: String
     @State private var revealedCharacterCount = 0
 
     private var characters: [Character] {
@@ -1699,7 +1716,7 @@ private struct SkeletonResultView: View {
         .overlay {
             ProgressView()
                 .tint(AkumaTheme.green)
-                .accessibilityLabel("Analyzing")
+                .accessibilityLabel(analyzingText)
         }
         .task(id: paragraph) {
             revealedCharacterCount = 0
