@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var isResultExpanded = false
     @State private var isAnalyzing = false
     @State private var isStreaming = false
+    @State private var isAnalysisIssuePresented = false
     @State private var resultStatusOverride: String?
     @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
@@ -33,6 +34,7 @@ struct ContentView: View {
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
+                        isStreaming: isStreaming,
                         canRestore: words != analyzedWords,
                         canUndo: !pastWords.isEmpty,
                         canRedo: !futureWords.isEmpty,
@@ -42,7 +44,6 @@ struct ContentView: View {
                             width: geometry.size.width,
                             height: max(geometry.size.height - AkumaTheme.navHeight, 0)
                         ),
-                        onAnalyze: analyzeParagraph,
                         onPaste: pasteFromClipboard,
                         onInsertSample: insertSample,
                         onUpdateUnit: updateUnit,
@@ -75,6 +76,11 @@ struct ContentView: View {
                 onRestore: restoreResultEdits
             )
         }
+        .alert(text.temporaryIssuesTitle, isPresented: $isAnalysisIssuePresented) {
+            Button(text.done, role: .cancel) {}
+        } message: {
+            Text(text.temporaryIssuesBody)
+        }
         .onChange(of: paragraph) { _, newValue in
             resultStatusOverride = nil
             scheduleAnalysis(for: newValue)
@@ -82,10 +88,11 @@ struct ContentView: View {
         .onDisappear {
             analysisTask?.cancel()
         }
-    }
-
-    private func analyzeParagraph() {
-        scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+        .task {
+            if !paragraph.isEmpty {
+                scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+            }
+        }
     }
 
     private func scheduleAnalysis(
@@ -124,9 +131,21 @@ struct ContentView: View {
             return
         }
 
-        isAnalyzing = true
+        isAnalyzing = false
         isStreaming = false
         resultStatusOverride = nil
+        let visibleLoadingTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: 500_000_000)
+            } catch {
+                return
+            }
+
+            guard paragraph == sourceParagraph, !Task.isCancelled else {
+                return
+            }
+            isAnalyzing = true
+        }
 
         do {
             let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph) { streamedWords in
@@ -134,7 +153,10 @@ struct ContentView: View {
                     return
                 }
 
-                words = streamedWords
+                visibleLoadingTask.cancel()
+                withAnimation(.easeOut(duration: 0.2)) {
+                    words = streamedWords
+                }
                 isAnalyzing = false
                 isStreaming = true
             }
@@ -149,16 +171,20 @@ struct ContentView: View {
             isAnalyzing = false
             isStreaming = false
         } catch is CancellationError {
+            visibleLoadingTask.cancel()
             if paragraph == sourceParagraph {
                 isAnalyzing = false
+                isStreaming = false
             }
         } catch {
+            visibleLoadingTask.cancel()
             if paragraph == sourceParagraph, !Task.isCancelled {
                 words = MockAccentAnalyzer.analyze(sourceParagraph)
                 analyzedWords = words
                 pastWords = []
                 futureWords = []
                 resultStatusOverride = text.analysisFailed
+                isAnalysisIssuePresented = true
                 isAnalyzing = false
                 isStreaming = false
             }
@@ -332,6 +358,8 @@ private struct AppText {
     let undo: String
     let redo: String
     let restoreAllEdits: String
+    let temporaryIssuesTitle: String
+    let temporaryIssuesBody: String
 
     static var current: AppText {
         let languageCode = Locale.current.language.languageCode?.identifier.lowercased()
@@ -375,7 +403,9 @@ private struct AppText {
         done: "Done",
         undo: "Undo edit",
         redo: "Redo edit",
-        restoreAllEdits: "Restore all edits"
+        restoreAllEdits: "Restore all edits",
+        temporaryIssuesTitle: "System issue",
+        temporaryIssuesBody: "The system is temporarily unable to analyze text. A simplified local result is shown; please try again later."
     )
 
     static let ja = AppText(
@@ -406,7 +436,9 @@ private struct AppText {
         done: "完了",
         undo: "編集を取り消す",
         redo: "編集をやり直す",
-        restoreAllEdits: "すべての編集を元に戻す"
+        restoreAllEdits: "すべての編集を元に戻す",
+        temporaryIssuesTitle: "システムの問題",
+        temporaryIssuesBody: "現在システムで一時的に分析を実行できません。簡易結果を表示していますので、少し時間をおいて再度お試しください。"
     )
 
     static let zh = AppText(
@@ -437,7 +469,9 @@ private struct AppText {
         done: "完成",
         undo: "復原編輯",
         redo: "重做編輯",
-        restoreAllEdits: "還原所有編輯"
+        restoreAllEdits: "還原所有編輯",
+        temporaryIssuesTitle: "系統問題",
+        temporaryIssuesBody: "系統目前暫時無法分析文字，已顯示簡化的本機結果，請稍後再試。"
     )
 }
 
@@ -477,13 +511,13 @@ private struct EditorSection: View {
     @Binding var isDarkResult: Bool
     @Binding var isResultExpanded: Bool
     let isAnalyzing: Bool
+    let isStreaming: Bool
     let canRestore: Bool
     let canUndo: Bool
     let canRedo: Bool
     let statusText: String?
     let text: AppText
     let viewportSize: CGSize
-    let onAnalyze: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
     let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
@@ -507,8 +541,6 @@ private struct EditorSection: View {
                         paragraph: $paragraph,
                         text: text,
                         isCompact: false,
-                        isAnalyzing: isAnalyzing,
-                        onAnalyze: onAnalyze,
                         onPaste: onPaste,
                         onInsertSample: onInsertSample
                     )
@@ -520,6 +552,7 @@ private struct EditorSection: View {
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
+                        isStreaming: isStreaming,
                         canRestore: canRestore,
                         canUndo: canUndo,
                         canRedo: canRedo,
@@ -542,8 +575,6 @@ private struct EditorSection: View {
                         paragraph: $paragraph,
                         text: text,
                         isCompact: isCompact,
-                        isAnalyzing: isAnalyzing,
-                        onAnalyze: onAnalyze,
                         onPaste: onPaste,
                         onInsertSample: onInsertSample
                     )
@@ -556,6 +587,7 @@ private struct EditorSection: View {
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
+                        isStreaming: isStreaming,
                         canRestore: canRestore,
                         canUndo: canUndo,
                         canRedo: canRedo,
@@ -591,14 +623,8 @@ private struct InputPanel: View {
     @Binding var paragraph: String
     let text: AppText
     let isCompact: Bool
-    let isAnalyzing: Bool
-    let onAnalyze: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
-
-    private var canAnalyze: Bool {
-        !paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnalyzing
-    }
 
     var body: some View {
         PanelContainer(isCompact: isCompact) {
@@ -637,28 +663,6 @@ private struct InputPanel: View {
                         )
                     }
 
-                    Button(action: onAnalyze) {
-                        if isAnalyzing {
-                            ProgressView()
-                                .controlSize(.small)
-                                .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-                        } else if isCompact {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 18, weight: .semibold))
-                                .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-                        } else {
-                            Label(text.analyze, systemImage: "sparkles")
-                                .font(.system(size: 14, weight: .semibold))
-                                .lineLimit(1)
-                                .frame(height: AkumaTheme.actionControlSize)
-                                .padding(.horizontal, AkumaTheme.space3)
-                        }
-                    }
-                    .buttonStyle(PanelButtonStyle(isActive: canAnalyze))
-                    .disabled(!canAnalyze)
-                    .opacity(canAnalyze || isAnalyzing ? 1 : 0.5)
-                    .accessibilityLabel(isAnalyzing ? text.analyzing : text.analyze)
-
                     Button(action: onInsertSample) {
                         if isCompact {
                             Image(systemName: "dice")
@@ -689,6 +693,7 @@ private struct ResultPanel: View {
     @Binding var isDarkResult: Bool
     @Binding var isResultExpanded: Bool
     let isAnalyzing: Bool
+    let isStreaming: Bool
     let canRestore: Bool
     let canUndo: Bool
     let canRedo: Bool
@@ -700,21 +705,29 @@ private struct ResultPanel: View {
     let onRedo: () -> Void
     let onRestore: () -> Void
     @State private var copyFeedbackVisible = false
+    @State private var isStatusDismissed = false
 
     var body: some View {
         PanelContainer(isCompact: isCompact, isDark: isDarkResult) {
             VStack(spacing: 0) {
-                ResultContentView(
-                    words: words,
-                    showAccent: showAccent,
-                    isDarkResult: isDarkResult,
-                    emptyText: text.result,
-                    text: text,
-                    onUpdateUnit: onUpdateUnit
-                )
+                Group {
+                    if isAnalyzing {
+                        SkeletonResultView(paragraph: paragraph, isDarkResult: isDarkResult)
+                    } else {
+                        ResultContentView(
+                            words: words,
+                            showAccent: showAccent,
+                            isDarkResult: isDarkResult,
+                            emptyText: text.result,
+                            text: text,
+                            onUpdateUnit: onUpdateUnit
+                        )
+                    }
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .transition(.opacity.combined(with: .offset(y: 8)))
 
-                if !words.isEmpty {
+                if !words.isEmpty && !isAnalyzing && !isStreaming {
                     ResultActions(
                         words: words,
                         paragraph: paragraph,
@@ -736,32 +749,14 @@ private struct ResultPanel: View {
             }
         }
         .overlay(alignment: .top) {
-            if isAnalyzing || !words.isEmpty {
-                ResultStatusChip(text: isAnalyzing ? text.analyzing : (statusText ?? text.resultHint), isDark: isDarkResult)
-                    .padding(.top, AkumaTheme.space3)
-                    .opacity(isCompact ? 0 : 1)
-            }
-        }
-        .overlay {
-            if isAnalyzing {
-                VStack(spacing: AkumaTheme.space3) {
-                    ProgressView()
-                        .controlSize(.regular)
-                        .tint(AkumaTheme.green)
-
-                    Text(text.analyzing)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isDarkResult ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText)
-                }
-                .padding(AkumaTheme.space4)
-                .background(
-                    RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
-                        .fill(isDarkResult ? AkumaTheme.darkPanel.opacity(0.92) : AkumaTheme.surface.opacity(0.92))
+            if (isAnalyzing || isStreaming || !words.isEmpty) && !isStatusDismissed {
+                ResultStatusChip(
+                    text: isAnalyzing || isStreaming ? text.analyzing : (statusText ?? text.resultHint),
+                    isDark: isDarkResult,
+                    onDismiss: isAnalyzing || isStreaming ? nil : { isStatusDismissed = true }
                 )
-                .overlay {
-                    RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
-                        .stroke(isDarkResult ? AkumaTheme.darkBorder : AkumaTheme.border, lineWidth: 1)
-                }
+                    .padding(.top, AkumaTheme.space3)
+                    .padding(.horizontal, AkumaTheme.space3)
             }
         }
         .overlay(alignment: .bottom) {
@@ -777,6 +772,17 @@ private struct ResultPanel: View {
                     )
                     .padding(.bottom, AkumaTheme.space7)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: isAnalyzing)
+        .onChange(of: isAnalyzing) { _, newValue in
+            if newValue {
+                isStatusDismissed = false
+            }
+        }
+        .onChange(of: isStreaming) { oldValue, newValue in
+            if oldValue && !newValue {
+                isStatusDismissed = false
             }
         }
     }
@@ -1169,19 +1175,84 @@ private struct ResultActions: View {
 private struct ResultStatusChip: View {
     let text: String
     let isDark: Bool
+    let onDismiss: (() -> Void)?
 
     var body: some View {
-        Text(text)
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(isDark ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText)
-            .lineLimit(2)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, AkumaTheme.space3)
-            .frame(minHeight: 32)
-            .background(
-                RoundedRectangle(cornerRadius: AkumaTheme.radiusMedium, style: .continuous)
-                    .fill(isDark ? AkumaTheme.darkPanel : AkumaTheme.surface)
-            )
+        HStack(spacing: AkumaTheme.space2) {
+            Text(text)
+                .font(.system(size: 14, weight: .medium))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+
+            if let onDismiss {
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+        }
+        .foregroundStyle(isDark ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText)
+        .padding(.leading, AkumaTheme.space3)
+        .padding(.trailing, onDismiss == nil ? AkumaTheme.space3 : AkumaTheme.space1)
+        .frame(minHeight: 36)
+        .background(
+            RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
+                .fill(isDark ? AkumaTheme.darkPanel : AkumaTheme.surface)
+        )
+        .shadow(color: Color.black.opacity(isDark ? 0 : 0.08), radius: 6, y: 2)
+    }
+}
+
+private struct SkeletonResultView: View {
+    let paragraph: String
+    let isDarkResult: Bool
+    @State private var revealedCharacterCount = 0
+
+    private var characters: [Character] {
+        paragraph.filter { !$0.isWhitespace }.map { $0 }
+    }
+
+    var body: some View {
+        ScrollView {
+            FlowLayout(spacing: AkumaTheme.space2, lineSpacing: AkumaTheme.space4) {
+                ForEach(Array(characters.enumerated()), id: \.offset) { index, character in
+                    VStack(spacing: AkumaTheme.space2) {
+                        Capsule()
+                            .fill(AkumaTheme.red.opacity(index < revealedCharacterCount ? 0.24 : 0.08))
+                            .frame(width: 20, height: 2)
+                        RoundedRectangle(cornerRadius: AkumaTheme.radiusSmall)
+                            .fill(shimmerColor.opacity(index < revealedCharacterCount ? 0.5 : 0.24))
+                            .frame(width: character.isASCII ? 16 : 24, height: 24)
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .padding(.top, AkumaTheme.space7)
+            .padding(.horizontal, AkumaTheme.space5)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .overlay {
+            ProgressView()
+                .tint(AkumaTheme.green)
+                .accessibilityLabel("Analyzing")
+        }
+        .task(id: paragraph) {
+            revealedCharacterCount = 0
+            for index in characters.indices {
+                guard !Task.isCancelled else { return }
+                try? await Task.sleep(nanoseconds: 22_000_000)
+                withAnimation(.easeOut(duration: 0.16)) {
+                    revealedCharacterCount = index + 1
+                }
+            }
+        }
+    }
+
+    private var shimmerColor: Color {
+        isDarkResult ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText
     }
 }
 
