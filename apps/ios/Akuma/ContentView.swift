@@ -14,17 +14,21 @@ struct ContentView: View {
     @State private var isAnalyzing = false
     @State private var isStreaming = false
     @State private var isAnalysisIssuePresented = false
+    @State private var isGuidePresented = false
     @State private var resultStatusOverride: String?
     @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
 
     private static let analysisDebounceNanoseconds: UInt64 = 800_000_000
     private let text = AppText.current
+    private let guideText = GuideText.current
 
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                NavigationBar(text: text)
+                NavigationBar(text: text, guideLabel: guideText.guide) {
+                    isGuidePresented = true
+                }
 
                 ScrollView {
                     EditorSection(
@@ -80,6 +84,9 @@ struct ContentView: View {
             Button(text.done, role: .cancel) {}
         } message: {
             Text(text.temporaryIssuesBody)
+        }
+        .sheet(isPresented: $isGuidePresented) {
+            GuideView(text: guideText)
         }
         .onChange(of: paragraph) { _, newValue in
             resultStatusOverride = nil
@@ -491,8 +498,297 @@ private struct AppText {
     )
 }
 
+private struct GuideText {
+    let guide: String
+    let heading: String
+    let intro: String
+    let pitchHeading: String
+    let pitchIntro: String
+    let pitchNoneTitle: String
+    let pitchNoneBody: String
+    let pitchHighTitle: String
+    let pitchHighBody: String
+    let pitchDropTitle: String
+    let pitchDropBody: String
+    let startTitle: String
+    let startBody: String
+    let editTitle: String
+    let editBody: String
+    let shareTitle: String
+    let shareBody: String
+    let about: String
+    let aboutBody: String
+    let email: String
+    let sourceCode: String
+    let socialPending: String
+    let close: String
+
+    static var current: GuideText {
+        let code = Locale.current.language.languageCode?.identifier.lowercased()
+        if code == "zh" { return .zh }
+        if code == "ja" { return .ja }
+        return .en
+    }
+
+    static let en = GuideText(
+        guide: "Guide",
+        heading: "Make Japanese pronunciation natural and clear",
+        intro: "AkuMa turns Japanese text into pronunciation material you can review, correct, and share.",
+        pitchHeading: "Why the accent line matters",
+        pitchIntro: "Pitch can affect both naturalness and word meaning. AkuMa marks where the voice stays high and where it falls.",
+        pitchNoneTitle: "Low / follows",
+        pitchNoneBody: "Particles can follow the previous word instead of carrying their own high mark.",
+        pitchHighTitle: "High, no fall",
+        pitchHighBody: "The marked span stays high with no fall inside the word.",
+        pitchDropTitle: "High, then fall",
+        pitchDropBody: "The voice falls after this mora; following particles shift low.",
+        startTitle: "Start an analysis",
+        startBody: "Type or paste Japanese text, or insert a random sample. Analysis starts automatically.",
+        editTitle: "Correct the result",
+        editBody: "Tap an accent lane to cycle its pitch. Tap a reading to edit both the kana and pitch in a focused sheet. Undo, redo, or restore from the actions menu.",
+        shareTitle: "Save in the right format",
+        shareBody: "Copy text for notes, or share a native image, HTML file, or plain text through the system share sheet.",
+        about: "About Sessatakuma",
+        aboutBody: "Sessatakuma develops Japanese-learning tools and is planning a speaking-practice community. We share the practice system and tools our team built to help learners practice efficiently and build confidence speaking Japanese.",
+        email: "Email us",
+        sourceCode: "Source code",
+        socialPending: "More social accounts are coming soon.",
+        close: "Close"
+    )
+
+    static let ja = GuideText(
+        guide: "使い方",
+        heading: "日本語の発音を、より自然に、より明瞭に",
+        intro: "AkuMa は日本語テキストを、確認・修正・共有できる発音教材に変換します。",
+        pitchHeading: "アクセント線の見方",
+        pitchIntro: "ピッチアクセントは自然さだけでなく、単語の意味にも影響します。声が高い部分と下がる位置を線で示します。",
+        pitchNoneTitle: "低い・前に従う",
+        pitchNoneBody: "助詞などは独自の高い印を持たず、前の単語のピッチに従います。",
+        pitchHighTitle: "高い・下降なし",
+        pitchHighBody: "印のある範囲は高いままで、単語の途中では下がりません。",
+        pitchDropTitle: "高い・その後下降",
+        pitchDropBody: "この拍の後で声が下がり、後続する助詞も低くなります。",
+        startTitle: "解析を始める",
+        startBody: "日本語を入力・貼り付けするか、例文を挿入します。解析は自動で始まります。",
+        editTitle: "結果を修正する",
+        editBody: "アクセント線をタップして切り替え、ふりがなをタップして読みとピッチを編集します。操作メニューから取り消し・やり直し・全復元もできます。",
+        shareTitle: "用途に合わせて保存する",
+        shareBody: "ノート用にテキストをコピーしたり、画像・HTML・テキストをiOSの共有シートから保存できます。",
+        about: "Sessatakuma について",
+        aboutBody: "Sessatakuma は日本語学習ツールを開発しながら、会話練習コミュニティを計画しています。チームが築いた練習体系とツールを共有し、効率的な練習と話す自信づくりを支援します。",
+        email: "メール",
+        sourceCode: "ソースコード",
+        socialPending: "その他のSNSアカウントは準備中です。",
+        close: "閉じる"
+    )
+
+    static let zh = GuideText(
+        guide: "指南",
+        heading: "讓日語發音更自然、更清楚",
+        intro: "AkuMa 將日語文字轉換成可以檢查、修正與分享的發音教材。",
+        pitchHeading: "如何閱讀音調線",
+        pitchIntro: "音調不只影響自然度，也可能改變詞義。線條會標示高音範圍與下降位置。",
+        pitchNoneTitle: "低音／承接前詞",
+        pitchNoneBody: "部分助詞沒有自己的高音標記，而是承接前一個詞的音調。",
+        pitchHighTitle: "高音、不下降",
+        pitchHighBody: "標記範圍維持高音，詞內不會下降。",
+        pitchDropTitle: "高音、隨後下降",
+        pitchDropBody: "聲音在這一拍之後下降，後接助詞也會轉為低音。",
+        startTitle: "開始分析",
+        startBody: "輸入或貼上日語，也可以插入隨機範文；分析會自動開始。",
+        editTitle: "修正結果",
+        editBody: "點按音調線即可循環切換；點按假名可在專用面板中修改讀音與音調。操作選單也支援復原、重做與全部還原。",
+        shareTitle: "選擇合適的格式",
+        shareBody: "可複製文字做筆記，也能透過 iOS 分享面板輸出圖片、HTML 或純文字。",
+        about: "關於 Sessatakuma",
+        aboutBody: "Sessatakuma 開發日語學習工具，並規劃日語口說練習社群。我們分享團隊建立的練習系統與工具，協助學習者有效練習並建立開口說日語的自信。",
+        email: "寄送電子郵件",
+        sourceCode: "原始碼",
+        socialPending: "其他社群帳號正在準備中。",
+        close: "關閉"
+    )
+}
+
+private struct GuideView: View {
+    let text: GuideText
+    @Environment(\.dismiss) private var dismiss
+    @State private var isAboutPresented = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: AkumaTheme.space7) {
+                    VStack(alignment: .leading, spacing: AkumaTheme.space3) {
+                        Text(text.heading)
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(AkumaTheme.text)
+                        Text(text.intro)
+                            .font(.system(size: 17))
+                            .foregroundStyle(AkumaTheme.secondaryText)
+                    }
+
+                    VStack(alignment: .leading, spacing: AkumaTheme.space4) {
+                        Text(text.pitchHeading)
+                            .font(.system(size: 24, weight: .bold))
+                        Text(text.pitchIntro)
+                            .foregroundStyle(AkumaTheme.secondaryText)
+
+                        PitchGuideCard(title: text.pitchNoneTitle, detail: text.pitchNoneBody, accent: .none)
+                        PitchGuideCard(title: text.pitchHighTitle, detail: text.pitchHighBody, accent: .flat)
+                        PitchGuideCard(title: text.pitchDropTitle, detail: text.pitchDropBody, accent: .drop)
+                    }
+
+                    VStack(spacing: AkumaTheme.space3) {
+                        GuideStepCard(number: 1, title: text.startTitle, detail: text.startBody, icon: "text.cursor")
+                        GuideStepCard(number: 2, title: text.editTitle, detail: text.editBody, icon: "slider.horizontal.3")
+                        GuideStepCard(number: 3, title: text.shareTitle, detail: text.shareBody, icon: "square.and.arrow.up")
+                    }
+                }
+                .padding(AkumaTheme.space5)
+                .frame(maxWidth: 720)
+                .frame(maxWidth: .infinity)
+            }
+            .background(AkumaTheme.background)
+            .navigationTitle(text.guide)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isAboutPresented = true
+                    } label: {
+                        Label(text.about, systemImage: "info.circle")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(text.close) { dismiss() }
+                }
+            }
+            .sheet(isPresented: $isAboutPresented) {
+                AboutView(text: text)
+            }
+        }
+    }
+}
+
+private struct PitchGuideCard: View {
+    let title: String
+    let detail: String
+    let accent: AccentKind
+
+    var body: some View {
+        HStack(alignment: .top, spacing: AkumaTheme.space4) {
+            VStack(spacing: AkumaTheme.space2) {
+                AccentLineView(accent: accent, isVisible: true)
+                    .frame(width: 40, height: 16)
+                Text("あ")
+                    .font(.system(size: 24))
+            }
+            .frame(width: 48)
+
+            VStack(alignment: .leading, spacing: AkumaTheme.space1) {
+                Text(title).font(.system(size: 17, weight: .semibold))
+                Text(detail)
+                    .font(.system(size: 15))
+                    .foregroundStyle(AkumaTheme.secondaryText)
+            }
+        }
+        .padding(AkumaTheme.space4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AkumaTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous))
+        .shadow(color: Color.black.opacity(0.06), radius: 8, y: 2)
+    }
+}
+
+private struct GuideStepCard: View {
+    let number: Int
+    let title: String
+    let detail: String
+    let icon: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: AkumaTheme.space4) {
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(AkumaTheme.green)
+                .frame(width: 44, height: 44)
+                .background(AkumaTheme.greenLight)
+                .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusMedium, style: .continuous))
+
+            VStack(alignment: .leading, spacing: AkumaTheme.space1) {
+                Text("\(number). \(title)")
+                    .font(.system(size: 18, weight: .semibold))
+                Text(detail)
+                    .font(.system(size: 15))
+                    .foregroundStyle(AkumaTheme.secondaryText)
+            }
+        }
+        .padding(AkumaTheme.space4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AkumaTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous))
+    }
+}
+
+private struct AboutView: View {
+    let text: GuideText
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: AkumaTheme.space5) {
+                    Image("Logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 72, height: 72)
+                    Text("Sessatakuma")
+                        .font(.system(size: 28, weight: .bold))
+                    Text(text.aboutBody)
+                        .font(.system(size: 17))
+                        .foregroundStyle(AkumaTheme.secondaryText)
+
+                    Link(destination: URL(string: "mailto:contact@sessatakuma.dev")!) {
+                        Label(text.email, systemImage: "envelope")
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AkumaTheme.green)
+
+                    Link(destination: URL(string: "https://github.com/sessatakuma")!) {
+                        Label(text.sourceCode, systemImage: "chevron.left.forwardslash.chevron.right")
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Text(text.socialPending)
+                        .font(.system(size: 14))
+                        .foregroundStyle(AkumaTheme.secondaryText)
+                }
+                .padding(AkumaTheme.space5)
+                .frame(maxWidth: 560)
+                .frame(maxWidth: .infinity)
+            }
+            .background(AkumaTheme.background)
+            .navigationTitle(text.about)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(text.close) { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
 private struct NavigationBar: View {
     let text: AppText
+    let guideLabel: String
+    let onOpenGuide: () -> Void
 
     var body: some View {
         HStack(spacing: AkumaTheme.space2) {
@@ -507,6 +803,15 @@ private struct NavigationBar: View {
                 .foregroundStyle(AkumaTheme.invertedText)
 
             Spacer(minLength: AkumaTheme.space4)
+
+            Button(action: onOpenGuide) {
+                Label(guideLabel, systemImage: "book")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, AkumaTheme.space3)
+                    .frame(height: AkumaTheme.actionControlSize)
+            }
+            .buttonStyle(NavigationButtonStyle())
+            .accessibilityLabel(guideLabel)
         }
         .padding(.horizontal, AkumaTheme.space5)
         .frame(maxWidth: .infinity)
@@ -517,6 +822,17 @@ private struct NavigationBar: View {
                 .fill(AkumaTheme.border)
                 .frame(height: 1)
         }
+    }
+}
+
+private struct NavigationButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(AkumaTheme.invertedText)
+            .background(AkumaTheme.invertedText.opacity(configuration.isPressed ? 0.2 : 0.12))
+            .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusMedium, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
