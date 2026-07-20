@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 import SwiftUI
 import UIKit
 
@@ -1064,6 +1065,7 @@ private struct ResultPanel: View {
                             isDarkResult: isDarkResult,
                             emptyText: text.result,
                             text: text,
+                            isInteractive: !isStreaming,
                             onUpdateUnit: onUpdateUnit
                         )
                     }
@@ -1175,6 +1177,7 @@ private struct ResultContentView: View {
     let isDarkResult: Bool
     let emptyText: String
     let text: AppText
+    var isInteractive = true
     let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
     @State private var editTarget: ReadingEditTarget?
 
@@ -1196,6 +1199,7 @@ private struct ResultContentView: View {
                             text: text,
                             showAccent: showAccent,
                             isDarkResult: isDarkResult,
+                            isInteractive: isInteractive,
                             onCycleAccent: { unitIndex in
                                 let accent = word.units[unitIndex].accent.next
                                 onUpdateUnit(wordIndex, unitIndex, nil, accent)
@@ -1235,6 +1239,7 @@ private struct AccentWordView: View {
     let text: AppText
     let showAccent: Bool
     let isDarkResult: Bool
+    let isInteractive: Bool
     let onCycleAccent: (Int) -> Void
     let onEditReading: (Int) -> Void
 
@@ -1255,6 +1260,7 @@ private struct AccentWordView: View {
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .disabled(!isInteractive)
                             .accessibilityLabel(textForAccent(unit.accent))
                             .accessibilityHint(text.cycleAccentHint)
 
@@ -1267,6 +1273,7 @@ private struct AccentWordView: View {
                                     .lineLimit(1)
                             }
                             .buttonStyle(.plain)
+                            .disabled(!isInteractive)
                             .frame(minHeight: 24)
                             .accessibilityLabel(unit.reading.isEmpty ? text.editReading : unit.reading)
                         }
@@ -2230,19 +2237,47 @@ private enum MockAccentAnalyzer {
     }
 
     private static func fallbackWords(for text: String) -> [AccentWord] {
-        text.map { character in
-            if character == "\n" {
-                return AccentWord(surface: "", units: [], isLineBreak: true)
+        var result: [AccentWord] = []
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+
+        lines.enumerated().forEach { index, line in
+            let lineText = String(line)
+            let tokenizer = NLTokenizer(unit: .word)
+            tokenizer.string = lineText
+            var cursor = lineText.startIndex
+
+            tokenizer.enumerateTokens(in: lineText.startIndex..<lineText.endIndex) { range, _ in
+                if cursor < range.lowerBound {
+                    appendFallbackSegment(String(lineText[cursor..<range.lowerBound]), to: &result)
+                }
+                appendFallbackSegment(String(lineText[range]), to: &result)
+                cursor = range.upperBound
+                return true
             }
 
-            if character.isWhitespace {
-                return word(String(character), "", [.none])
+            if cursor < lineText.endIndex {
+                appendFallbackSegment(String(lineText[cursor...]), to: &result)
             }
 
-            let surface = String(character)
-            let accent: AccentKind = character.unicodeScalars.first?.value.isMultiple(of: 3) == true ? .drop : .flat
-            return word(surface, surface, [accent])
+            if index < lines.count - 1 {
+                result.append(AccentWord(surface: "", units: [], isLineBreak: true))
+            }
         }
+
+        return result
+    }
+
+    private static func appendFallbackSegment(_ surface: String, to result: inout [AccentWord]) {
+        guard !surface.isEmpty else {
+            return
+        }
+
+        result.append(
+            AccentWord(
+                surface: surface,
+                units: [AccentUnit(reading: "", accent: .none)]
+            )
+        )
     }
 
     private static func word(_ surface: String, _ reading: String, _ accents: [AccentKind]) -> AccentWord {
