@@ -5,6 +5,9 @@ import UIKit
 struct ContentView: View {
     @State private var paragraph = ContentView.initialParagraph()
     @State private var words: [AccentWord] = []
+    @State private var analyzedWords: [AccentWord] = []
+    @State private var pastWords: [[AccentWord]] = []
+    @State private var futureWords: [[AccentWord]] = []
     @State private var showAccent = true
     @State private var isDarkResult = false
     @State private var isResultExpanded = false
@@ -25,11 +28,14 @@ struct ContentView: View {
                 ScrollView {
                     EditorSection(
                         paragraph: $paragraph,
-                        words: words,
+                        words: $words,
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
+                        canRestore: words != analyzedWords,
+                        canUndo: !pastWords.isEmpty,
+                        canRedo: !futureWords.isEmpty,
                         statusText: resultStatusOverride,
                         text: text,
                         viewportSize: CGSize(
@@ -38,7 +44,11 @@ struct ContentView: View {
                         ),
                         onAnalyze: analyzeParagraph,
                         onPaste: pasteFromClipboard,
-                        onInsertSample: insertSample
+                        onInsertSample: insertSample,
+                        onUpdateUnit: updateUnit,
+                        onUndo: undoResultEdit,
+                        onRedo: redoResultEdit,
+                        onRestore: restoreResultEdits
                     )
                     .frame(width: geometry.size.width)
                 }
@@ -50,11 +60,19 @@ struct ContentView: View {
         }
         .sheet(isPresented: $isResultExpanded) {
             ExpandedResultView(
-                words: words,
+                words: $words,
                 paragraph: paragraph,
                 showAccent: $showAccent,
                 isDarkResult: $isDarkResult,
-                text: text
+                isResultExpanded: $isResultExpanded,
+                text: text,
+                canRestore: words != analyzedWords,
+                canUndo: !pastWords.isEmpty,
+                canRedo: !futureWords.isEmpty,
+                onUpdateUnit: updateUnit,
+                onUndo: undoResultEdit,
+                onRedo: redoResultEdit,
+                onRestore: restoreResultEdits
             )
         }
         .onChange(of: paragraph) { _, newValue in
@@ -125,6 +143,9 @@ struct ContentView: View {
             }
 
             words = analyzedWords
+            self.analyzedWords = analyzedWords
+            pastWords = []
+            futureWords = []
             isAnalyzing = false
             isStreaming = false
         } catch is CancellationError {
@@ -134,6 +155,9 @@ struct ContentView: View {
         } catch {
             if paragraph == sourceParagraph, !Task.isCancelled {
                 words = MockAccentAnalyzer.analyze(sourceParagraph)
+                analyzedWords = words
+                pastWords = []
+                futureWords = []
                 resultStatusOverride = text.analysisFailed
                 isAnalyzing = false
                 isStreaming = false
@@ -163,6 +187,56 @@ struct ContentView: View {
 
         lastSampleIndex = nextIndex
         paragraph = Self.sampleParagraphs[nextIndex]
+    }
+
+    private func updateUnit(wordIndex: Int, unitIndex: Int, reading: String?, accent: AccentKind?) {
+        guard words.indices.contains(wordIndex), words[wordIndex].units.indices.contains(unitIndex) else {
+            return
+        }
+
+        var updatedWords = words
+        if let reading {
+            updatedWords[wordIndex].units[unitIndex].reading = reading
+        }
+        if let accent {
+            updatedWords[wordIndex].units[unitIndex].accent = accent
+        }
+        commitResultEdit(updatedWords)
+    }
+
+    private func commitResultEdit(_ updatedWords: [AccentWord]) {
+        guard updatedWords != words else {
+            return
+        }
+
+        pastWords.append(words)
+        if pastWords.count > 50 {
+            pastWords.removeFirst(pastWords.count - 50)
+        }
+        futureWords = []
+        words = updatedWords
+    }
+
+    private func undoResultEdit() {
+        guard let previousWords = pastWords.popLast() else {
+            return
+        }
+
+        futureWords.insert(words, at: 0)
+        words = previousWords
+    }
+
+    private func redoResultEdit() {
+        guard !futureWords.isEmpty else {
+            return
+        }
+
+        pastWords.append(words)
+        words = futureWords.removeFirst()
+    }
+
+    private func restoreResultEdits() {
+        commitResultEdit(analyzedWords)
     }
 
     private static func initialParagraph() -> String {
@@ -248,6 +322,16 @@ private struct AppText {
     let darkResult: String
     let lightResult: String
     let resultHint: String
+    let editReading: String
+    let reading: String
+    let accentNone: String
+    let accentHigh: String
+    let accentDrop: String
+    let cancel: String
+    let done: String
+    let undo: String
+    let redo: String
+    let restoreAllEdits: String
 
     static var current: AppText {
         let languageCode = Locale.current.language.languageCode?.identifier.lowercased()
@@ -281,7 +365,17 @@ private struct AppText {
         share: "Share",
         darkResult: "Dark result",
         lightResult: "Light result",
-        resultHint: "Analysis complete"
+        resultHint: "Analysis complete. Tap a reading or accent mark to edit.",
+        editReading: "Edit reading",
+        reading: "Reading",
+        accentNone: "Low",
+        accentHigh: "High",
+        accentDrop: "Drop",
+        cancel: "Cancel",
+        done: "Done",
+        undo: "Undo edit",
+        redo: "Redo edit",
+        restoreAllEdits: "Restore all edits"
     )
 
     static let ja = AppText(
@@ -302,7 +396,17 @@ private struct AppText {
         share: "共有",
         darkResult: "ダーク表示",
         lightResult: "ライト表示",
-        resultHint: "解析完了"
+        resultHint: "解析完了。ふりがな・アクセントをタップして編集できます。",
+        editReading: "ふりがなを編集",
+        reading: "ふりがな",
+        accentNone: "低",
+        accentHigh: "高",
+        accentDrop: "下降",
+        cancel: "キャンセル",
+        done: "完了",
+        undo: "編集を取り消す",
+        redo: "編集をやり直す",
+        restoreAllEdits: "すべての編集を元に戻す"
     )
 
     static let zh = AppText(
@@ -323,7 +427,17 @@ private struct AppText {
         share: "分享",
         darkResult: "深色結果",
         lightResult: "淺色結果",
-        resultHint: "分析完成"
+        resultHint: "分析完成。點按假名或音調標記即可編輯。",
+        editReading: "編輯假名",
+        reading: "假名",
+        accentNone: "低",
+        accentHigh: "高",
+        accentDrop: "下降",
+        cancel: "取消",
+        done: "完成",
+        undo: "復原編輯",
+        redo: "重做編輯",
+        restoreAllEdits: "還原所有編輯"
     )
 }
 
@@ -358,17 +472,24 @@ private struct NavigationBar: View {
 
 private struct EditorSection: View {
     @Binding var paragraph: String
-    let words: [AccentWord]
+    @Binding var words: [AccentWord]
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
     @Binding var isResultExpanded: Bool
     let isAnalyzing: Bool
+    let canRestore: Bool
+    let canUndo: Bool
+    let canRedo: Bool
     let statusText: String?
     let text: AppText
     let viewportSize: CGSize
     let onAnalyze: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
+    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onRestore: () -> Void
 
     private var isCompact: Bool {
         viewportSize.width <= 768
@@ -393,15 +514,22 @@ private struct EditorSection: View {
                     )
 
                     ResultPanel(
-                        words: words,
+                        words: $words,
                         paragraph: paragraph,
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
+                        canRestore: canRestore,
+                        canUndo: canUndo,
+                        canRedo: canRedo,
                         statusText: statusText,
                         text: text,
-                        isCompact: false
+                        isCompact: false,
+                        onUpdateUnit: onUpdateUnit,
+                        onUndo: onUndo,
+                        onRedo: onRedo,
+                        onRestore: onRestore
                     )
                 }
                 .frame(minHeight: max(viewportSize.height - (AkumaTheme.space6 * 2), 520))
@@ -422,15 +550,22 @@ private struct EditorSection: View {
                     .frame(minHeight: compactPanelHeight)
 
                     ResultPanel(
-                        words: words,
+                        words: $words,
                         paragraph: paragraph,
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
                         isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
+                        canRestore: canRestore,
+                        canUndo: canUndo,
+                        canRedo: canRedo,
                         statusText: statusText,
                         text: text,
-                        isCompact: isCompact
+                        isCompact: isCompact,
+                        onUpdateUnit: onUpdateUnit,
+                        onUndo: onUndo,
+                        onRedo: onRedo,
+                        onRestore: onRestore
                     )
                     .frame(minHeight: compactPanelHeight)
                 }
@@ -548,15 +683,22 @@ private struct InputPanel: View {
 }
 
 private struct ResultPanel: View {
-    let words: [AccentWord]
+    @Binding var words: [AccentWord]
     let paragraph: String
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
     @Binding var isResultExpanded: Bool
     let isAnalyzing: Bool
+    let canRestore: Bool
+    let canUndo: Bool
+    let canRedo: Bool
     let statusText: String?
     let text: AppText
     let isCompact: Bool
+    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onRestore: () -> Void
     @State private var copyFeedbackVisible = false
 
     var body: some View {
@@ -566,7 +708,9 @@ private struct ResultPanel: View {
                     words: words,
                     showAccent: showAccent,
                     isDarkResult: isDarkResult,
-                    emptyText: text.result
+                    emptyText: text.result,
+                    text: text,
+                    onUpdateUnit: onUpdateUnit
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
@@ -579,8 +723,14 @@ private struct ResultPanel: View {
                         isResultExpanded: $isResultExpanded,
                         text: text,
                         isCompact: isCompact,
+                        canRestore: canRestore,
+                        canUndo: canUndo,
+                        canRedo: canRedo,
                         copyFeedbackVisible: $copyFeedbackVisible,
-                        onCopy: copyResult
+                        onCopy: copyResult,
+                        onUndo: onUndo,
+                        onRedo: onRedo,
+                        onRestore: onRestore
                     )
                 }
             }
@@ -673,6 +823,9 @@ private struct ResultContentView: View {
     let showAccent: Bool
     let isDarkResult: Bool
     let emptyText: String
+    let text: AppText
+    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    @State private var editTarget: ReadingEditTarget?
 
     var body: some View {
         ScrollView {
@@ -685,11 +838,25 @@ private struct ResultContentView: View {
                     .padding(.horizontal, AkumaTheme.space5)
             } else {
                 FlowLayout(spacing: 0, lineSpacing: 10) {
-                    ForEach(Array(words.enumerated()), id: \.offset) { _, word in
+                    ForEach(Array(words.enumerated()), id: \.offset) { wordIndex, word in
                         AccentWordView(
                             word: word,
+                            wordIndex: wordIndex,
                             showAccent: showAccent,
-                            isDarkResult: isDarkResult
+                            isDarkResult: isDarkResult,
+                            onCycleAccent: { unitIndex in
+                                let accent = word.units[unitIndex].accent.next
+                                onUpdateUnit(wordIndex, unitIndex, nil, accent)
+                            },
+                            onEditReading: { unitIndex in
+                                let unit = word.units[unitIndex]
+                                editTarget = ReadingEditTarget(
+                                    wordIndex: wordIndex,
+                                    unitIndex: unitIndex,
+                                    reading: unit.reading,
+                                    accent: unit.accent
+                                )
+                            }
                         )
                     }
                 }
@@ -700,13 +867,23 @@ private struct ResultContentView: View {
             }
         }
         .scrollIndicators(.hidden)
+        .sheet(item: $editTarget) { target in
+            ReadingEditorSheet(target: target, text: text) { reading, accent in
+                onUpdateUnit(target.wordIndex, target.unitIndex, reading, accent)
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
     }
 }
 
 private struct AccentWordView: View {
     let word: AccentWord
+    let wordIndex: Int
     let showAccent: Bool
     let isDarkResult: Bool
+    let onCycleAccent: (Int) -> Void
+    let onEditReading: (Int) -> Void
 
     var body: some View {
         if word.isLineBreak {
@@ -715,16 +892,30 @@ private struct AccentWordView: View {
         } else {
             VStack(spacing: 2) {
                 HStack(spacing: 0) {
-                    ForEach(Array(word.units.enumerated()), id: \.offset) { _, unit in
+                    ForEach(Array(word.units.enumerated()), id: \.offset) { unitIndex, unit in
                         VStack(spacing: 2) {
-                            AccentLineView(accent: unit.accent, isVisible: showAccent)
-                                .frame(height: 12)
+                            Button {
+                                onCycleAccent(unitIndex)
+                            } label: {
+                                AccentLineView(accent: unit.accent, isVisible: showAccent)
+                                    .frame(height: 20)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(textForAccent(unit.accent))
+                            .accessibilityHint("Tap to change pitch accent")
 
-                            Text(unit.reading)
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundStyle(readingColor)
-                                .lineLimit(1)
-                                .opacity(unit.reading.isEmpty ? 0 : 1)
+                            Button {
+                                onEditReading(unitIndex)
+                            } label: {
+                                Text(unit.reading.isEmpty ? "　" : unit.reading)
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundStyle(readingColor)
+                                    .lineLimit(1)
+                            }
+                            .buttonStyle(.plain)
+                            .frame(minHeight: 24)
+                            .accessibilityLabel(unit.reading.isEmpty ? "Edit reading" : unit.reading)
                         }
                         .frame(minWidth: unitWidth(unit))
                     }
@@ -754,6 +945,74 @@ private struct AccentWordView: View {
 
     private var readingColor: Color {
         isDarkResult ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText
+    }
+
+    private func textForAccent(_ accent: AccentKind) -> String {
+        switch accent {
+        case .none: "Low pitch"
+        case .flat: "High pitch"
+        case .drop: "Pitch drop"
+        }
+    }
+}
+
+private struct ReadingEditTarget: Identifiable {
+    let wordIndex: Int
+    let unitIndex: Int
+    let reading: String
+    let accent: AccentKind
+
+    var id: String { "\(wordIndex)-\(unitIndex)" }
+}
+
+private struct ReadingEditorSheet: View {
+    let target: ReadingEditTarget
+    let text: AppText
+    let onSave: (String, AccentKind) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var reading: String
+    @State private var accent: AccentKind
+
+    init(target: ReadingEditTarget, text: AppText, onSave: @escaping (String, AccentKind) -> Void) {
+        self.target = target
+        self.text = text
+        self.onSave = onSave
+        _reading = State(initialValue: target.reading)
+        _accent = State(initialValue: target.accent)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(text.reading) {
+                    TextField(text.reading, text: $reading)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+
+                Section(text.accent) {
+                    Picker(text.accent, selection: $accent) {
+                        Text(text.accentNone).tag(AccentKind.none)
+                        Text(text.accentHigh).tag(AccentKind.flat)
+                        Text(text.accentDrop).tag(AccentKind.drop)
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
+            .navigationTitle(text.editReading)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(text.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(text.done) {
+                        onSave(reading, accent)
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -788,8 +1047,15 @@ private struct ResultActions: View {
     @Binding var isResultExpanded: Bool
     let text: AppText
     let isCompact: Bool
+    let canRestore: Bool
+    let canUndo: Bool
+    let canRedo: Bool
     @Binding var copyFeedbackVisible: Bool
     let onCopy: () -> Void
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onRestore: () -> Void
+    @State private var isRestoreConfirmationVisible = false
 
     private var exportText: String {
         ResultExporter.plainText(words: words, showAccent: showAccent)
@@ -833,6 +1099,35 @@ private struct ResultActions: View {
 
             Spacer(minLength: AkumaTheme.space2)
 
+            Menu {
+                Button(action: onUndo) {
+                    Label(text.undo, systemImage: "arrow.uturn.backward")
+                }
+                .disabled(!canUndo)
+                .keyboardShortcut("z", modifiers: .command)
+
+                Button(action: onRedo) {
+                    Label(text.redo, systemImage: "arrow.uturn.forward")
+                }
+                .disabled(!canRedo)
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+
+                Divider()
+
+                Button(role: .destructive) {
+                    isRestoreConfirmationVisible = true
+                } label: {
+                    Label(text.restoreAllEdits, systemImage: "arrow.counterclockwise")
+                }
+                .disabled(!canRestore)
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+            }
+            .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
+            .accessibilityLabel(text.restoreAllEdits)
+
             IconButton(
                 title: isDarkResult ? text.lightResult : text.darkResult,
                 systemName: isDarkResult ? "sun.max" : "moon",
@@ -850,20 +1145,24 @@ private struct ResultActions: View {
             .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
             .accessibilityLabel(text.share)
 
-            if !isCompact {
-                IconButton(
-                    title: text.expandResult,
-                    systemName: "arrow.up.left.and.arrow.down.right",
-                    style: .plain,
-                    isDark: isDarkResult
-                ) {
-                    isResultExpanded = true
-                }
+            IconButton(
+                title: isResultExpanded ? text.collapseResult : text.expandResult,
+                systemName: isResultExpanded
+                    ? "arrow.down.right.and.arrow.up.left"
+                    : "arrow.up.left.and.arrow.down.right",
+                style: .plain,
+                isDark: isDarkResult
+            ) {
+                isResultExpanded.toggle()
             }
         }
         .padding(.horizontal, AkumaTheme.space5)
         .padding(.top, AkumaTheme.space4)
         .padding(.bottom, AkumaTheme.space5)
+        .confirmationDialog(text.restoreAllEdits, isPresented: $isRestoreConfirmationVisible) {
+            Button(text.restoreAllEdits, role: .destructive, action: onRestore)
+            Button(text.cancel, role: .cancel) {}
+        }
     }
 }
 
@@ -943,12 +1242,21 @@ private struct PanelButtonStyle: ButtonStyle {
 }
 
 private struct ExpandedResultView: View {
-    let words: [AccentWord]
+    @Binding var words: [AccentWord]
     let paragraph: String
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
+    @Binding var isResultExpanded: Bool
     let text: AppText
+    let canRestore: Bool
+    let canUndo: Bool
+    let canRedo: Bool
+    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onRestore: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var copyFeedbackVisible = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -973,10 +1281,41 @@ private struct ExpandedResultView: View {
                 words: words,
                 showAccent: showAccent,
                 isDarkResult: isDarkResult,
-                emptyText: text.result
+                emptyText: text.result,
+                text: text,
+                onUpdateUnit: onUpdateUnit
             )
+
+            if !words.isEmpty {
+                ResultActions(
+                    words: words,
+                    paragraph: paragraph,
+                    showAccent: $showAccent,
+                    isDarkResult: $isDarkResult,
+                    isResultExpanded: $isResultExpanded,
+                    text: text,
+                    isCompact: false,
+                    canRestore: canRestore,
+                    canUndo: canUndo,
+                    canRedo: canRedo,
+                    copyFeedbackVisible: $copyFeedbackVisible,
+                    onCopy: copyResult,
+                    onUndo: onUndo,
+                    onRedo: onRedo,
+                    onRestore: onRestore
+                )
+            }
         }
         .background(isDarkResult ? AkumaTheme.darkPanel : AkumaTheme.surface)
+    }
+
+    private func copyResult() {
+        UIPasteboard.general.string = ResultExporter.plainText(words: words, showAccent: showAccent)
+        copyFeedbackVisible = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            copyFeedbackVisible = false
+        }
     }
 }
 
@@ -1069,7 +1408,7 @@ private struct AccentWord: Equatable {
     }
 }
 
-private enum AccentKind: Equatable {
+private enum AccentKind: Hashable {
     case none
     case flat
     case drop
@@ -1082,6 +1421,14 @@ private enum AccentKind: Equatable {
             self = .drop
         default:
             self = .none
+        }
+    }
+
+    var next: AccentKind {
+        switch self {
+        case .none: .flat
+        case .flat: .drop
+        case .drop: .none
         }
     }
 }
