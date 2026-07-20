@@ -4,11 +4,12 @@ import UIKit
 
 struct ContentView: View {
     @State private var paragraph = ContentView.initialParagraph()
-    @State private var words = MockAccentAnalyzer.analyze(ContentView.initialParagraph())
+    @State private var words: [AccentWord] = []
     @State private var showAccent = true
     @State private var isDarkResult = false
     @State private var isResultExpanded = false
     @State private var isAnalyzing = false
+    @State private var isStreaming = false
     @State private var resultStatusOverride: String?
     @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
@@ -58,7 +59,6 @@ struct ContentView: View {
         }
         .onChange(of: paragraph) { _, newValue in
             resultStatusOverride = nil
-            words = MockAccentAnalyzer.analyze(newValue)
             scheduleAnalysis(for: newValue)
         }
         .onDisappear {
@@ -76,6 +76,7 @@ struct ContentView: View {
     ) {
         analysisTask?.cancel()
         isAnalyzing = false
+        isStreaming = false
 
         guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             words = []
@@ -106,16 +107,26 @@ struct ContentView: View {
         }
 
         isAnalyzing = true
+        isStreaming = false
         resultStatusOverride = nil
 
         do {
-            let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph)
+            let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph) { streamedWords in
+                guard paragraph == sourceParagraph, !Task.isCancelled else {
+                    return
+                }
+
+                words = streamedWords
+                isAnalyzing = false
+                isStreaming = true
+            }
             guard paragraph == sourceParagraph, !Task.isCancelled else {
                 return
             }
 
             words = analyzedWords
             isAnalyzing = false
+            isStreaming = false
         } catch is CancellationError {
             if paragraph == sourceParagraph {
                 isAnalyzing = false
@@ -125,6 +136,7 @@ struct ContentView: View {
                 words = MockAccentAnalyzer.analyze(sourceParagraph)
                 resultStatusOverride = text.analysisFailed
                 isAnalyzing = false
+                isStreaming = false
             }
         }
     }
@@ -702,14 +714,21 @@ private struct AccentWordView: View {
                 .frame(width: 1, height: 60)
         } else {
             VStack(spacing: 2) {
-                AccentLineView(accent: word.accent, isVisible: showAccent)
-                    .frame(height: 12)
+                HStack(spacing: 0) {
+                    ForEach(Array(word.units.enumerated()), id: \.offset) { _, unit in
+                        VStack(spacing: 2) {
+                            AccentLineView(accent: unit.accent, isVisible: showAccent)
+                                .frame(height: 12)
 
-                Text(word.reading)
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundStyle(readingColor)
-                    .lineLimit(1)
-                    .opacity(word.reading.isEmpty ? 0 : 1)
+                            Text(unit.reading)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundStyle(readingColor)
+                                .lineLimit(1)
+                                .opacity(unit.reading.isEmpty ? 0 : 1)
+                        }
+                        .frame(minWidth: unitWidth(unit))
+                    }
+                }
 
                 Text(word.surface)
                     .font(.system(size: 24, weight: .regular))
@@ -722,7 +741,11 @@ private struct AccentWordView: View {
     }
 
     private var minWidth: CGFloat {
-        CGFloat(max(word.surface.count, word.reading.count, 1)) * 18
+        max(CGFloat(max(word.surface.count, 1)) * 18, word.units.reduce(0) { $0 + unitWidth($1) })
+    }
+
+    private func unitWidth(_ unit: AccentUnit) -> CGFloat {
+        CGFloat(max(unit.reading.count, 1)) * 18
     }
 
     private var baseColor: Color {
@@ -1016,19 +1039,33 @@ private struct FlowLayout: Layout {
     }
 }
 
+private struct AccentUnit: Equatable {
+    var reading: String
+    var accent: AccentKind
+}
+
 private struct AccentWord: Equatable {
     let surface: String
-    let reading: String
-    let accent: AccentKind
-    let accentIndex: Int
+    var units: [AccentUnit]
     var isLineBreak = false
 
-    init(surface: String, reading: String, accent: AccentKind, accentIndex: Int? = nil, isLineBreak: Bool = false) {
+    init(surface: String, units: [AccentUnit], isLineBreak: Bool = false) {
         self.surface = surface
-        self.reading = reading
-        self.accent = accent
-        self.accentIndex = accentIndex ?? (accent == .drop ? 1 : 0)
+        self.units = units
         self.isLineBreak = isLineBreak
+    }
+
+    var reading: String {
+        units.map(\.reading).joined()
+    }
+
+    var accentIndex: Int {
+        if let dropIndex = units.firstIndex(where: { $0.accent == .drop }) {
+            return dropIndex + 1
+        }
+
+        let highIndices = units.indices.filter { units[$0].accent == .flat }
+        return highIndices.count == 1 && highIndices.first == 0 ? 1 : 0
     }
 }
 
@@ -1036,6 +1073,17 @@ private enum AccentKind: Equatable {
     case none
     case flat
     case drop
+
+    init(apiValue: Int) {
+        switch apiValue {
+        case 1:
+            self = .flat
+        case 2:
+            self = .drop
+        default:
+            self = .none
+        }
+    }
 }
 
 private enum ResultExporter {
@@ -1068,7 +1116,10 @@ private enum MarkAccentAPI {
     private static let productionOrigin = "https://akuma.sessatakuma.dev"
     private static let streamPath = "/api/mark-accent/stream"
 
-    static func analyze(_ text: String) async throws -> [AccentWord] {
+    static func analyze(
+        _ text: String,
+        onUpdate: @escaping @MainActor ([AccentWord]) -> Void
+    ) async throws -> [AccentWord] {
         let endpoint = try streamEndpoint()
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
@@ -1095,6 +1146,7 @@ private enum MarkAccentAPI {
             }
             lastChunkIndex = chunk.chunk
             accumulatedWords.append(contentsOf: chunk.result.map(Self.mapWord))
+            await onUpdate(accumulatedWords)
         }
 
         guard !accumulatedWords.isEmpty else {
@@ -1123,37 +1175,19 @@ private enum MarkAccentAPI {
     }
 
     private static func mapWord(_ word: MarkAccentResultWord) -> AccentWord {
-        let accentValues = word.accent.map(\.accentMarkingType)
-        let accentIndex = accentIndex(for: accentValues)
-        let accentKind: AccentKind
-        if accentValues.contains(2) {
-            accentKind = .drop
-        } else if accentValues.contains(1) {
-            accentKind = .flat
-        } else {
-            accentKind = .none
+        let units = word.accent.map { entry in
+            AccentUnit(
+                reading: entry.furigana == word.surface ? "" : entry.furigana,
+                accent: AccentKind(apiValue: entry.accentMarkingType)
+            )
         }
 
-        let reading = word.furigana.isEmpty ? word.accent.map(\.furigana).joined() : word.furigana
-        return AccentWord(
-            surface: word.surface,
-            reading: reading == word.surface ? "" : reading,
-            accent: accentKind,
-            accentIndex: accentIndex
-        )
-    }
-
-    private static func accentIndex(for values: [Int]) -> Int {
-        if let dropIndex = values.firstIndex(of: 2) {
-            return dropIndex + 1
+        if !units.isEmpty {
+            return AccentWord(surface: word.surface, units: units)
         }
 
-        let highIndices = values.indices.filter { values[$0] == 1 }
-        if highIndices.count == 1, highIndices.first == 0 {
-            return 1
-        }
-
-        return 0
+        let reading = word.furigana == word.surface ? "" : word.furigana
+        return AccentWord(surface: word.surface, units: [AccentUnit(reading: reading, accent: .none)])
     }
 
     private static func lineBreakWords(count: Int) -> [AccentWord] {
@@ -1161,7 +1195,10 @@ private enum MarkAccentAPI {
             return []
         }
 
-        return Array(repeating: AccentWord(surface: "", reading: "", accent: .none, isLineBreak: true), count: count)
+        return Array(
+            repeating: AccentWord(surface: "", units: [], isLineBreak: true),
+            count: count
+        )
     }
 
     private enum APIError: Error {
@@ -1213,27 +1250,27 @@ private enum MockAccentAnalyzer {
 
         if trimmedText.contains("今日は朝から猫") {
             return [
-                AccentWord(surface: "今日", reading: "きょう", accent: .flat),
-                AccentWord(surface: "は", reading: "は", accent: .none),
-                AccentWord(surface: "朝", reading: "あさ", accent: .drop),
-                AccentWord(surface: "から", reading: "から", accent: .none),
-                AccentWord(surface: "猫", reading: "ねこ", accent: .drop),
-                AccentWord(surface: "が", reading: "が", accent: .none),
-                AccentWord(surface: "ベランダ", reading: "べらんだ", accent: .flat),
-                AccentWord(surface: "で", reading: "で", accent: .none),
-                AccentWord(surface: "日向", reading: "ひなた", accent: .drop),
-                AccentWord(surface: "ぼっこ", reading: "ぼっこ", accent: .flat),
-                AccentWord(surface: "して", reading: "して", accent: .none),
-                AccentWord(surface: "いた", reading: "いた", accent: .drop),
-                AccentWord(surface: "ので", reading: "ので", accent: .none),
-                AccentWord(surface: "、", reading: "", accent: .none),
-                AccentWord(surface: "つい", reading: "つい", accent: .flat),
-                AccentWord(surface: "一緒", reading: "いっしょ", accent: .drop),
-                AccentWord(surface: "に", reading: "に", accent: .none),
-                AccentWord(surface: "ゴロゴロ", reading: "ごろごろ", accent: .flat),
-                AccentWord(surface: "して", reading: "して", accent: .none),
-                AccentWord(surface: "しまった", reading: "しまった", accent: .drop),
-                AccentWord(surface: "。", reading: "", accent: .none),
+                word("今日", "きょう", [.flat, .flat]),
+                word("は", "は", [.none]),
+                word("朝", "あさ", [.flat, .drop]),
+                word("から", "から", [.none, .none]),
+                word("猫", "ねこ", [.flat, .drop]),
+                word("が", "が", [.none]),
+                word("ベランダ", "べらんだ", [.flat, .flat, .flat, .flat]),
+                word("で", "で", [.none]),
+                word("日向", "ひなた", [.flat, .flat, .drop]),
+                word("ぼっこ", "ぼっこ", [.flat, .flat, .flat]),
+                word("して", "して", [.none, .none]),
+                word("いた", "いた", [.flat, .drop]),
+                word("ので", "ので", [.none, .none]),
+                word("、", "", [.none]),
+                word("つい", "つい", [.flat, .flat]),
+                word("一緒", "いっしょ", [.flat, .flat, .drop]),
+                word("に", "に", [.none]),
+                word("ゴロゴロ", "ごろごろ", [.flat, .flat, .flat, .flat]),
+                word("して", "して", [.none, .none]),
+                word("しまった", "しまった", [.flat, .flat, .flat, .drop]),
+                word("。", "", [.none]),
             ]
         }
 
@@ -1243,16 +1280,24 @@ private enum MockAccentAnalyzer {
     private static func fallbackWords(for text: String) -> [AccentWord] {
         text.map { character in
             if character == "\n" {
-                return AccentWord(surface: "", reading: "", accent: .none, isLineBreak: true)
+                return AccentWord(surface: "", units: [], isLineBreak: true)
             }
 
             if character.isWhitespace {
-                return AccentWord(surface: String(character), reading: "", accent: .none)
+                return word(String(character), "", [.none])
             }
 
             let surface = String(character)
             let accent: AccentKind = character.unicodeScalars.first?.value.isMultiple(of: 3) == true ? .drop : .flat
-            return AccentWord(surface: surface, reading: surface, accent: accent)
+            return word(surface, surface, [accent])
         }
+    }
+
+    private static func word(_ surface: String, _ reading: String, _ accents: [AccentKind]) -> AccentWord {
+        let characters = reading.map(String.init)
+        let units = accents.enumerated().map { index, accent in
+            AccentUnit(reading: index < characters.count ? characters[index] : "", accent: accent)
+        }
+        return AccentWord(surface: surface, units: units)
     }
 }
