@@ -43,7 +43,11 @@ function GithubIcon({ size = 24 }: { size?: number }) {
     );
 }
 
-export default function Footer() {
+interface FooterProps {
+    showPrivacyLink?: boolean;
+}
+
+export default function Footer({ showPrivacyLink = true }: FooterProps) {
     const { t } = useI18n();
     const emailAddress = 'contact@sessatakuma.dev';
     const socialLinks = [
@@ -86,8 +90,8 @@ export default function Footer() {
                     >
                         <img
                             className='site-footer-logo'
-                            src='images/logo-128.png'
-                            srcSet='images/logo-64.png 64w, images/logo-128.png 128w, images/logo.png 650w'
+                            src='/images/logo-128.png'
+                            srcSet='/images/logo-64.png 64w, /images/logo-128.png 128w, /images/logo.png 650w'
                             sizes='64px'
                             width='128'
                             height='128'
@@ -134,9 +138,9 @@ export default function Footer() {
                     <p>{t.footerWhatBody}</p>
                 </section>
                 <nav className='site-footer-legal' aria-label='Legal and privacy'>
-                    <a href='/privacy'>Privacy &amp; Cookie Policy</a>
+                    {showPrivacyLink ? <a href='/privacy'>{t.footerPrivacyPolicy}</a> : null}
                     <button type='button' onClick={openAnalyticsPreferences}>
-                        Manage analytics
+                        {t.footerCookieSettings}
                     </button>
                 </nav>
             </div>
