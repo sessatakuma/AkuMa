@@ -2,6 +2,44 @@
 
 Internal development and operations notes for AkuMa.
 
+## Service Status and Ownership
+
+AkuMa should remain active during the Sago Cloud consolidation. It is a small,
+stateless public service, production is healthy on the organization-owned
+Cloudflare account, and active product work still targets this repository.
+Pausing it would interrupt the public tool without removing a database or
+realtime migration dependency.
+
+- Repository ownership is defined in `.github/CODEOWNERS`.
+- Runtime ownership is the `Sessatakuma` Cloudflare account and its `akuma`
+  Worker. Do not deploy from a personal Cloudflare account.
+- The production host is `akuma.sessatakuma.dev`; the
+  `accent-marker.sessatakuma.dev` host is a compatibility redirect only.
+- Vercel is no longer in the production request path. Any remaining legacy
+  `accent-marker` Vercel project may be retired only by an owner with access to
+  its former team, after confirming that no domains, environment variables, or
+  rollback retention are still needed.
+
+The only unresolved operational ownership is the upstream
+`api.sessatakuma.dev` service. A Sago Cloud owner must accept responsibility for
+its availability and for rotating the Worker-side `MARK_ACCENT_API_KEY`, or
+provide a verified replacement before the upstream is paused. This does not
+require pausing AkuMa while ownership is assigned.
+
+### State and dependency boundary
+
+| Capability              | Dependency                                                                                          |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| Authentication          | None. The app has no user accounts or sessions.                                                     |
+| Database/server storage | None. The Worker does not bind KV, D1, R2, Durable Objects, or an external database.                |
+| Client storage          | Browser `localStorage` stores only the locale preference.                                           |
+| Realtime                | None. Analysis uses a request-scoped NDJSON HTTP stream, not WebSockets or a persistent connection. |
+| Accent analysis         | `api.sessatakuma.dev/v1/mark-accent`, authenticated by the Worker-side API key.                     |
+| Analytics               | Optional Cloudflare Web Analytics beacon; no application data depends on it.                        |
+
+Local `.env` files are not an inventory of production dependencies. Only the
+variables documented below are consumed by the current application.
+
 ## Local API Setup
 
 Production on Cloudflare manages the upstream API key server-side.
