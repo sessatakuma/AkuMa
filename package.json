@@ -6,6 +6,10 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
+        "ios": "scripts/ios-run-simulator.sh",
+        "ios:check": "scripts/ios-check.sh",
+        "ios:screenshot": "scripts/ios-screenshot.sh",
+        "ios:simulator": "scripts/ios-build.sh",
         "lint": "eslint .",
         "format": "prettier . --write",
         "format:check": "prettier . --check",
