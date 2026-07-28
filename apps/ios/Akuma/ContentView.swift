@@ -230,9 +230,32 @@ struct ContentView: View {
 
         var updatedWords = words
         if let reading {
-            updatedWords[wordIndex].units[unitIndex].reading = reading
-        }
-        if let accent {
+            let normalizedReading = KanaReading.normalized(reading)
+            let syllables = KanaReading.syllables(in: normalizedReading)
+            let currentAccent = accent ?? updatedWords[wordIndex].units[unitIndex].accent
+
+            if syllables.isEmpty {
+                if updatedWords[wordIndex].units.count == 1 {
+                    updatedWords[wordIndex].units[unitIndex] = AccentUnit(
+                        reading: "",
+                        accent: .none
+                    )
+                } else {
+                    updatedWords[wordIndex].units.remove(at: unitIndex)
+                }
+            } else {
+                let replacementUnits = syllables.enumerated().map { index, syllable in
+                    AccentUnit(
+                        reading: syllable,
+                        accent: index == 0 ? currentAccent : .none
+                    )
+                }
+                updatedWords[wordIndex].units.replaceSubrange(
+                    unitIndex...unitIndex,
+                    with: replacementUnits
+                )
+            }
+        } else if let accent {
             updatedWords[wordIndex].units[unitIndex].accent = accent
         }
         commitResultEdit(updatedWords)
@@ -293,7 +316,7 @@ private enum AkumaTheme {
     static let navHeight: CGFloat = 64
     static let maxContentWidth: CGFloat = 1_400
     static let editorPanelMinHeight: CGFloat = 192
-    static let actionControlSize: CGFloat = 40
+    static let actionControlSize: CGFloat = 44
 
     static let space1: CGFloat = 4
     static let space2: CGFloat = 8
@@ -366,6 +389,10 @@ private struct AppText {
     let undo: String
     let redo: String
     let restoreAllEdits: String
+    let restoreAllEditsTitle: String
+    let restoreAllEditsBody: String
+    let restore: String
+    let furiganaInputWarning: String
     let temporaryIssuesTitle: String
     let temporaryIssuesBody: String
     let exportOptions: String
@@ -418,6 +445,10 @@ private struct AppText {
         undo: "Undo edit",
         redo: "Redo edit",
         restoreAllEdits: "Restore all edits",
+        restoreAllEditsTitle: "Restore all edits?",
+        restoreAllEditsBody: "This will discard all reading and accent edits and return the result to the latest analyzed state.",
+        restore: "Restore",
+        furiganaInputWarning: "Only kana can be entered for a reading.",
         temporaryIssuesTitle: "System issue",
         temporaryIssuesBody: "The system is temporarily unable to analyze text. A simplified local result is shown; please try again later.",
         exportOptions: "Share or export",
@@ -457,6 +488,10 @@ private struct AppText {
         undo: "編集を取り消す",
         redo: "編集をやり直す",
         restoreAllEdits: "すべての編集を元に戻す",
+        restoreAllEditsTitle: "すべての編集を元に戻しますか？",
+        restoreAllEditsBody: "ふりがなとアクセントの編集内容をすべて破棄し、最新の解析結果の状態に戻します。",
+        restore: "元に戻す",
+        furiganaInputWarning: "ふりがなにはかなのみ入力できます。",
         temporaryIssuesTitle: "システムの問題",
         temporaryIssuesBody: "現在システムで一時的に分析を実行できません。簡易結果を表示していますので、少し時間をおいて再度お試しください。",
         exportOptions: "共有・書き出し",
@@ -496,6 +531,10 @@ private struct AppText {
         undo: "復原編輯",
         redo: "重做編輯",
         restoreAllEdits: "還原所有編輯",
+        restoreAllEditsTitle: "要還原所有編輯嗎？",
+        restoreAllEditsBody: "這會捨棄目前所有振假名與音調編輯，並回到最近一次分析完成時的結果。",
+        restore: "還原",
+        furiganaInputWarning: "振假名只能輸入假名。",
         temporaryIssuesTitle: "系統問題",
         temporaryIssuesBody: "系統目前暫時無法分析文字，已顯示簡化的本機結果，請稍後再試。",
         exportOptions: "分享或匯出",
@@ -1330,6 +1369,7 @@ private struct ReadingEditorSheet: View {
     let text: AppText
     let onSave: (String, AccentKind) -> Void
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var isReadingFocused: Bool
     @State private var reading: String
     @State private var accent: AccentKind
 
@@ -1348,6 +1388,15 @@ private struct ReadingEditorSheet: View {
                     TextField(text.reading, text: $reading)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($isReadingFocused)
+                        .submitLabel(.done)
+                        .onSubmit(save)
+
+                    if !isReadingValid {
+                        Label(text.furiganaInputWarning, systemImage: "exclamationmark.circle")
+                            .font(.footnote)
+                            .foregroundStyle(AkumaTheme.red)
+                    }
                 }
 
                 Section(text.accent) {
@@ -1366,13 +1415,31 @@ private struct ReadingEditorSheet: View {
                     Button(text.cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(text.done) {
-                        onSave(reading, accent)
-                        dismiss()
-                    }
+                    Button(text.done, action: save)
+                        .disabled(!isReadingValid)
                 }
             }
         }
+        .task {
+            isReadingFocused = true
+        }
+    }
+
+    private var normalizedReading: String {
+        KanaReading.normalized(reading)
+    }
+
+    private var isReadingValid: Bool {
+        KanaReading.isValid(normalizedReading)
+    }
+
+    private func save() {
+        guard isReadingValid else {
+            return
+        }
+
+        onSave(normalizedReading, accent)
+        dismiss()
     }
 }
 
@@ -1423,7 +1490,7 @@ private struct ResultActions: View {
     }
 
     var body: some View {
-        HStack(spacing: AkumaTheme.space2) {
+        HStack(spacing: isCompact ? 0 : AkumaTheme.space2) {
             Button(action: onCopy) {
                 if isCompact {
                     Image(systemName: "doc.on.doc")
@@ -1527,12 +1594,18 @@ private struct ResultActions: View {
                 isResultExpanded.toggle()
             }
         }
-        .padding(.horizontal, AkumaTheme.space5)
+        .padding(.horizontal, isCompact ? AkumaTheme.space4 : AkumaTheme.space5)
         .padding(.top, AkumaTheme.space4)
         .padding(.bottom, AkumaTheme.space5)
-        .confirmationDialog(text.restoreAllEdits, isPresented: $isRestoreConfirmationVisible) {
-            Button(text.restoreAllEdits, role: .destructive, action: onRestore)
+        .confirmationDialog(
+            text.restoreAllEditsTitle,
+            isPresented: $isRestoreConfirmationVisible,
+            titleVisibility: .visible
+        ) {
+            Button(text.restore, role: .destructive, action: onRestore)
             Button(text.cancel, role: .cancel) {}
+        } message: {
+            Text(text.restoreAllEditsBody)
         }
         .sheet(item: $sharePayload) { payload in
             ActivityShareSheet(items: payload.items)
@@ -1990,6 +2063,70 @@ private enum AccentKind: Hashable {
     }
 }
 
+private enum KanaReading {
+    private static let smallKana = Set("ゃゅょァィゥェォャュョヮぁぃぅぇぉ")
+    private static let supplementalCharacters = Set("ーゔゞ゛゜・･")
+
+    static func normalized(_ text: String) -> String {
+        text
+            .precomposedStringWithCanonicalMapping
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func isValid(_ text: String) -> Bool {
+        text.isEmpty || text.allSatisfy(isReadingCharacter)
+    }
+
+    static func isKanaSurface(_ text: String) -> Bool {
+        let normalizedText = text.precomposedStringWithCanonicalMapping
+        guard !normalizedText.isEmpty else {
+            return false
+        }
+
+        let punctuation = CharacterSet(charactersIn: "　、。・「」『』（）《》【】！？：；—…‥〜")
+        return normalizedText.allSatisfy { character in
+            isReadingCharacter(character)
+                || character.unicodeScalars.allSatisfy(punctuation.contains)
+        }
+    }
+
+    static func syllables(in text: String) -> [String] {
+        let characters = Array(normalized(text))
+        var result: [String] = []
+        var index = 0
+
+        while index < characters.count {
+            let character = characters[index]
+            if index + 1 < characters.count, smallKana.contains(characters[index + 1]) {
+                result.append(String([character, characters[index + 1]]))
+                index += 2
+            } else {
+                result.append(String(character))
+                index += 1
+            }
+        }
+
+        return result
+    }
+
+    private static func isReadingCharacter(_ character: Character) -> Bool {
+        if supplementalCharacters.contains(character) {
+            return true
+        }
+
+        return character.unicodeScalars.allSatisfy(isKanaScalar)
+    }
+
+    private static func isKanaScalar(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x3041...0x3096, 0x30A1...0x30FA:
+            true
+        default:
+            false
+        }
+    }
+}
+
 private enum ResultExporter {
     static func plainText(words: [AccentWord], showAccent: Bool) -> String {
         words.map { word in
@@ -2134,9 +2271,10 @@ private enum MarkAccentAPI {
     }
 
     private static func mapWord(_ word: MarkAccentResultWord) -> AccentWord {
+        let hidesReading = KanaReading.isKanaSurface(word.surface)
         let units = word.accent.map { entry in
             AccentUnit(
-                reading: entry.furigana == word.surface ? "" : entry.furigana,
+                reading: hidesReading || entry.furigana == word.surface ? "" : entry.furigana,
                 accent: AccentKind(apiValue: entry.accentMarkingType)
             )
         }
@@ -2272,18 +2410,28 @@ private enum MockAccentAnalyzer {
             return
         }
 
+        let unitCount = KanaReading.isKanaSurface(surface)
+            ? max(KanaReading.syllables(in: surface).count, 1)
+            : 1
         result.append(
             AccentWord(
                 surface: surface,
-                units: [AccentUnit(reading: "", accent: .none)]
+                units: Array(
+                    repeating: AccentUnit(reading: "", accent: .none),
+                    count: unitCount
+                )
             )
         )
     }
 
     private static func word(_ surface: String, _ reading: String, _ accents: [AccentKind]) -> AccentWord {
-        let characters = reading.map(String.init)
+        let syllables = KanaReading.syllables(in: reading)
+        let hidesReading = KanaReading.isKanaSurface(surface)
         let units = accents.enumerated().map { index, accent in
-            AccentUnit(reading: index < characters.count ? characters[index] : "", accent: accent)
+            AccentUnit(
+                reading: hidesReading ? "" : (index < syllables.count ? syllables[index] : ""),
+                accent: accent
+            )
         }
         return AccentWord(surface: surface, units: units)
     }

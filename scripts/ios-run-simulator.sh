@@ -29,9 +29,11 @@ APP_PATH="${IOS_APP_PATH:-$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-iphon
 xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
 
 if [[ -n "${AKUMA_API_ORIGIN:-}" && "${IOS_SHOWCASE_DATA:-0}" == "1" ]]; then
-    xcrun simctl launch --env AKUMA_API_ORIGIN "$AKUMA_API_ORIGIN" "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE" --showcase-data
+    SIMCTL_CHILD_AKUMA_API_ORIGIN="$AKUMA_API_ORIGIN" \
+        xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE" --showcase-data
 elif [[ -n "${AKUMA_API_ORIGIN:-}" ]]; then
-    xcrun simctl launch --env AKUMA_API_ORIGIN "$AKUMA_API_ORIGIN" "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE"
+    SIMCTL_CHILD_AKUMA_API_ORIGIN="$AKUMA_API_ORIGIN" \
+        xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE"
 elif [[ "${IOS_SHOWCASE_DATA:-0}" == "1" ]]; then
     xcrun simctl launch "$SIMULATOR_ID" "$IOS_BUNDLE_ID_VALUE" --showcase-data
 else
