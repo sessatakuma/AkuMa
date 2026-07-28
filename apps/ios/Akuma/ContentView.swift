@@ -16,7 +16,6 @@ struct ContentView: View {
     @State private var isStreaming = false
     @State private var isAnalysisIssuePresented = false
     @State private var isGuidePresented = false
-    @State private var resultStatusOverride: String?
     @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
 
@@ -26,43 +25,33 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                NavigationBar(text: text, guideLabel: guideText.guide) {
-                    isGuidePresented = true
-                }
-
-                ScrollView {
-                    EditorSection(
-                        paragraph: $paragraph,
-                        words: $words,
-                        showAccent: $showAccent,
-                        isDarkResult: $isDarkResult,
-                        isResultExpanded: $isResultExpanded,
-                        isAnalyzing: isAnalyzing,
-                        isStreaming: isStreaming,
-                        canRestore: words != analyzedWords,
-                        canUndo: !pastWords.isEmpty,
-                        canRedo: !futureWords.isEmpty,
-                        statusText: resultStatusOverride,
-                        text: text,
-                        viewportSize: CGSize(
-                            width: geometry.size.width,
-                            height: max(geometry.size.height - AkumaTheme.navHeight, 0)
-                        ),
-                        onPaste: pasteFromClipboard,
-                        onInsertSample: insertSample,
-                        onUpdateUnit: updateUnit,
-                        onUndo: undoResultEdit,
-                        onRedo: redoResultEdit,
-                        onRestore: restoreResultEdits
-                    )
-                    .frame(width: geometry.size.width)
-                }
-                .background(AkumaTheme.background)
-                .scrollIndicators(.hidden)
+            ScrollView {
+                EditorSection(
+                    paragraph: $paragraph,
+                    words: $words,
+                    showAccent: $showAccent,
+                    isDarkResult: $isDarkResult,
+                    isResultExpanded: $isResultExpanded,
+                    isAnalyzing: isAnalyzing,
+                    isStreaming: isStreaming,
+                    canRestore: words != analyzedWords,
+                    canUndo: !pastWords.isEmpty,
+                    canRedo: !futureWords.isEmpty,
+                    text: text,
+                    guideLabel: guideText.guide,
+                    viewportSize: geometry.size,
+                    onOpenGuide: { isGuidePresented = true },
+                    onPaste: pasteFromClipboard,
+                    onInsertSample: insertSample,
+                    onUpdateUnit: updateUnit,
+                    onUndo: undoResultEdit,
+                    onRedo: redoResultEdit,
+                    onRestore: restoreResultEdits
+                )
+                .frame(width: geometry.size.width)
             }
-            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
-            .background(AkumaTheme.background)
+            .background(geometry.size.width <= 768 ? AkumaTheme.surface : AkumaTheme.background)
+            .scrollIndicators(.hidden)
         }
         .sheet(isPresented: $isResultExpanded) {
             ExpandedResultView(
@@ -90,7 +79,6 @@ struct ContentView: View {
             GuideView(text: guideText)
         }
         .onChange(of: paragraph) { _, newValue in
-            resultStatusOverride = nil
             scheduleAnalysis(for: newValue)
         }
         .onDisappear {
@@ -141,7 +129,6 @@ struct ContentView: View {
 
         isAnalyzing = false
         isStreaming = false
-        resultStatusOverride = nil
         let visibleLoadingTask = Task { @MainActor in
             do {
                 try await Task.sleep(nanoseconds: 500_000_000)
@@ -191,7 +178,6 @@ struct ContentView: View {
                 analyzedWords = words
                 pastWords = []
                 futureWords = []
-                resultStatusOverride = text.analysisFailed
                 isAnalysisIssuePresented = true
                 isAnalyzing = false
                 isStreaming = false
@@ -313,7 +299,6 @@ struct ContentView: View {
 }
 
 private enum AkumaTheme {
-    static let navHeight: CGFloat = 64
     static let maxContentWidth: CGFloat = 1_400
     static let editorPanelMinHeight: CGFloat = 192
     static let actionControlSize: CGFloat = 44
@@ -361,11 +346,8 @@ private extension Color {
 }
 
 private struct AppText {
-    let brandLabel: String
     let inputPlaceholder: String
-    let analyze: String
     let analyzing: String
-    let analysisFailed: String
     let pasteFromClipboard: String
     let randomSample: String
     let insertSample: String
@@ -378,7 +360,6 @@ private struct AppText {
     let share: String
     let darkResult: String
     let lightResult: String
-    let resultHint: String
     let editReading: String
     let reading: String
     let accentNone: String
@@ -399,7 +380,6 @@ private struct AppText {
     let exportText: String
     let exportImage: String
     let exportHTML: String
-    let dismissHint: String
     let cycleAccentHint: String
 
     static var current: AppText {
@@ -417,11 +397,8 @@ private struct AppText {
     }
 
     static let en = AppText(
-        brandLabel: "AkuMa",
         inputPlaceholder: "Enter Japanese text...",
-        analyze: "Analyze",
         analyzing: "Analyzing...",
-        analysisFailed: "API unavailable. Showing a local preview.",
         pasteFromClipboard: "Paste from clipboard",
         randomSample: "Insert random sample",
         insertSample: "Insert sample",
@@ -434,7 +411,6 @@ private struct AppText {
         share: "Share",
         darkResult: "Dark result",
         lightResult: "Light result",
-        resultHint: "Analysis complete. Tap a reading or accent mark to edit.",
         editReading: "Edit reading",
         reading: "Reading",
         accentNone: "Low",
@@ -455,16 +431,12 @@ private struct AppText {
         exportText: "Share text",
         exportImage: "Share image",
         exportHTML: "Share HTML",
-        dismissHint: "Dismiss edit hint",
         cycleAccentHint: "Tap to change pitch accent"
     )
 
     static let ja = AppText(
-        brandLabel: "AkuMa",
         inputPlaceholder: "文章を入力...",
-        analyze: "解析",
         analyzing: "解析中...",
-        analysisFailed: "API に接続できません。ローカルプレビューを表示しています。",
         pasteFromClipboard: "クリップボードから貼り付け",
         randomSample: "ランダム例文を挿入",
         insertSample: "例文を挿入",
@@ -477,7 +449,6 @@ private struct AppText {
         share: "共有",
         darkResult: "ダーク表示",
         lightResult: "ライト表示",
-        resultHint: "解析完了。ふりがな・アクセントをタップして編集できます。",
         editReading: "ふりがなを編集",
         reading: "ふりがな",
         accentNone: "低",
@@ -498,16 +469,12 @@ private struct AppText {
         exportText: "テキストを共有",
         exportImage: "画像を共有",
         exportHTML: "HTMLを共有",
-        dismissHint: "編集ヒントを閉じる",
         cycleAccentHint: "タップしてアクセントを切り替え"
     )
 
     static let zh = AppText(
-        brandLabel: "AkuMa",
         inputPlaceholder: "輸入日語文字...",
-        analyze: "分析",
         analyzing: "分析中...",
-        analysisFailed: "API 無法連線，正在顯示本機預覽。",
         pasteFromClipboard: "從剪貼簿貼上",
         randomSample: "插入隨機範文",
         insertSample: "插入範文",
@@ -520,7 +487,6 @@ private struct AppText {
         share: "分享",
         darkResult: "深色結果",
         lightResult: "淺色結果",
-        resultHint: "分析完成。點按假名或音調標記即可編輯。",
         editReading: "編輯假名",
         reading: "假名",
         accentNone: "低",
@@ -541,7 +507,6 @@ private struct AppText {
         exportText: "分享文字",
         exportImage: "分享圖片",
         exportHTML: "分享 HTML",
-        dismissHint: "關閉編輯提示",
         cycleAccentHint: "點按以切換音調"
     )
 }
@@ -833,57 +798,6 @@ private struct AboutView: View {
     }
 }
 
-private struct NavigationBar: View {
-    let text: AppText
-    let guideLabel: String
-    let onOpenGuide: () -> Void
-
-    var body: some View {
-        HStack(spacing: AkumaTheme.space2) {
-            Image("Logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 32, height: 32)
-                .accessibilityHidden(true)
-
-            Text(text.brandLabel)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(AkumaTheme.invertedText)
-
-            Spacer(minLength: AkumaTheme.space4)
-
-            Button(action: onOpenGuide) {
-                Label(guideLabel, systemImage: "book")
-                    .font(.system(size: 14, weight: .semibold))
-                    .padding(.horizontal, AkumaTheme.space3)
-                    .frame(height: AkumaTheme.actionControlSize)
-            }
-            .buttonStyle(NavigationButtonStyle())
-            .accessibilityLabel(guideLabel)
-        }
-        .padding(.horizontal, AkumaTheme.space5)
-        .frame(maxWidth: .infinity)
-        .frame(height: AkumaTheme.navHeight)
-        .background(AkumaTheme.green)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(AkumaTheme.border)
-                .frame(height: 1)
-        }
-    }
-}
-
-private struct NavigationButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(AkumaTheme.invertedText)
-            .background(AkumaTheme.invertedText.opacity(configuration.isPressed ? 0.2 : 0.12))
-            .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusMedium, style: .continuous))
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
-    }
-}
-
 private struct EditorSection: View {
     @Binding var paragraph: String
     @Binding var words: [AccentWord]
@@ -895,9 +809,10 @@ private struct EditorSection: View {
     let canRestore: Bool
     let canUndo: Bool
     let canRedo: Bool
-    let statusText: String?
     let text: AppText
+    let guideLabel: String
     let viewportSize: CGSize
+    let onOpenGuide: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
     let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
@@ -920,7 +835,9 @@ private struct EditorSection: View {
                     InputPanel(
                         paragraph: $paragraph,
                         text: text,
+                        guideLabel: guideLabel,
                         isCompact: false,
+                        onOpenGuide: onOpenGuide,
                         onPaste: onPaste,
                         onInsertSample: onInsertSample
                     )
@@ -936,7 +853,6 @@ private struct EditorSection: View {
                         canRestore: canRestore,
                         canUndo: canUndo,
                         canRedo: canRedo,
-                        statusText: statusText,
                         text: text,
                         isCompact: false,
                         onUpdateUnit: onUpdateUnit,
@@ -954,11 +870,17 @@ private struct EditorSection: View {
                     InputPanel(
                         paragraph: $paragraph,
                         text: text,
+                        guideLabel: guideLabel,
                         isCompact: isCompact,
+                        onOpenGuide: onOpenGuide,
                         onPaste: onPaste,
                         onInsertSample: onInsertSample
                     )
                     .frame(minHeight: compactPanelHeight)
+
+                    if isCompact {
+                        Divider()
+                    }
 
                     ResultPanel(
                         words: $words,
@@ -971,7 +893,6 @@ private struct EditorSection: View {
                         canRestore: canRestore,
                         canUndo: canUndo,
                         canRedo: canRedo,
-                        statusText: statusText,
                         text: text,
                         isCompact: isCompact,
                         onUpdateUnit: onUpdateUnit,
@@ -987,7 +908,7 @@ private struct EditorSection: View {
             }
         }
         .frame(minHeight: viewportSize.height, alignment: .top)
-        .background(AkumaTheme.background)
+        .background(isCompact ? AkumaTheme.surface : AkumaTheme.background)
     }
 
     private var compactPanelHeight: CGFloat {
@@ -1002,7 +923,9 @@ private struct EditorSection: View {
 private struct InputPanel: View {
     @Binding var paragraph: String
     let text: AppText
+    let guideLabel: String
     let isCompact: Bool
+    let onOpenGuide: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
 
@@ -1032,6 +955,13 @@ private struct InputPanel: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 HStack(spacing: AkumaTheme.space3) {
+                    IconButton(
+                        title: guideLabel,
+                        systemName: "book",
+                        style: .plain,
+                        action: onOpenGuide
+                    )
+
                     Spacer(minLength: 0)
 
                     if paragraph.isEmpty {
@@ -1077,7 +1007,6 @@ private struct ResultPanel: View {
     let canRestore: Bool
     let canUndo: Bool
     let canRedo: Bool
-    let statusText: String?
     let text: AppText
     let isCompact: Bool
     let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
@@ -1085,7 +1014,6 @@ private struct ResultPanel: View {
     let onRedo: () -> Void
     let onRestore: () -> Void
     @State private var copyFeedbackVisible = false
-    @State private var isStatusDismissed = false
 
     var body: some View {
         PanelContainer(isCompact: isCompact, isDark: isDarkResult) {
@@ -1133,18 +1061,6 @@ private struct ResultPanel: View {
                 }
             }
         }
-        .overlay(alignment: .top) {
-            if (isAnalyzing || isStreaming || !words.isEmpty) && !isStatusDismissed {
-                ResultStatusChip(
-                    text: isAnalyzing || isStreaming ? text.analyzing : (statusText ?? text.resultHint),
-                    isDark: isDarkResult,
-                    dismissLabel: text.dismissHint,
-                    onDismiss: isAnalyzing || isStreaming ? nil : { isStatusDismissed = true }
-                )
-                    .padding(.top, AkumaTheme.space3)
-                    .padding(.horizontal, AkumaTheme.space3)
-            }
-        }
         .overlay(alignment: .bottom) {
             if copyFeedbackVisible {
                 Text(text.copied)
@@ -1161,16 +1077,6 @@ private struct ResultPanel: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: isAnalyzing)
-        .onChange(of: isAnalyzing) { _, newValue in
-            if newValue {
-                isStatusDismissed = false
-            }
-        }
-        .onChange(of: isStreaming) { oldValue, newValue in
-            if oldValue && !newValue {
-                isStatusDismissed = false
-            }
-        }
     }
 
     private func copyResult() {
@@ -1200,8 +1106,10 @@ private struct PanelContainer<Content: View>: View {
             .background(isDark ? AkumaTheme.darkPanel : AkumaTheme.surface)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(isDark ? AkumaTheme.darkBorder : AkumaTheme.border, lineWidth: 1)
+                if !isCompact {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(isDark ? AkumaTheme.darkBorder : AkumaTheme.border, lineWidth: 1)
+                }
             }
     }
 
@@ -1647,41 +1555,6 @@ private struct ResultActions: View {
     }
 }
 
-private struct ResultStatusChip: View {
-    let text: String
-    let isDark: Bool
-    let dismissLabel: String
-    let onDismiss: (() -> Void)?
-
-    var body: some View {
-        HStack(spacing: AkumaTheme.space2) {
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-
-            if let onDismiss {
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(dismissLabel)
-            }
-        }
-        .foregroundStyle(isDark ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText)
-        .padding(.leading, AkumaTheme.space3)
-        .padding(.trailing, onDismiss == nil ? AkumaTheme.space3 : AkumaTheme.space1)
-        .frame(minHeight: 36)
-        .background(
-            RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous)
-                .fill(isDark ? AkumaTheme.darkPanel : AkumaTheme.surface)
-        )
-        .shadow(color: Color.black.opacity(isDark ? 0 : 0.08), radius: 6, y: 2)
-    }
-}
-
 private struct SharePayload: Identifiable {
     let id = UUID()
     let items: [Any]
@@ -1768,45 +1641,54 @@ private struct SkeletonResultView: View {
     let paragraph: String
     let isDarkResult: Bool
     let analyzingText: String
-    @State private var revealedCharacterCount = 0
+    @State private var isPulsing = false
 
-    private var characters: [Character] {
-        paragraph.filter { !$0.isWhitespace }.map { $0 }
+    private var groupWidths: [CGFloat] {
+        let characterCount = max(paragraph.filter { !$0.isWhitespace }.count, 12)
+        let pattern: [Int] = [3, 5, 2, 4, 3, 6, 2]
+        var widths: [CGFloat] = []
+        var representedCharacters = 0
+        var patternIndex = 0
+
+        while representedCharacters < characterCount {
+            let groupLength = min(pattern[patternIndex % pattern.count], characterCount - representedCharacters)
+            widths.append(CGFloat(groupLength) * 24)
+            representedCharacters += groupLength
+            patternIndex += 1
+        }
+
+        return widths
     }
 
     var body: some View {
         ScrollView {
-            FlowLayout(spacing: AkumaTheme.space2, lineSpacing: AkumaTheme.space4) {
-                ForEach(Array(characters.enumerated()), id: \.offset) { index, character in
-                    VStack(spacing: AkumaTheme.space2) {
+            FlowLayout(spacing: AkumaTheme.space3, lineSpacing: AkumaTheme.space5) {
+                ForEach(Array(groupWidths.enumerated()), id: \.offset) { index, width in
+                    VStack(alignment: .leading, spacing: AkumaTheme.space2) {
                         Capsule()
-                            .fill(AkumaTheme.red.opacity(index < revealedCharacterCount ? 0.24 : 0.08))
-                            .frame(width: 20, height: 2)
+                            .fill(AkumaTheme.red.opacity(0.18))
+                            .frame(width: max(width * 0.64, 28), height: 2)
                         RoundedRectangle(cornerRadius: AkumaTheme.radiusSmall)
-                            .fill(shimmerColor.opacity(index < revealedCharacterCount ? 0.5 : 0.24))
-                            .frame(width: character.isASCII ? 16 : 24, height: 24)
+                            .fill(shimmerColor.opacity(0.28))
+                            .frame(width: width, height: 24)
                     }
-                    .transition(.opacity)
+                    .opacity(isPulsing ? 0.46 : 1)
+                    .animation(
+                        .easeInOut(duration: 0.9)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.07),
+                        value: isPulsing
+                    )
                 }
             }
             .padding(.top, AkumaTheme.space7)
             .padding(.horizontal, AkumaTheme.space5)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .overlay {
-            ProgressView()
-                .tint(AkumaTheme.green)
-                .accessibilityLabel(analyzingText)
-        }
-        .task(id: paragraph) {
-            revealedCharacterCount = 0
-            for index in characters.indices {
-                guard !Task.isCancelled else { return }
-                try? await Task.sleep(nanoseconds: 22_000_000)
-                withAnimation(.easeOut(duration: 0.16)) {
-                    revealedCharacterCount = index + 1
-                }
-            }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(analyzingText)
+        .onAppear {
+            isPulsing = true
         }
     }
 
