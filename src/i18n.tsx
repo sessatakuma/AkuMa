@@ -21,18 +21,34 @@ const STORAGE_KEY = 'akuma-locale';
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-function resolveBrowserLocale(initialLocale: Locale): Locale {
+function readStoredLocale(): Locale | null {
+    try {
+        return normalizeLocale(window.localStorage.getItem(STORAGE_KEY));
+    } catch {
+        return null;
+    }
+}
+
+function writeStoredLocale(locale: Locale): void {
+    try {
+        window.localStorage.setItem(STORAGE_KEY, locale);
+    } catch {
+        // Ignore blocked or unavailable storage; the URL locale still applies.
+    }
+}
+
+export function resolveBrowserLocale(initialLocale: Locale): Locale {
     if (typeof window === 'undefined') {
         return initialLocale;
     }
 
     const searchLocale = normalizeLocale(new URLSearchParams(window.location.search).get('lang'));
     if (searchLocale) {
-        window.localStorage.setItem(STORAGE_KEY, searchLocale);
+        writeStoredLocale(searchLocale);
         return searchLocale;
     }
 
-    const storedLocale = normalizeLocale(window.localStorage.getItem(STORAGE_KEY));
+    const storedLocale = readStoredLocale();
     if (storedLocale) {
         return storedLocale;
     }

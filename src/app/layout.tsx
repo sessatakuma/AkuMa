@@ -4,6 +4,8 @@ import { Noto_Sans_JP } from 'next/font/google';
 import { headers } from 'next/headers';
 import Script from 'next/script';
 
+import AnalyticsConsent from '../components/AnalyticsConsent';
+
 import { buildStructuredData, LOCALE_HEADER, resolveLocaleFromHeader, SITE_URL } from './locale';
 
 import type { Metadata, Viewport } from 'next';
@@ -99,6 +101,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     // Only report analytics from the production domain; skip preview/workers.dev/local.
     const isProductionHost = requestHeaders.get('host') === new URL(SITE_URL).host;
     const cfBeaconToken = isProductionHost ? process.env.NEXT_PUBLIC_CF_BEACON_TOKEN : undefined;
+    const msClarityProjectId = isProductionHost
+        ? process.env.NEXT_PUBLIC_MS_CLARITY_PROJECT_ID
+        : undefined;
 
     return (
         <html lang={structuredDataForLocale.inLanguage[0]} className={notoSansJp.variable}>
@@ -117,6 +122,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                         data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}
                     />
                 ) : null}
+                <AnalyticsConsent msClarityProjectId={msClarityProjectId} />
             </body>
         </html>
     );

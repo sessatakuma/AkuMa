@@ -4,6 +4,16 @@ export interface TranslationSet {
     brandLabel: string;
     accentResultLabel: string;
     accentToggle: string;
+    analyticsConsentTitle: string;
+    analyticsConsentBody: string;
+    analyticsConsentPrivacyLink: string;
+    analyticsConsentCurrentLabel: string;
+    analyticsConsentStatusEnabled: string;
+    analyticsConsentStatusDisabled: string;
+    analyticsConsentStatusNotSelected: string;
+    analyticsConsentReject: string;
+    analyticsConsentAccept: string;
+    analyticsConsentWithdrawConfirm: string;
     temporaryIssuesBody: string;
     temporaryIssuesClose: string;
     temporaryIssuesTitle: string;
@@ -25,6 +35,8 @@ export interface TranslationSet {
     footerGithubLabel: string;
     footerInstagramLabel: string;
     footerMailLabel: string;
+    footerPrivacyPolicy: string;
+    footerCookieSettings: string;
     footerSocialHeading: string;
     footerSocialPendingMessage: string;
     footerThreadsLabel: string;
@@ -43,6 +55,22 @@ export interface TranslationSet {
     pageDescription: string;
     randomSample: string;
     randomSampleButtonLabel: string;
+    privacyTitle: string;
+    privacyDescription: string;
+    privacyLastUpdated: string;
+    privacyAnalyticsTitle: string;
+    privacyAnalyticsBody: string;
+    privacyCollectionTitle: string;
+    privacyCollectionBody: string;
+    privacyCookiesTitle: string;
+    privacyCookiesBody: string;
+    privacyProviderTitle: string;
+    privacyProviderBodyPrefix: string;
+    privacyProviderLink: string;
+    privacyProviderBodySuffix: string;
+    privacyContactTitle: string;
+    privacyContactBodyPrefix: string;
+    privacyContactBodySuffix: string;
     result: string;
     resultActions: string;
     resultHint: string;
@@ -98,6 +126,18 @@ export const translations: Record<Locale, TranslationSet> = {
         brandLabel: 'AkuMa',
         accentResultLabel: 'Pitch accent analysis result',
         accentToggle: 'Accent',
+        analyticsConsentTitle: 'Analytics cookies',
+        analyticsConsentBody:
+            'We use Microsoft Clarity only if you agree, to understand how people use this site through session recordings and heatmaps. You can change your choice at any time.',
+        analyticsConsentPrivacyLink: 'Privacy & Cookie Policy',
+        analyticsConsentCurrentLabel: 'Current preference:',
+        analyticsConsentStatusEnabled: 'Analytics enabled',
+        analyticsConsentStatusDisabled: 'Analytics disabled',
+        analyticsConsentStatusNotSelected: 'Not selected',
+        analyticsConsentReject: 'Reject analytics',
+        analyticsConsentAccept: 'Accept analytics',
+        analyticsConsentWithdrawConfirm:
+            'Withdrawing analytics consent reloads this page. Your current input and analysis will be lost. Continue?',
         temporaryIssuesBody:
             'The system is temporarily unable to analyze text. The development team is actively working on it, so please try again later.',
         temporaryIssuesClose: 'Close',
@@ -121,6 +161,8 @@ export const translations: Record<Locale, TranslationSet> = {
         footerGithubLabel: 'GitHub',
         footerInstagramLabel: 'Instagram',
         footerMailLabel: 'Email',
+        footerPrivacyPolicy: 'Privacy & Cookie Policy',
+        footerCookieSettings: 'Cookie settings',
         footerSocialHeading: 'Social media',
         footerSocialPendingMessage: 'We are working on this account.',
         footerThreadsLabel: 'Threads',
@@ -141,6 +183,26 @@ export const translations: Record<Locale, TranslationSet> = {
         pageDescription:
             'Paste Japanese text to add furigana and pitch-accent markings automatically, then edit and export the result.',
         pasteFromClipboard: 'Paste from clipboard',
+        privacyTitle: 'Privacy & Cookie Policy',
+        privacyDescription: 'How AkuMa uses analytics and manages your privacy choices.',
+        privacyLastUpdated: 'Last updated: July 19, 2026',
+        privacyAnalyticsTitle: 'Analytics',
+        privacyAnalyticsBody:
+            'AkuMa uses Microsoft Clarity only after you choose to accept analytics cookies. Clarity helps us understand how visitors use the site through aggregated heatmaps and session recordings, so we can improve the product.',
+        privacyCollectionTitle: 'What Clarity may collect',
+        privacyCollectionBody:
+            'When analytics is enabled, Clarity may process page activity such as clicks, scrolling, mouse movement, page rendering, and session replay data. AkuMa masks the text input and analysis result from Clarity recordings. Do not enter personal or sensitive information.',
+        privacyCookiesTitle: 'Cookies and your choices',
+        privacyCookiesBody:
+            'Clarity uses analytics cookies to recognize a browser across pages and sessions. You can accept or reject analytics when the banner appears, and change your choice at any time through the Cookie settings link in the site footer. Rejecting analytics prevents Clarity from loading on subsequent page visits.',
+        privacyProviderTitle: 'Service provider',
+        privacyProviderBodyPrefix:
+            'Microsoft Clarity provides the analytics service. Its processing is subject to the ',
+        privacyProviderLink: 'Microsoft Privacy Statement',
+        privacyProviderBodySuffix: '.',
+        privacyContactTitle: 'Contact',
+        privacyContactBodyPrefix: 'For privacy questions, contact ',
+        privacyContactBodySuffix: '.',
         randomSample: 'Insert random sample',
         randomSampleButtonLabel: 'Insert sample',
         result: 'Result',
@@ -205,6 +267,18 @@ export const translations: Record<Locale, TranslationSet> = {
         brandLabel: 'AkuMa',
         accentResultLabel: 'アクセント解析結果',
         accentToggle: 'アクセント',
+        analyticsConsentTitle: '分析用 Cookie',
+        analyticsConsentBody:
+            'ご同意いただいた場合のみ Microsoft Clarity を使用し、セッション記録やヒートマップを通じてサイトの利用状況を把握します。設定はいつでも変更できます。',
+        analyticsConsentPrivacyLink: 'プライバシー・Cookie ポリシー',
+        analyticsConsentCurrentLabel: '現在の設定：',
+        analyticsConsentStatusEnabled: '分析を有効化',
+        analyticsConsentStatusDisabled: '分析を無効化',
+        analyticsConsentStatusNotSelected: '未選択',
+        analyticsConsentReject: '分析を拒否',
+        analyticsConsentAccept: '分析を許可',
+        analyticsConsentWithdrawConfirm:
+            '分析への同意を取り消すと、このページが再読み込みされます。現在の入力内容と解析結果は失われます。続行しますか？',
         temporaryIssuesBody:
             '現在システムで一時的に分析を実行できません。開発チームが対応中ですので、少し時間をおいて再度お試しください。',
         temporaryIssuesClose: '閉じる',
@@ -227,6 +301,8 @@ export const translations: Record<Locale, TranslationSet> = {
         footerGithubLabel: 'GitHub',
         footerInstagramLabel: 'Instagram',
         footerMailLabel: 'メール',
+        footerPrivacyPolicy: 'プライバシー・Cookie ポリシー',
+        footerCookieSettings: 'Cookie 設定',
         footerSocialHeading: 'SNS',
         footerSocialPendingMessage: 'このアカウントは準備中です。',
         footerThreadsLabel: 'Threads',
@@ -247,6 +323,26 @@ export const translations: Record<Locale, TranslationSet> = {
         pageDescription:
             '日本語テキストにふりがなとピッチアクセントを自動で付与し、編集して書き出せる学習ツールです。',
         pasteFromClipboard: 'クリップボードから貼り付け',
+        privacyTitle: 'プライバシー・Cookie ポリシー',
+        privacyDescription: 'AkuMa の分析機能とプライバシー設定について。',
+        privacyLastUpdated: '最終更新日：2026年7月19日',
+        privacyAnalyticsTitle: '分析について',
+        privacyAnalyticsBody:
+            'AkuMa は、利用者が分析 Cookie に同意した場合にのみ Microsoft Clarity を使用します。Clarity は集計されたヒートマップやセッション記録を通じてサイトの利用状況を把握し、プロダクト改善に役立てるためのものです。',
+        privacyCollectionTitle: 'Clarity が収集する可能性のある情報',
+        privacyCollectionBody:
+            '分析が有効な場合、Clarity はクリック、スクロール、マウス操作、ページ表示、セッション再生データなどのページ上の操作情報を処理することがあります。AkuMa は Clarity の記録からテキスト入力欄と分析結果をマスクします。個人情報や機密情報は入力しないでください。',
+        privacyCookiesTitle: 'Cookie と選択肢',
+        privacyCookiesBody:
+            'Clarity は、ページやセッションをまたいでブラウザを識別するために分析 Cookie を使用します。バナーで分析を許可または拒否でき、サイトのフッターにある Cookie 設定からいつでも設定を変更できます。分析を拒否すると、それ以降のページ訪問で Clarity は読み込まれません。',
+        privacyProviderTitle: 'サービス提供者',
+        privacyProviderBodyPrefix:
+            '分析サービスは Microsoft Clarity によって提供されます。その処理には ',
+        privacyProviderLink: 'Microsoft プライバシー ステートメント',
+        privacyProviderBodySuffix: ' が適用されます。',
+        privacyContactTitle: 'お問い合わせ',
+        privacyContactBodyPrefix: 'プライバシーに関するお問い合わせは ',
+        privacyContactBodySuffix: ' までご連絡ください。',
         randomSample: 'ランダム例文を挿入',
         randomSampleButtonLabel: '例文を挿入',
         result: '結果',
@@ -309,6 +405,18 @@ export const translations: Record<Locale, TranslationSet> = {
         brandLabel: 'AkuMa',
         accentResultLabel: '音調分析結果',
         accentToggle: '音調',
+        analyticsConsentTitle: '分析 Cookie',
+        analyticsConsentBody:
+            '只有在您同意的情況下，我們才會使用 Microsoft Clarity，透過工作階段錄製與熱區圖了解使用者如何使用本網站。您可以隨時變更選擇。',
+        analyticsConsentPrivacyLink: '隱私權與 Cookie 政策',
+        analyticsConsentCurrentLabel: '目前設定：',
+        analyticsConsentStatusEnabled: '已啟用分析',
+        analyticsConsentStatusDisabled: '已停用分析',
+        analyticsConsentStatusNotSelected: '尚未選擇',
+        analyticsConsentReject: '拒絕分析',
+        analyticsConsentAccept: '接受分析',
+        analyticsConsentWithdrawConfirm:
+            '取消分析同意會重新載入本頁面，目前的輸入內容與分析結果將會遺失。要繼續嗎？',
         temporaryIssuesBody: '系統目前暫時無法進行分析，開發團隊正在積極搶救，請稍後再試一次。',
         temporaryIssuesClose: '關閉',
         temporaryIssuesTitle: '系統發生問題',
@@ -330,6 +438,8 @@ export const translations: Record<Locale, TranslationSet> = {
         footerGithubLabel: 'GitHub',
         footerInstagramLabel: 'Instagram',
         footerMailLabel: '電子郵件',
+        footerPrivacyPolicy: '隱私權與 Cookie 政策',
+        footerCookieSettings: 'Cookie 設定',
         footerSocialHeading: '社群媒體',
         footerSocialPendingMessage: '這個帳號還在準備中。',
         footerThreadsLabel: 'Threads',
@@ -349,6 +459,25 @@ export const translations: Record<Locale, TranslationSet> = {
         inputTools: '輸入工具',
         pageDescription: '貼上日語文字，自動加入振假名與音高音調標記，之後還可編輯並匯出結果。',
         pasteFromClipboard: '從剪貼簿貼上',
+        privacyTitle: '隱私權與 Cookie 政策',
+        privacyDescription: 'AkuMa 如何使用分析服務，以及您如何管理隱私選擇。',
+        privacyLastUpdated: '最後更新：2026 年 7 月 19 日',
+        privacyAnalyticsTitle: '分析服務',
+        privacyAnalyticsBody:
+            'AkuMa 只有在您同意分析 Cookie 之後，才會使用 Microsoft Clarity。Clarity 會透過彙整後的熱區圖與工作階段錄製，協助我們了解使用者如何使用本網站，進而改善產品。',
+        privacyCollectionTitle: 'Clarity 可能蒐集的資料',
+        privacyCollectionBody:
+            '啟用分析時，Clarity 可能會處理頁面活動資料，例如點擊、捲動、滑鼠移動、頁面呈現與工作階段重播資料。AkuMa 會在 Clarity 錄製內容中遮蔽文字輸入區與分析結果。請勿輸入個人或敏感資訊。',
+        privacyCookiesTitle: 'Cookie 與您的選擇',
+        privacyCookiesBody:
+            'Clarity 會使用分析 Cookie，在不同頁面與工作階段中辨識同一個瀏覽器。您可以在提示橫幅出現時接受或拒絕分析，也可以隨時透過網站頁尾的 Cookie 設定變更選擇。拒絕分析後，後續瀏覽頁面時將不會載入 Clarity。',
+        privacyProviderTitle: '服務提供者',
+        privacyProviderBodyPrefix: '分析服務由 Microsoft Clarity 提供，其資料處理受 ',
+        privacyProviderLink: 'Microsoft 隱私權聲明',
+        privacyProviderBodySuffix: ' 規範。',
+        privacyContactTitle: '聯絡方式',
+        privacyContactBodyPrefix: '如有隱私相關問題，請聯絡 ',
+        privacyContactBodySuffix: '。',
         randomSample: '插入隨機範文',
         randomSampleButtonLabel: '插入範文',
         result: '結果',

@@ -38,6 +38,8 @@
     // Secrets (set via `wrangler secret put` or the dashboard, NOT here):
     //   MARK_ACCENT_API_KEY        (required)
     //   MARK_ACCENT_UPSTREAM_URL   (optional; defaults to api.sessatakuma.dev)
+    // Public analytics IDs are build variables (see docs/deployment.md) so Next.js
+    // can inline them while building; do not declare them as runtime vars here.
     // Local dev: see README — secrets/vars are read from .env on `bun dev`
     // and from the Worker's runtime vars on `bun run preview`.
 }

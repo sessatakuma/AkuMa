@@ -49,6 +49,37 @@
     text-wrap: pretty;
 }
 
+.site-footer-legal {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: flex-end;
+    color: color-mix(in srgb, var(--color-text-inverted) 88%, transparent);
+    font-size: var(--space-4);
+    text-align: right;
+}
+
+.site-footer-legal a,
+.site-footer-legal button {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.site-footer-legal button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    text-align: right;
+}
+
+.site-footer-legal a:focus-visible,
+.site-footer-legal button:focus-visible {
+    outline: var(--space-1) solid var(--color-text-inverted);
+    outline-offset: var(--space-1);
+}
+
 .site-footer-social {
     --footer-social-glyph-offset: calc((var(--space-7) - var(--space-5)) / 2);
 
@@ -197,6 +228,12 @@
 
     .site-footer-about {
         grid-column: 1;
+    }
+
+    .site-footer-legal {
+        grid-column: 2;
+        justify-self: end;
+        text-align: right;
     }
 
     .site-footer-about p {
