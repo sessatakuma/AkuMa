@@ -62,18 +62,29 @@
     }
 
     function renderRuby(surface: string, reading: string, accent: AkumaAccentValue, options: AkumaAnnotateOptions) {
-        const ruby = document.createElement('ruby');
-        ruby.className = 'akuma-crx-ruby';
-        ruby.append(document.createTextNode(surface));
-
-        const rt = document.createElement('rt');
-        rt.className = 'akuma-crx-reading';
-        if (options.showAccent && reading.length > 0) {
-            rt.append(renderKana(reading, accent, true));
-        } else {
-            rt.textContent = reading;
+        if (reading.length === 0) {
+            return document.createTextNode(surface);
         }
-        ruby.append(rt);
+
+        const ruby = document.createElement('span');
+        ruby.className = 'akuma-crx-ruby';
+
+        const base = document.createElement('span');
+        base.className = 'akuma-crx-ruby-base';
+        base.textContent = surface;
+
+        const spacer = document.createElement('span');
+        spacer.className = 'akuma-crx-reading-spacer';
+        spacer.textContent = reading;
+
+        const readingNode = document.createElement('span');
+        readingNode.className = 'akuma-crx-reading';
+        if (options.showAccent) {
+            readingNode.append(renderKana(reading, accent, true));
+        } else {
+            readingNode.textContent = reading;
+        }
+        ruby.append(base, spacer, readingNode);
 
         return ruby;
     }

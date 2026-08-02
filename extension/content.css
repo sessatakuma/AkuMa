@@ -104,30 +104,86 @@
     display: inline;
 }
 
+.akuma-crx-annotation-flow {
+    line-height: 1.7;
+}
+
 .akuma-crx-ruby {
-    ruby-position: over;
+    position: relative;
+    display: inline-grid;
+    line-height: inherit;
+    text-align: center;
+    vertical-align: baseline;
+}
+
+.akuma-crx-ruby-base {
+    grid-area: 1 / 1;
+    justify-self: center;
+}
+
+.akuma-crx-reading-spacer {
+    grid-area: 1 / 1;
+    height: 0;
+    overflow: hidden;
+    padding-inline: 0.04em;
+    color: transparent;
+    font-size: 0.62em;
+    line-height: 0;
+    pointer-events: none;
+    user-select: none;
+    visibility: hidden;
+    white-space: nowrap;
 }
 
 .akuma-crx-reading {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    z-index: 2147483647;
     color: var(--akuma-crx-color-muted);
     font-size: 0.62em;
-    line-height: 1.35;
+    line-height: 1.1;
+    pointer-events: none;
     text-align: center;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.akuma-crx-annotation-flow .akuma-crx-ruby {
+    padding-top: 1em;
+}
+
+.akuma-crx-annotation-flow .akuma-crx-ruby > .akuma-crx-reading {
+    top: 0.36em;
+    bottom: auto;
 }
 
 .akuma-crx-kana {
     position: relative;
-    display: inline-grid;
-    grid-template-rows: 0.5em auto;
+    display: inline-block;
+    line-height: inherit;
     min-width: 1em;
-    row-gap: 4px;
     text-align: center;
+    vertical-align: baseline;
+}
+
+.akuma-crx-annotation-flow .akuma-crx-kana-word > .akuma-crx-kana {
+    padding-top: 0.58em;
+}
+
+.akuma-crx-annotation-flow .akuma-crx-kana-word > .akuma-crx-kana > .akuma-crx-accent-lane {
+    top: 0;
+    bottom: auto;
 }
 
 .akuma-crx-accent-lane {
-    position: relative;
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    left: 0;
     display: block;
-    min-height: 0.5em;
+    height: 0.5em;
+    pointer-events: none;
 }
 
 .akuma-crx-kana[data-accent-visible='true'][data-accent='high'] .akuma-crx-accent-lane::before,
@@ -150,8 +206,8 @@
 }
 
 .akuma-crx-kana-text {
-    display: block;
+    display: inline;
     color: inherit;
-    line-height: 1;
+    line-height: inherit;
     white-space: nowrap;
 }
