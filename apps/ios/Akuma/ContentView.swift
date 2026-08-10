@@ -71,7 +71,10 @@ struct ContentView: View {
             )
         }
         .alert(text.temporaryIssuesTitle, isPresented: $isAnalysisIssuePresented) {
-            Button(text.done, role: .cancel) {}
+            Button(text.retry) {
+                scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+            }
+            Button(text.continueUsing, role: .cancel) {}
         } message: {
             Text(text.temporaryIssuesBody)
         }
@@ -352,9 +355,12 @@ private struct AppText {
     let randomSample: String
     let insertSample: String
     let result: String
+    let resultEmptyHint: String
     let copyAsText: String
     let copied: String
     let accent: String
+    let showAccent: String
+    let hideAccent: String
     let expandResult: String
     let collapseResult: String
     let share: String
@@ -376,6 +382,9 @@ private struct AppText {
     let furiganaInputWarning: String
     let temporaryIssuesTitle: String
     let temporaryIssuesBody: String
+    let retry: String
+    let continueUsing: String
+    let resultOptions: String
     let exportOptions: String
     let exportText: String
     let exportImage: String
@@ -403,9 +412,12 @@ private struct AppText {
         randomSample: "Insert random sample",
         insertSample: "Insert sample",
         result: "Result",
+        resultEmptyHint: "Your analyzed reading and pitch accent will appear here.",
         copyAsText: "Copy as text",
         copied: "Copied",
         accent: "accent",
+        showAccent: "Show pitch accent",
+        hideAccent: "Hide pitch accent",
         expandResult: "Expand result",
         collapseResult: "Collapse result",
         share: "Share",
@@ -425,8 +437,11 @@ private struct AppText {
         restoreAllEditsBody: "This will discard all reading and accent edits and return the result to the latest analyzed state.",
         restore: "Restore",
         furiganaInputWarning: "Only kana can be entered for a reading.",
-        temporaryIssuesTitle: "System issue",
-        temporaryIssuesBody: "The system is temporarily unable to analyze text. A simplified local result is shown; please try again later.",
+        temporaryIssuesTitle: "Using a local result",
+        temporaryIssuesBody: "Online analysis is unavailable. You can keep using this simplified result or try again.",
+        retry: "Try Again",
+        continueUsing: "Continue",
+        resultOptions: "More result options",
         exportOptions: "Share or export",
         exportText: "Share text",
         exportImage: "Share image",
@@ -441,9 +456,12 @@ private struct AppText {
         randomSample: "ランダム例文を挿入",
         insertSample: "例文を挿入",
         result: "結果",
+        resultEmptyHint: "解析したふりがなとアクセントがここに表示されます。",
         copyAsText: "テキスト形式でコピー",
         copied: "コピーしました",
         accent: "アクセント",
+        showAccent: "アクセントを表示",
+        hideAccent: "アクセントを非表示",
         expandResult: "結果を拡大表示",
         collapseResult: "結果の拡大表示を閉じる",
         share: "共有",
@@ -463,8 +481,11 @@ private struct AppText {
         restoreAllEditsBody: "ふりがなとアクセントの編集内容をすべて破棄し、最新の解析結果の状態に戻します。",
         restore: "元に戻す",
         furiganaInputWarning: "ふりがなにはかなのみ入力できます。",
-        temporaryIssuesTitle: "システムの問題",
-        temporaryIssuesBody: "現在システムで一時的に分析を実行できません。簡易結果を表示していますので、少し時間をおいて再度お試しください。",
+        temporaryIssuesTitle: "ローカル結果を表示中",
+        temporaryIssuesBody: "オンライン解析を利用できません。簡易結果をそのまま使うか、もう一度お試しください。",
+        retry: "再試行",
+        continueUsing: "このまま使う",
+        resultOptions: "その他の結果オプション",
         exportOptions: "共有・書き出し",
         exportText: "テキストを共有",
         exportImage: "画像を共有",
@@ -479,9 +500,12 @@ private struct AppText {
         randomSample: "插入隨機範文",
         insertSample: "插入範文",
         result: "結果",
+        resultEmptyHint: "分析後的假名與音調會顯示在這裡。",
         copyAsText: "複製為文字",
         copied: "已複製",
         accent: "音調",
+        showAccent: "顯示音調線",
+        hideAccent: "隱藏音調線",
         expandResult: "展開結果面板",
         collapseResult: "收合結果面板",
         share: "分享",
@@ -501,8 +525,11 @@ private struct AppText {
         restoreAllEditsBody: "這會捨棄目前所有振假名與音調編輯，並回到最近一次分析完成時的結果。",
         restore: "還原",
         furiganaInputWarning: "振假名只能輸入假名。",
-        temporaryIssuesTitle: "系統問題",
-        temporaryIssuesBody: "系統目前暫時無法分析文字，已顯示簡化的本機結果，請稍後再試。",
+        temporaryIssuesTitle: "正在使用本機結果",
+        temporaryIssuesBody: "目前無法使用線上分析。你可以繼續使用簡化結果，或再試一次。",
+        retry: "再試一次",
+        continueUsing: "繼續使用",
+        resultOptions: "更多結果選項",
         exportOptions: "分享或匯出",
         exportText: "分享文字",
         exportImage: "分享圖片",
@@ -653,7 +680,7 @@ private struct GuideView: View {
 
                     VStack(spacing: AkumaTheme.space3) {
                         GuideStepCard(number: 1, title: text.startTitle, detail: text.startBody, icon: "text.cursor")
-                        GuideStepCard(number: 2, title: text.editTitle, detail: text.editBody, icon: "slider.horizontal.3")
+                        GuideStepCard(number: 2, title: text.editTitle, detail: text.editBody, icon: "pencil")
                         GuideStepCard(number: 3, title: text.shareTitle, detail: text.shareBody, icon: "square.and.arrow.up")
                     }
                 }
@@ -877,6 +904,7 @@ private struct EditorSection: View {
                         onInsertSample: onInsertSample
                     )
                     .frame(minHeight: compactPanelHeight)
+                    .frame(height: isCompact ? compactPanelHeight : nil)
 
                     if isCompact {
                         Divider()
@@ -901,6 +929,7 @@ private struct EditorSection: View {
                         onRestore: onRestore
                     )
                     .frame(minHeight: compactPanelHeight)
+                    .frame(height: isCompact ? compactPanelHeight : nil)
                 }
                 .padding(isCompact ? 0 : AkumaTheme.space5)
                 .frame(maxWidth: AkumaTheme.maxContentWidth)
@@ -957,7 +986,7 @@ private struct InputPanel: View {
                 HStack(spacing: AkumaTheme.space3) {
                     IconButton(
                         title: guideLabel,
-                        systemName: "book",
+                        systemName: "questionmark.circle",
                         style: .plain,
                         action: onOpenGuide
                     )
@@ -1131,9 +1160,17 @@ private struct ResultContentView: View {
     var body: some View {
         ScrollView {
             if words.isEmpty {
-                Text(emptyText)
-                    .font(.system(size: 24, weight: .regular))
-                    .foregroundStyle(AkumaTheme.secondaryText.opacity(0.6))
+                VStack(alignment: .leading, spacing: AkumaTheme.space2) {
+                    Text(emptyText)
+                        .font(.system(size: 24, weight: .regular))
+                    Text(text.resultEmptyHint)
+                        .font(.system(size: 15, weight: .regular))
+                }
+                .foregroundStyle(
+                    isDarkResult
+                        ? AkumaTheme.darkSecondaryText
+                        : AkumaTheme.secondaryText.opacity(0.72)
+                )
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 40)
                     .padding(.horizontal, AkumaTheme.space5)
@@ -1156,6 +1193,7 @@ private struct ResultContentView: View {
                                 editTarget = ReadingEditTarget(
                                     wordIndex: wordIndex,
                                     unitIndex: unitIndex,
+                                    surface: word.surface,
                                     reading: unit.reading,
                                     accent: unit.accent
                                 )
@@ -1208,7 +1246,9 @@ private struct AccentWordView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(!isInteractive)
-                            .accessibilityLabel(textForAccent(unit.accent))
+                            .accessibilityLabel(
+                                "\(word.surface)\(unit.reading.isEmpty ? "" : ", \(unit.reading)"), \(text.accent): \(textForAccent(unit.accent))"
+                            )
                             .accessibilityHint(text.cycleAccentHint)
 
                             Button {
@@ -1222,7 +1262,9 @@ private struct AccentWordView: View {
                             .buttonStyle(.plain)
                             .disabled(!isInteractive)
                             .frame(minHeight: 24)
-                            .accessibilityLabel(unit.reading.isEmpty ? text.editReading : unit.reading)
+                            .accessibilityLabel(
+                                "\(word.surface), \(text.reading): \(unit.reading.isEmpty ? text.editReading : unit.reading)"
+                            )
                         }
                         .frame(minWidth: unitWidth(unit))
                     }
@@ -1266,6 +1308,7 @@ private struct AccentWordView: View {
 private struct ReadingEditTarget: Identifiable {
     let wordIndex: Int
     let unitIndex: Int
+    let surface: String
     let reading: String
     let accent: AccentKind
 
@@ -1292,6 +1335,17 @@ private struct ReadingEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    VStack(alignment: .leading, spacing: AkumaTheme.space1) {
+                        Text(target.surface)
+                            .font(.system(size: 24, weight: .semibold))
+                        Text(target.reading)
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundStyle(AkumaTheme.secondaryText)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+
                 Section(text.reading) {
                     TextField(text.reading, text: $reading)
                         .textInputAutocapitalization(.never)
@@ -1419,11 +1473,14 @@ private struct ResultActions: View {
                 showAccent.toggle()
             } label: {
                 if isCompact {
-                    Image(systemName: showAccent ? "waveform.path.ecg" : "waveform.path")
+                    Image(systemName: showAccent ? "eye" : "eye.slash")
                         .font(.system(size: 18, weight: .semibold))
                         .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
                 } else {
-                    Label(text.accent, systemImage: showAccent ? "waveform.path.ecg" : "waveform.path")
+                    Label(
+                        showAccent ? text.hideAccent : text.showAccent,
+                        systemImage: showAccent ? "eye" : "eye.slash"
+                    )
                         .font(.system(size: 14, weight: .medium))
                         .lineLimit(1)
                         .frame(height: AkumaTheme.actionControlSize)
@@ -1431,47 +1488,9 @@ private struct ResultActions: View {
                 }
             }
             .buttonStyle(PanelButtonStyle(isDark: isDarkResult, isActive: showAccent))
-            .accessibilityLabel(text.accent)
+            .accessibilityLabel(showAccent ? text.hideAccent : text.showAccent)
 
             Spacer(minLength: AkumaTheme.space2)
-
-            Menu {
-                Button(action: onUndo) {
-                    Label(text.undo, systemImage: "arrow.uturn.backward")
-                }
-                .disabled(!canUndo)
-                .keyboardShortcut("z", modifiers: .command)
-
-                Button(action: onRedo) {
-                    Label(text.redo, systemImage: "arrow.uturn.forward")
-                }
-                .disabled(!canRedo)
-                .keyboardShortcut("z", modifiers: [.command, .shift])
-
-                Divider()
-
-                Button(role: .destructive) {
-                    isRestoreConfirmationVisible = true
-                } label: {
-                    Label(text.restoreAllEdits, systemImage: "arrow.counterclockwise")
-                }
-                .disabled(!canRestore)
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-            }
-            .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
-            .accessibilityLabel(text.restoreAllEdits)
-
-            IconButton(
-                title: isDarkResult ? text.lightResult : text.darkResult,
-                systemName: isDarkResult ? "sun.max" : "moon",
-                style: .plain,
-                isDark: isDarkResult
-            ) {
-                isDarkResult.toggle()
-            }
 
             Menu {
                 Button(action: shareText) {
@@ -1484,23 +1503,71 @@ private struct ResultActions: View {
                     Label(text.exportHTML, systemImage: "chevron.left.forwardslash.chevron.right")
                 }
             } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                if isCompact {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                } else {
+                    Label(text.share, systemImage: "square.and.arrow.up")
+                        .font(.system(size: 14, weight: .medium))
+                        .lineLimit(1)
+                        .frame(height: AkumaTheme.actionControlSize)
+                        .padding(.horizontal, AkumaTheme.space3)
+                }
             }
             .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
             .accessibilityLabel(text.exportOptions)
 
-            IconButton(
-                title: isResultExpanded ? text.collapseResult : text.expandResult,
-                systemName: isResultExpanded
-                    ? "arrow.down.right.and.arrow.up.left"
-                    : "arrow.up.left.and.arrow.down.right",
-                style: .plain,
-                isDark: isDarkResult
-            ) {
-                isResultExpanded.toggle()
+            Menu {
+                if canUndo || canRedo || canRestore {
+                    Section {
+                        if canUndo {
+                            Button(action: onUndo) {
+                                Label(text.undo, systemImage: "arrow.uturn.backward")
+                            }
+                            .keyboardShortcut("z", modifiers: .command)
+                        }
+
+                        if canRedo {
+                            Button(action: onRedo) {
+                                Label(text.redo, systemImage: "arrow.uturn.forward")
+                            }
+                            .keyboardShortcut("z", modifiers: [.command, .shift])
+                        }
+
+                        if canRestore {
+                            Button(role: .destructive) {
+                                isRestoreConfirmationVisible = true
+                            } label: {
+                                Label(text.restoreAllEdits, systemImage: "arrow.counterclockwise")
+                            }
+                        }
+                    }
+                }
+
+                Button {
+                    isDarkResult.toggle()
+                } label: {
+                    Label(
+                        isDarkResult ? text.lightResult : text.darkResult,
+                        systemImage: "circle.lefthalf.filled"
+                    )
+                }
+
+                if !isResultExpanded {
+                    Button {
+                        isResultExpanded = true
+                    } label: {
+                        Label(text.expandResult, systemImage: "arrow.up.left.and.arrow.down.right")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
             }
+            .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
+            .accessibilityLabel(text.resultOptions)
         }
         .padding(.horizontal, isCompact ? AkumaTheme.space4 : AkumaTheme.space5)
         .padding(.top, AkumaTheme.space4)
@@ -1641,6 +1708,7 @@ private struct SkeletonResultView: View {
     let paragraph: String
     let isDarkResult: Bool
     let analyzingText: String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPulsing = false
 
     private var groupWidths: [CGFloat] {
@@ -1672,11 +1740,13 @@ private struct SkeletonResultView: View {
                             .fill(shimmerColor.opacity(0.28))
                             .frame(width: width, height: 24)
                     }
-                    .opacity(isPulsing ? 0.46 : 1)
+                    .opacity(isPulsing && !reduceMotion ? 0.46 : 1)
                     .animation(
-                        .easeInOut(duration: 0.9)
-                            .repeatForever(autoreverses: true)
-                            .delay(Double(index) * 0.07),
+                        reduceMotion
+                            ? nil
+                            : .easeInOut(duration: 0.9)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(index) * 0.07),
                         value: isPulsing
                     )
                 }
@@ -1688,7 +1758,10 @@ private struct SkeletonResultView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(analyzingText)
         .onAppear {
-            isPulsing = true
+            isPulsing = !reduceMotion
+        }
+        .onChange(of: reduceMotion) { _, newValue in
+            isPulsing = !newValue
         }
     }
 
@@ -1806,7 +1879,7 @@ private struct ExpandedResultView: View {
                     isDarkResult: $isDarkResult,
                     isResultExpanded: $isResultExpanded,
                     text: text,
-                    isCompact: false,
+                    isCompact: true,
                     canRestore: canRestore,
                     canUndo: canUndo,
                     canRedo: canRedo,
