@@ -4,13 +4,14 @@ import SwiftUI
 import UIKit
 
 struct ContentView: View {
-    @State private var paragraph = ContentView.initialParagraph()
+    @AppStorage("draftParagraph") private var paragraph = ContentView.initialParagraph()
+    @AppStorage("showsPitchAccent") private var showAccent = true
     @State private var words: [AccentWord] = []
     @State private var analyzedWords: [AccentWord] = []
     @State private var pastWords: [[AccentWord]] = []
     @State private var futureWords: [[AccentWord]] = []
-    @State private var showAccent = true
     @State private var isDarkResult = false
+    @State private var isEditingInput = true
     @State private var isResultExpanded = false
     @State private var isAnalyzing = false
     @State private var isStreaming = false
@@ -18,6 +19,7 @@ struct ContentView: View {
     @State private var isGuidePresented = false
     @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
+    @Environment(\.colorScheme) private var colorScheme
 
     private static let analysisDebounceNanoseconds: UInt64 = 800_000_000
     private let text = AppText.current
@@ -31,6 +33,7 @@ struct ContentView: View {
                     words: $words,
                     showAccent: $showAccent,
                     isDarkResult: $isDarkResult,
+                    isEditingInput: $isEditingInput,
                     isResultExpanded: $isResultExpanded,
                     isAnalyzing: isAnalyzing,
                     isStreaming: isStreaming,
@@ -43,6 +46,7 @@ struct ContentView: View {
                     onOpenGuide: { isGuidePresented = true },
                     onPaste: pasteFromClipboard,
                     onInsertSample: insertSample,
+                    onAnalyze: analyzeParagraph,
                     onUpdateUnit: updateUnit,
                     onUndo: undoResultEdit,
                     onRedo: redoResultEdit,
@@ -81,17 +85,28 @@ struct ContentView: View {
         .sheet(isPresented: $isGuidePresented) {
             GuideView(text: guideText)
         }
-        .onChange(of: paragraph) { _, newValue in
-            scheduleAnalysis(for: newValue)
+        .onChange(of: colorScheme) { _, newValue in
+            isDarkResult = newValue == .dark
         }
         .onDisappear {
             analysisTask?.cancel()
         }
         .task {
+            isDarkResult = colorScheme == .dark
             if !paragraph.isEmpty {
                 scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+                isEditingInput = false
             }
         }
+    }
+
+    private func analyzeParagraph() {
+        guard !paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        isEditingInput = false
+        scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
     }
 
     private func scheduleAnalysis(
@@ -354,6 +369,8 @@ private struct AppText {
     let pasteFromClipboard: String
     let randomSample: String
     let insertSample: String
+    let analyze: String
+    let editInput: String
     let result: String
     let resultEmptyHint: String
     let copyAsText: String
@@ -411,6 +428,8 @@ private struct AppText {
         pasteFromClipboard: "Paste from clipboard",
         randomSample: "Insert random sample",
         insertSample: "Insert sample",
+        analyze: "Analyze",
+        editInput: "Edit text",
         result: "Result",
         resultEmptyHint: "Your analyzed reading and pitch accent will appear here.",
         copyAsText: "Copy as text",
@@ -455,6 +474,8 @@ private struct AppText {
         pasteFromClipboard: "クリップボードから貼り付け",
         randomSample: "ランダム例文を挿入",
         insertSample: "例文を挿入",
+        analyze: "解析",
+        editInput: "文章を編集",
         result: "結果",
         resultEmptyHint: "解析したふりがなとアクセントがここに表示されます。",
         copyAsText: "テキスト形式でコピー",
@@ -499,6 +520,8 @@ private struct AppText {
         pasteFromClipboard: "從剪貼簿貼上",
         randomSample: "插入隨機範文",
         insertSample: "插入範文",
+        analyze: "分析",
+        editInput: "編輯文字",
         result: "結果",
         resultEmptyHint: "分析後的假名與音調會顯示在這裡。",
         copyAsText: "複製為文字",
@@ -831,6 +854,7 @@ private struct EditorSection: View {
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
     @Binding var isResultExpanded: Bool
+    @Binding var isEditingInput: Bool
     let isAnalyzing: Bool
     let isStreaming: Bool
     let canRestore: Bool
@@ -842,6 +866,7 @@ private struct EditorSection: View {
     let onOpenGuide: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
+    let onAnalyze: () -> Void
     let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
@@ -857,7 +882,51 @@ private struct EditorSection: View {
 
     var body: some View {
         Group {
-            if isTwoColumn {
+            if isCompact {
+                if isEditingInput || words.isEmpty {
+                    InputPanel(
+                        paragraph: $paragraph,
+                        text: text,
+                        guideLabel: guideLabel,
+                        isCompact: true,
+                        onOpenGuide: onOpenGuide,
+                        onPaste: onPaste,
+                        onInsertSample: onInsertSample,
+                        onAnalyze: onAnalyze
+                    )
+                    .frame(minHeight: viewportSize.height)
+                } else {
+                    VStack(spacing: 0) {
+                        AnalyzedInputBar(
+                            paragraph: paragraph,
+                            editLabel: text.editInput,
+                            onEdit: { isEditingInput = true }
+                        )
+
+                        Divider()
+
+                        ResultPanel(
+                            words: $words,
+                            paragraph: paragraph,
+                            showAccent: $showAccent,
+                            isDarkResult: $isDarkResult,
+                            isResultExpanded: $isResultExpanded,
+                            isAnalyzing: isAnalyzing,
+                            isStreaming: isStreaming,
+                            canRestore: canRestore,
+                            canUndo: canUndo,
+                            canRedo: canRedo,
+                            text: text,
+                            isCompact: true,
+                            onUpdateUnit: onUpdateUnit,
+                            onUndo: onUndo,
+                            onRedo: onRedo,
+                            onRestore: onRestore
+                        )
+                        .frame(minHeight: max(viewportSize.height - 72, 320))
+                    }
+                }
+            } else if isTwoColumn {
                 HStack(alignment: .top, spacing: AkumaTheme.space6) {
                     InputPanel(
                         paragraph: $paragraph,
@@ -866,7 +935,8 @@ private struct EditorSection: View {
                         isCompact: false,
                         onOpenGuide: onOpenGuide,
                         onPaste: onPaste,
-                        onInsertSample: onInsertSample
+                        onInsertSample: onInsertSample,
+                        onAnalyze: onAnalyze
                     )
 
                     ResultPanel(
@@ -893,22 +963,18 @@ private struct EditorSection: View {
                 .frame(maxWidth: AkumaTheme.maxContentWidth)
                 .frame(maxWidth: .infinity)
             } else {
-                VStack(spacing: isCompact ? 0 : AkumaTheme.space2) {
+                VStack(spacing: AkumaTheme.space2) {
                     InputPanel(
                         paragraph: $paragraph,
                         text: text,
                         guideLabel: guideLabel,
-                        isCompact: isCompact,
+                        isCompact: false,
                         onOpenGuide: onOpenGuide,
                         onPaste: onPaste,
-                        onInsertSample: onInsertSample
+                        onInsertSample: onInsertSample,
+                        onAnalyze: onAnalyze
                     )
                     .frame(minHeight: compactPanelHeight)
-                    .frame(height: isCompact ? compactPanelHeight : nil)
-
-                    if isCompact {
-                        Divider()
-                    }
 
                     ResultPanel(
                         words: $words,
@@ -922,30 +988,48 @@ private struct EditorSection: View {
                         canUndo: canUndo,
                         canRedo: canRedo,
                         text: text,
-                        isCompact: isCompact,
+                        isCompact: false,
                         onUpdateUnit: onUpdateUnit,
                         onUndo: onUndo,
                         onRedo: onRedo,
                         onRestore: onRestore
                     )
                     .frame(minHeight: compactPanelHeight)
-                    .frame(height: isCompact ? compactPanelHeight : nil)
                 }
-                .padding(isCompact ? 0 : AkumaTheme.space5)
+                .padding(AkumaTheme.space5)
                 .frame(maxWidth: AkumaTheme.maxContentWidth)
                 .frame(maxWidth: .infinity)
             }
         }
         .frame(minHeight: viewportSize.height, alignment: .top)
-        .background(isCompact ? AkumaTheme.surface : AkumaTheme.background)
+        .background(isCompact ? Color(.systemBackground) : AkumaTheme.background)
     }
 
     private var compactPanelHeight: CGFloat {
-        if isCompact {
-            return max(viewportSize.height / 2, 280)
-        }
-
         return AkumaTheme.editorPanelMinHeight
+    }
+}
+
+private struct AnalyzedInputBar: View {
+    let paragraph: String
+    let editLabel: String
+    let onEdit: () -> Void
+
+    var body: some View {
+        HStack(spacing: AkumaTheme.space3) {
+            Text(paragraph.replacingOccurrences(of: "\n", with: " "))
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+
+            Button(editLabel, action: onEdit)
+                .buttonStyle(.bordered)
+        }
+        .padding(.horizontal, AkumaTheme.space4)
+        .frame(height: 64)
+        .background(Color(.systemBackground))
     }
 }
 
@@ -957,6 +1041,7 @@ private struct InputPanel: View {
     let onOpenGuide: () -> Void
     let onPaste: () -> Void
     let onInsertSample: () -> Void
+    let onAnalyze: () -> Void
 
     var body: some View {
         PanelContainer(isCompact: isCompact) {
@@ -1002,21 +1087,33 @@ private struct InputPanel: View {
                         )
                     }
 
-                    Button(action: onInsertSample) {
-                        if isCompact {
-                            Image(systemName: "dice")
-                                .font(.system(size: 18, weight: .semibold))
-                                .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-                        } else {
-                            Label(text.insertSample, systemImage: "dice")
-                                .font(.system(size: 14, weight: .semibold))
-                                .lineLimit(1)
-                                .frame(height: AkumaTheme.actionControlSize)
-                                .padding(.horizontal, AkumaTheme.space3)
+                    if paragraph.isEmpty {
+                        Button(action: onInsertSample) {
+                            if isCompact {
+                                Image(systemName: "dice")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                            } else {
+                                Label(text.insertSample, systemImage: "dice")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .lineLimit(1)
+                                    .frame(height: AkumaTheme.actionControlSize)
+                                    .padding(.horizontal, AkumaTheme.space3)
+                            }
                         }
+                        .buttonStyle(PanelButtonStyle())
+                        .accessibilityLabel(text.randomSample)
                     }
-                    .buttonStyle(PanelButtonStyle())
-                    .accessibilityLabel(text.randomSample)
+
+                    Button(action: onAnalyze) {
+                        Label(text.analyze, systemImage: "sparkles")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(height: AkumaTheme.actionControlSize)
+                            .padding(.horizontal, AkumaTheme.space3)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AkumaTheme.green)
+                    .disabled(paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 .padding(.horizontal, AkumaTheme.space5)
                 .padding(.bottom, AkumaTheme.space5)
