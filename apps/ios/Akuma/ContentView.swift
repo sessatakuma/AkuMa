@@ -33,8 +33,8 @@ struct ContentView: View {
                     words: $words,
                     showAccent: $showAccent,
                     isDarkResult: $isDarkResult,
-                    isEditingInput: $isEditingInput,
                     isResultExpanded: $isResultExpanded,
+                    isEditingInput: $isEditingInput,
                     isAnalyzing: isAnalyzing,
                     isStreaming: isStreaming,
                     canRestore: words != analyzedWords,
@@ -47,7 +47,7 @@ struct ContentView: View {
                     onPaste: pasteFromClipboard,
                     onInsertSample: insertSample,
                     onAnalyze: analyzeParagraph,
-                    onUpdateUnit: updateUnit,
+                    onUpdateWord: updateWord,
                     onUndo: undoResultEdit,
                     onRedo: redoResultEdit,
                     onRestore: restoreResultEdits
@@ -68,7 +68,7 @@ struct ContentView: View {
                 canRestore: words != analyzedWords,
                 canUndo: !pastWords.isEmpty,
                 canRedo: !futureWords.isEmpty,
-                onUpdateUnit: updateUnit,
+                onUpdateWord: updateWord,
                 onUndo: undoResultEdit,
                 onRedo: redoResultEdit,
                 onRestore: restoreResultEdits
@@ -227,41 +227,13 @@ struct ContentView: View {
         paragraph = Self.sampleParagraphs[nextIndex]
     }
 
-    private func updateUnit(wordIndex: Int, unitIndex: Int, reading: String?, accent: AccentKind?) {
-        guard words.indices.contains(wordIndex), words[wordIndex].units.indices.contains(unitIndex) else {
+    private func updateWord(wordIndex: Int, reading: String, accentPosition: Int) {
+        guard words.indices.contains(wordIndex) else {
             return
         }
 
         var updatedWords = words
-        if let reading {
-            let normalizedReading = KanaReading.normalized(reading)
-            let syllables = KanaReading.syllables(in: normalizedReading)
-            let currentAccent = accent ?? updatedWords[wordIndex].units[unitIndex].accent
-
-            if syllables.isEmpty {
-                if updatedWords[wordIndex].units.count == 1 {
-                    updatedWords[wordIndex].units[unitIndex] = AccentUnit(
-                        reading: "",
-                        accent: .none
-                    )
-                } else {
-                    updatedWords[wordIndex].units.remove(at: unitIndex)
-                }
-            } else {
-                let replacementUnits = syllables.enumerated().map { index, syllable in
-                    AccentUnit(
-                        reading: syllable,
-                        accent: index == 0 ? currentAccent : .none
-                    )
-                }
-                updatedWords[wordIndex].units.replaceSubrange(
-                    unitIndex...unitIndex,
-                    with: replacementUnits
-                )
-            }
-        } else if let accent {
-            updatedWords[wordIndex].units[unitIndex].accent = accent
-        }
+        updatedWords[wordIndex].apply(reading: reading, accentPosition: accentPosition)
         commitResultEdit(updatedWords)
     }
 
@@ -407,6 +379,25 @@ private struct AppText {
     let exportImage: String
     let exportHTML: String
     let cycleAccentHint: String
+    let editWordHint: String
+    let changeAccent: String
+    let accentFollowPrevious: String
+    let accentNoDrop: String
+    let dropAfterFormat: String
+
+    func dropAfter(_ position: Int) -> String {
+        String(format: dropAfterFormat, position)
+    }
+
+    func accentLabel(for position: Int) -> String {
+        if position < 0 {
+            return accentFollowPrevious
+        }
+        if position == 0 {
+            return accentNoDrop
+        }
+        return dropAfter(position)
+    }
 
     static var current: AppText {
         let languageCode = Locale.current.language.languageCode?.identifier.lowercased()
@@ -465,7 +456,12 @@ private struct AppText {
         exportText: "Share text",
         exportImage: "Share image",
         exportHTML: "Share HTML",
-        cycleAccentHint: "Tap to change pitch accent"
+        cycleAccentHint: "Tap to change pitch accent",
+        editWordHint: "Edit this word's reading and pitch accent",
+        changeAccent: "Change pitch accent",
+        accentFollowPrevious: "Unmarked or follows previous word",
+        accentNoDrop: "No drop",
+        dropAfterFormat: "Drop after mora %d"
     )
 
     static let ja = AppText(
@@ -511,7 +507,12 @@ private struct AppText {
         exportText: "テキストを共有",
         exportImage: "画像を共有",
         exportHTML: "HTMLを共有",
-        cycleAccentHint: "タップしてアクセントを切り替え"
+        cycleAccentHint: "タップしてアクセントを切り替え",
+        editWordHint: "この単語のふりがなとアクセントを編集",
+        changeAccent: "アクセントを変更",
+        accentFollowPrevious: "無印・前の語に従う",
+        accentNoDrop: "下降なし",
+        dropAfterFormat: "%d拍目の後で下降"
     )
 
     static let zh = AppText(
@@ -557,7 +558,12 @@ private struct AppText {
         exportText: "分享文字",
         exportImage: "分享圖片",
         exportHTML: "分享 HTML",
-        cycleAccentHint: "點按以切換音調"
+        cycleAccentHint: "點按以切換音調",
+        editWordHint: "編輯這個詞的假名與音調",
+        changeAccent: "更改音調",
+        accentFollowPrevious: "無標記或承接前詞",
+        accentNoDrop: "不下降",
+        dropAfterFormat: "第 %d 拍後下降"
     )
 }
 
@@ -867,7 +873,7 @@ private struct EditorSection: View {
     let onPaste: () -> Void
     let onInsertSample: () -> Void
     let onAnalyze: () -> Void
-    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    let onUpdateWord: (Int, String, Int) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onRestore: () -> Void
@@ -918,7 +924,7 @@ private struct EditorSection: View {
                             canRedo: canRedo,
                             text: text,
                             isCompact: true,
-                            onUpdateUnit: onUpdateUnit,
+                            onUpdateWord: onUpdateWord,
                             onUndo: onUndo,
                             onRedo: onRedo,
                             onRestore: onRestore
@@ -952,7 +958,7 @@ private struct EditorSection: View {
                         canRedo: canRedo,
                         text: text,
                         isCompact: false,
-                        onUpdateUnit: onUpdateUnit,
+                        onUpdateWord: onUpdateWord,
                         onUndo: onUndo,
                         onRedo: onRedo,
                         onRestore: onRestore
@@ -989,7 +995,7 @@ private struct EditorSection: View {
                         canRedo: canRedo,
                         text: text,
                         isCompact: false,
-                        onUpdateUnit: onUpdateUnit,
+                        onUpdateWord: onUpdateWord,
                         onUndo: onUndo,
                         onRedo: onRedo,
                         onRestore: onRestore
@@ -1135,7 +1141,7 @@ private struct ResultPanel: View {
     let canRedo: Bool
     let text: AppText
     let isCompact: Bool
-    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    let onUpdateWord: (Int, String, Int) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onRestore: () -> Void
@@ -1159,7 +1165,7 @@ private struct ResultPanel: View {
                             emptyText: text.result,
                             text: text,
                             isInteractive: !isStreaming,
-                            onUpdateUnit: onUpdateUnit
+                            onUpdateWord: onUpdateWord
                         )
                     }
                 }
@@ -1251,7 +1257,7 @@ private struct ResultContentView: View {
     let emptyText: String
     let text: AppText
     var isInteractive = true
-    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    let onUpdateWord: (Int, String, Int) -> Void
     @State private var editTarget: ReadingEditTarget?
 
     var body: some View {
@@ -1276,23 +1282,23 @@ private struct ResultContentView: View {
                     ForEach(Array(words.enumerated()), id: \.offset) { wordIndex, word in
                         AccentWordView(
                             word: word,
-                            wordIndex: wordIndex,
                             text: text,
                             showAccent: showAccent,
                             isDarkResult: isDarkResult,
                             isInteractive: isInteractive,
-                            onCycleAccent: { unitIndex in
-                                let accent = word.units[unitIndex].accent.next
-                                onUpdateUnit(wordIndex, unitIndex, nil, accent)
+                            onCycleAccent: {
+                                onUpdateWord(
+                                    wordIndex,
+                                    word.editableReading,
+                                    word.nextAccentPosition
+                                )
                             },
-                            onEditReading: { unitIndex in
-                                let unit = word.units[unitIndex]
+                            onEdit: {
                                 editTarget = ReadingEditTarget(
                                     wordIndex: wordIndex,
-                                    unitIndex: unitIndex,
                                     surface: word.surface,
-                                    reading: unit.reading,
-                                    accent: unit.accent
+                                    reading: word.editableReading,
+                                    accentPosition: word.accentPosition
                                 )
                             }
                         )
@@ -1304,10 +1310,9 @@ private struct ResultContentView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
-        .scrollIndicators(.hidden)
         .sheet(item: $editTarget) { target in
-            ReadingEditorSheet(target: target, text: text) { reading, accent in
-                onUpdateUnit(target.wordIndex, target.unitIndex, reading, accent)
+            ReadingEditorSheet(target: target, text: text) { reading, accentPosition in
+                onUpdateWord(target.wordIndex, reading, accentPosition)
             }
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
@@ -1317,72 +1322,62 @@ private struct ResultContentView: View {
 
 private struct AccentWordView: View {
     let word: AccentWord
-    let wordIndex: Int
     let text: AppText
     let showAccent: Bool
     let isDarkResult: Bool
     let isInteractive: Bool
-    let onCycleAccent: (Int) -> Void
-    let onEditReading: (Int) -> Void
+    let onCycleAccent: () -> Void
+    let onEdit: () -> Void
+    @ScaledMetric(relativeTo: .title2) private var unitBaseWidth: CGFloat = 18
 
     var body: some View {
         if word.isLineBreak {
             Color.clear
                 .frame(width: 1, height: 60)
         } else {
-            VStack(spacing: 2) {
-                HStack(spacing: 0) {
-                    ForEach(Array(word.units.enumerated()), id: \.offset) { unitIndex, unit in
-                        VStack(spacing: 2) {
-                            Button {
-                                onCycleAccent(unitIndex)
-                            } label: {
+            Button(action: onEdit) {
+                VStack(spacing: 2) {
+                    HStack(spacing: 0) {
+                        ForEach(Array(word.units.enumerated()), id: \.offset) { _, unit in
+                            VStack(spacing: 2) {
                                 AccentLineView(accent: unit.accent, isVisible: showAccent)
                                     .frame(height: 20)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(!isInteractive)
-                            .accessibilityLabel(
-                                "\(word.surface)\(unit.reading.isEmpty ? "" : ", \(unit.reading)"), \(text.accent): \(textForAccent(unit.accent))"
-                            )
-                            .accessibilityHint(text.cycleAccentHint)
 
-                            Button {
-                                onEditReading(unitIndex)
-                            } label: {
                                 Text(unit.reading.isEmpty ? "　" : unit.reading)
-                                    .font(.system(size: 14, weight: .regular))
+                                    .font(.caption)
                                     .foregroundStyle(readingColor)
                                     .lineLimit(1)
                             }
-                            .buttonStyle(.plain)
-                            .disabled(!isInteractive)
-                            .frame(minHeight: 24)
-                            .accessibilityLabel(
-                                "\(word.surface), \(text.reading): \(unit.reading.isEmpty ? text.editReading : unit.reading)"
-                            )
+                            .frame(minWidth: unitWidth(unit))
                         }
-                        .frame(minWidth: unitWidth(unit))
                     }
-                }
 
-                Text(word.surface)
-                    .font(.system(size: 24, weight: .regular))
-                    .foregroundStyle(baseColor)
-                    .lineLimit(1)
+                    Text(word.surface)
+                        .font(.title2)
+                        .foregroundStyle(baseColor)
+                        .lineLimit(1)
+                }
+                .padding(.vertical, AkumaTheme.space1)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 1)
-            .frame(minWidth: minWidth)
+            .buttonStyle(.plain)
+            .disabled(!isInteractive)
+            .frame(minWidth: minWidth, minHeight: 44)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityHint(text.editWordHint)
+            .accessibilityAction(named: text.changeAccent) {
+                onCycleAccent()
+            }
         }
     }
 
     private var minWidth: CGFloat {
-        max(CGFloat(max(word.surface.count, 1)) * 18, word.units.reduce(0) { $0 + unitWidth($1) })
+        max(CGFloat(max(word.surface.count, 1)) * unitBaseWidth, word.units.reduce(0) { $0 + unitWidth($1) })
     }
 
     private func unitWidth(_ unit: AccentUnit) -> CGFloat {
-        CGFloat(max(unit.reading.count, 1)) * 18
+        CGFloat(max(unit.reading.count, 1)) * unitBaseWidth
     }
 
     private var baseColor: Color {
@@ -1393,40 +1388,36 @@ private struct AccentWordView: View {
         isDarkResult ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText
     }
 
-    private func textForAccent(_ accent: AccentKind) -> String {
-        switch accent {
-        case .none: text.accentNone
-        case .flat: text.accentHigh
-        case .drop: text.accentDrop
-        }
+    private var accessibilityLabel: String {
+        let reading = word.editableReading.isEmpty ? "" : ", \(word.editableReading)"
+        return "\(word.surface)\(reading), \(text.accent): \(text.accentLabel(for: word.accentPosition))"
     }
 }
 
 private struct ReadingEditTarget: Identifiable {
     let wordIndex: Int
-    let unitIndex: Int
     let surface: String
     let reading: String
-    let accent: AccentKind
+    let accentPosition: Int
 
-    var id: String { "\(wordIndex)-\(unitIndex)" }
+    var id: Int { wordIndex }
 }
 
 private struct ReadingEditorSheet: View {
     let target: ReadingEditTarget
     let text: AppText
-    let onSave: (String, AccentKind) -> Void
+    let onSave: (String, Int) -> Void
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isReadingFocused: Bool
     @State private var reading: String
-    @State private var accent: AccentKind
+    @State private var accentPosition: Int
 
-    init(target: ReadingEditTarget, text: AppText, onSave: @escaping (String, AccentKind) -> Void) {
+    init(target: ReadingEditTarget, text: AppText, onSave: @escaping (String, Int) -> Void) {
         self.target = target
         self.text = text
         self.onSave = onSave
         _reading = State(initialValue: target.reading)
-        _accent = State(initialValue: target.accent)
+        _accentPosition = State(initialValue: target.accentPosition)
     }
 
     var body: some View {
@@ -1435,10 +1426,10 @@ private struct ReadingEditorSheet: View {
                 Section {
                     VStack(alignment: .leading, spacing: AkumaTheme.space1) {
                         Text(target.surface)
-                            .font(.system(size: 24, weight: .semibold))
+                            .font(.title2.weight(.semibold))
                         Text(target.reading)
-                            .font(.system(size: 15, weight: .regular))
-                            .foregroundStyle(AkumaTheme.secondaryText)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                     .accessibilityElement(children: .combine)
                 }
@@ -1459,12 +1450,14 @@ private struct ReadingEditorSheet: View {
                 }
 
                 Section(text.accent) {
-                    Picker(text.accent, selection: $accent) {
-                        Text(text.accentNone).tag(AccentKind.none)
-                        Text(text.accentHigh).tag(AccentKind.flat)
-                        Text(text.accentDrop).tag(AccentKind.drop)
+                    Picker(text.accent, selection: $accentPosition) {
+                        Text(text.accentFollowPrevious).tag(-1)
+                        Text(text.accentNoDrop).tag(0)
+                        ForEach(1...max(syllableCount, 1), id: \.self) { position in
+                            Text(text.dropAfter(position)).tag(position)
+                        }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                 }
             }
             .navigationTitle(text.editReading)
@@ -1492,12 +1485,16 @@ private struct ReadingEditorSheet: View {
         KanaReading.isValid(normalizedReading)
     }
 
+    private var syllableCount: Int {
+        KanaReading.syllables(in: normalizedReading).count
+    }
+
     private func save() {
         guard isReadingValid else {
             return
         }
 
-        onSave(normalizedReading, accent)
+        onSave(normalizedReading, min(accentPosition, max(syllableCount, 0)))
         dismiss()
     }
 }
@@ -1933,7 +1930,7 @@ private struct ExpandedResultView: View {
     let canRestore: Bool
     let canUndo: Bool
     let canRedo: Bool
-    let onUpdateUnit: (Int, Int, String?, AccentKind?) -> Void
+    let onUpdateWord: (Int, String, Int) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onRestore: () -> Void
@@ -1965,7 +1962,7 @@ private struct ExpandedResultView: View {
                 isDarkResult: isDarkResult,
                 emptyText: text.result,
                 text: text,
-                onUpdateUnit: onUpdateUnit
+                onUpdateWord: onUpdateWord
             )
 
             if !words.isEmpty {
@@ -2078,6 +2075,60 @@ private struct AccentWord: Equatable {
 
     var reading: String {
         units.map(\.reading).joined()
+    }
+
+    var editableReading: String {
+        if !reading.isEmpty {
+            return reading
+        }
+
+        return KanaReading.isValid(surface) ? surface : ""
+    }
+
+    var accentPosition: Int {
+        if let dropIndex = units.firstIndex(where: { $0.accent == .drop }) {
+            return dropIndex + 1
+        }
+
+        return units.contains(where: { $0.accent == .flat }) ? 0 : -1
+    }
+
+    var nextAccentPosition: Int {
+        let count = max(units.count, 1)
+        if accentPosition < 0 {
+            return 0
+        }
+        if accentPosition < count {
+            return accentPosition + 1
+        }
+        return -1
+    }
+
+    mutating func apply(reading: String, accentPosition: Int) {
+        let normalizedReading = KanaReading.normalized(reading)
+        let syllables = KanaReading.syllables(in: normalizedReading)
+        let unitCount = max(syllables.count, 1)
+        let hidesReading = KanaReading.isKanaSurface(surface)
+
+        units = (0..<unitCount).map { index in
+            let accent: AccentKind
+            if accentPosition < 0 {
+                accent = .none
+            } else if accentPosition == 0 {
+                accent = .flat
+            } else if index < accentPosition - 1 {
+                accent = .flat
+            } else if index == accentPosition - 1 {
+                accent = .drop
+            } else {
+                accent = .none
+            }
+
+            return AccentUnit(
+                reading: hidesReading || syllables.isEmpty ? "" : syllables[index],
+                accent: accent
+            )
+        }
     }
 
     var accentIndex: Int {
