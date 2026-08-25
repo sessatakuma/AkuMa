@@ -17,11 +17,11 @@ struct ContentView: View {
     @State private var isStreaming = false
     @State private var isAnalysisIssuePresented = false
     @State private var isGuidePresented = false
+    @State private var isSettingsPresented = false
     @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
     @Environment(\.colorScheme) private var colorScheme
 
-    private static let analysisDebounceNanoseconds: UInt64 = 800_000_000
     private let text = AppText.current
     private let guideText = GuideText.current
 
@@ -44,9 +44,9 @@ struct ContentView: View {
                     guideLabel: guideText.guide,
                     viewportSize: geometry.size,
                     onOpenGuide: { isGuidePresented = true },
-                    onPaste: pasteFromClipboard,
                     onInsertSample: insertSample,
                     onAnalyze: analyzeParagraph,
+                    onOpenSettings: { isSettingsPresented = true },
                     onUpdateWord: updateWord,
                     onUndo: undoResultEdit,
                     onRedo: redoResultEdit,
@@ -56,6 +56,7 @@ struct ContentView: View {
             }
             .background(geometry.size.width <= 768 ? AkumaTheme.surface : AkumaTheme.background)
             .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
         }
         .sheet(isPresented: $isResultExpanded) {
             ExpandedResultView(
@@ -76,7 +77,7 @@ struct ContentView: View {
         }
         .alert(text.temporaryIssuesTitle, isPresented: $isAnalysisIssuePresented) {
             Button(text.retry) {
-                scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+                scheduleAnalysis(for: paragraph)
             }
             Button(text.continueUsing, role: .cancel) {}
         } message: {
@@ -84,6 +85,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $isGuidePresented) {
             GuideView(text: guideText)
+        }
+        .sheet(isPresented: $isSettingsPresented) {
+            SettingsView(text: guideText)
         }
         .onChange(of: colorScheme) { _, newValue in
             isDarkResult = newValue == .dark
@@ -93,8 +97,8 @@ struct ContentView: View {
         }
         .task {
             isDarkResult = colorScheme == .dark
-            if !paragraph.isEmpty {
-                scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+            if ProcessInfo.processInfo.arguments.contains("--showcase-data"), !paragraph.isEmpty {
+                scheduleAnalysis(for: paragraph)
                 isEditingInput = false
             }
         }
@@ -106,15 +110,12 @@ struct ContentView: View {
         }
 
         isEditingInput = false
-        scheduleAnalysis(for: paragraph, debounceNanoseconds: 0)
+        scheduleAnalysis(for: paragraph)
     }
 
-    private func scheduleAnalysis(
-        for sourceParagraph: String,
-        debounceNanoseconds: UInt64 = Self.analysisDebounceNanoseconds
-    ) {
+    private func scheduleAnalysis(for sourceParagraph: String) {
         analysisTask?.cancel()
-        isAnalyzing = false
+        isAnalyzing = true
         isStreaming = false
 
         guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -123,14 +124,6 @@ struct ContentView: View {
         }
 
         analysisTask = Task {
-            if debounceNanoseconds > 0 {
-                do {
-                    try await Task.sleep(nanoseconds: debounceNanoseconds)
-                } catch {
-                    return
-                }
-            }
-
             if Task.isCancelled {
                 return
             }
@@ -145,20 +138,7 @@ struct ContentView: View {
             return
         }
 
-        isAnalyzing = false
         isStreaming = false
-        let visibleLoadingTask = Task { @MainActor in
-            do {
-                try await Task.sleep(nanoseconds: 500_000_000)
-            } catch {
-                return
-            }
-
-            guard paragraph == sourceParagraph, !Task.isCancelled else {
-                return
-            }
-            isAnalyzing = true
-        }
 
         do {
             let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph) { streamedWords in
@@ -166,7 +146,6 @@ struct ContentView: View {
                     return
                 }
 
-                visibleLoadingTask.cancel()
                 withAnimation(.easeOut(duration: 0.2)) {
                     words = streamedWords
                 }
@@ -184,13 +163,11 @@ struct ContentView: View {
             isAnalyzing = false
             isStreaming = false
         } catch is CancellationError {
-            visibleLoadingTask.cancel()
             if paragraph == sourceParagraph {
                 isAnalyzing = false
                 isStreaming = false
             }
         } catch {
-            visibleLoadingTask.cancel()
             if paragraph == sourceParagraph, !Task.isCancelled {
                 words = MockAccentAnalyzer.analyze(sourceParagraph)
                 analyzedWords = words
@@ -201,14 +178,6 @@ struct ContentView: View {
                 isStreaming = false
             }
         }
-    }
-
-    private func pasteFromClipboard() {
-        guard let pastedText = UIPasteboard.general.string, !pastedText.isEmpty else {
-            return
-        }
-
-        paragraph = pastedText
     }
 
     private func insertSample() {
@@ -306,18 +275,18 @@ private enum AkumaTheme {
     static let radiusLarge: CGFloat = 16
     static let radiusXLarge: CGFloat = 24
 
-    static let background = Color(hex: 0xE8E3E3)
-    static let surface = Color.white
-    static let surfaceHover = Color(hex: 0xFAFAF9)
-    static let text = Color(hex: 0x1F2937)
-    static let secondaryText = Color(hex: 0x6B7280)
-    static let invertedText = Color.white
+    static let background = Color(.secondarySystemBackground)
+    static let surface = Color(.systemBackground)
+    static let surfaceHover = Color(.secondarySystemBackground)
+    static let text = Color.primary
+    static let secondaryText = Color.secondary
+    static let invertedText = Color(.systemBackground)
     static let green = Color(hex: 0x619E83)
     static let greenHover = Color(hex: 0x4E7E69)
     static let greenLight = Color(hex: 0xEFF7F4)
     static let red = Color(hex: 0x9E4145)
     static let redLight = Color(hex: 0xFCF2F2)
-    static let border = Color(hex: 0xE5E7EB)
+    static let border = Color(.separator)
     static let darkPanel = Color(hex: 0x1F2937)
     static let darkHover = Color(hex: 0x374151)
     static let darkText = Color(hex: 0xF9FAFB)
@@ -338,11 +307,11 @@ private extension Color {
 private struct AppText {
     let inputPlaceholder: String
     let analyzing: String
-    let pasteFromClipboard: String
     let randomSample: String
     let insertSample: String
     let analyze: String
     let editInput: String
+    let settings: String
     let result: String
     let resultEmptyHint: String
     let copyAsText: String
@@ -353,8 +322,6 @@ private struct AppText {
     let expandResult: String
     let collapseResult: String
     let share: String
-    let darkResult: String
-    let lightResult: String
     let editReading: String
     let reading: String
     let accentNone: String
@@ -376,9 +343,7 @@ private struct AppText {
     let resultOptions: String
     let exportOptions: String
     let exportText: String
-    let exportImage: String
     let exportHTML: String
-    let cycleAccentHint: String
     let editWordHint: String
     let changeAccent: String
     let accentFollowPrevious: String
@@ -416,11 +381,11 @@ private struct AppText {
     static let en = AppText(
         inputPlaceholder: "Enter Japanese text...",
         analyzing: "Analyzing...",
-        pasteFromClipboard: "Paste from clipboard",
         randomSample: "Insert random sample",
         insertSample: "Insert sample",
         analyze: "Analyze",
         editInput: "Edit text",
+        settings: "Settings",
         result: "Result",
         resultEmptyHint: "Your analyzed reading and pitch accent will appear here.",
         copyAsText: "Copy as text",
@@ -431,8 +396,6 @@ private struct AppText {
         expandResult: "Expand result",
         collapseResult: "Collapse result",
         share: "Share",
-        darkResult: "Dark result",
-        lightResult: "Light result",
         editReading: "Edit reading",
         reading: "Reading",
         accentNone: "Low",
@@ -454,9 +417,7 @@ private struct AppText {
         resultOptions: "More result options",
         exportOptions: "Share or export",
         exportText: "Share text",
-        exportImage: "Share image",
         exportHTML: "Share HTML",
-        cycleAccentHint: "Tap to change pitch accent",
         editWordHint: "Edit this word's reading and pitch accent",
         changeAccent: "Change pitch accent",
         accentFollowPrevious: "Unmarked or follows previous word",
@@ -467,11 +428,11 @@ private struct AppText {
     static let ja = AppText(
         inputPlaceholder: "文章を入力...",
         analyzing: "解析中...",
-        pasteFromClipboard: "クリップボードから貼り付け",
         randomSample: "ランダム例文を挿入",
         insertSample: "例文を挿入",
         analyze: "解析",
         editInput: "文章を編集",
+        settings: "設定",
         result: "結果",
         resultEmptyHint: "解析したふりがなとアクセントがここに表示されます。",
         copyAsText: "テキスト形式でコピー",
@@ -482,8 +443,6 @@ private struct AppText {
         expandResult: "結果を拡大表示",
         collapseResult: "結果の拡大表示を閉じる",
         share: "共有",
-        darkResult: "ダーク表示",
-        lightResult: "ライト表示",
         editReading: "ふりがなを編集",
         reading: "ふりがな",
         accentNone: "低",
@@ -505,9 +464,7 @@ private struct AppText {
         resultOptions: "その他の結果オプション",
         exportOptions: "共有・書き出し",
         exportText: "テキストを共有",
-        exportImage: "画像を共有",
         exportHTML: "HTMLを共有",
-        cycleAccentHint: "タップしてアクセントを切り替え",
         editWordHint: "この単語のふりがなとアクセントを編集",
         changeAccent: "アクセントを変更",
         accentFollowPrevious: "無印・前の語に従う",
@@ -518,11 +475,11 @@ private struct AppText {
     static let zh = AppText(
         inputPlaceholder: "輸入日語文字...",
         analyzing: "分析中...",
-        pasteFromClipboard: "從剪貼簿貼上",
         randomSample: "插入隨機範文",
         insertSample: "插入範文",
         analyze: "分析",
         editInput: "編輯文字",
+        settings: "設定",
         result: "結果",
         resultEmptyHint: "分析後的假名與音調會顯示在這裡。",
         copyAsText: "複製為文字",
@@ -533,8 +490,6 @@ private struct AppText {
         expandResult: "展開結果面板",
         collapseResult: "收合結果面板",
         share: "分享",
-        darkResult: "深色結果",
-        lightResult: "淺色結果",
         editReading: "編輯假名",
         reading: "假名",
         accentNone: "低",
@@ -556,9 +511,7 @@ private struct AppText {
         resultOptions: "更多結果選項",
         exportOptions: "分享或匯出",
         exportText: "分享文字",
-        exportImage: "分享圖片",
         exportHTML: "分享 HTML",
-        cycleAccentHint: "點按以切換音調",
         editWordHint: "編輯這個詞的假名與音調",
         changeAccent: "更改音調",
         accentFollowPrevious: "無標記或承接前詞",
@@ -569,8 +522,6 @@ private struct AppText {
 
 private struct GuideText {
     let guide: String
-    let heading: String
-    let intro: String
     let pitchHeading: String
     let pitchIntro: String
     let pitchNoneTitle: String
@@ -579,17 +530,12 @@ private struct GuideText {
     let pitchHighBody: String
     let pitchDropTitle: String
     let pitchDropBody: String
-    let startTitle: String
-    let startBody: String
-    let editTitle: String
     let editBody: String
-    let shareTitle: String
     let shareBody: String
     let about: String
     let aboutBody: String
     let email: String
     let sourceCode: String
-    let socialPending: String
     let close: String
 
     static var current: GuideText {
@@ -601,8 +547,6 @@ private struct GuideText {
 
     static let en = GuideText(
         guide: "Guide",
-        heading: "Make Japanese pronunciation natural and clear",
-        intro: "AkuMa turns Japanese text into pronunciation material you can review, correct, and share.",
         pitchHeading: "Why the accent line matters",
         pitchIntro: "Pitch can affect both naturalness and word meaning. AkuMa marks where the voice stays high and where it falls.",
         pitchNoneTitle: "Low / follows",
@@ -611,24 +555,17 @@ private struct GuideText {
         pitchHighBody: "The marked span stays high with no fall inside the word.",
         pitchDropTitle: "High, then fall",
         pitchDropBody: "The voice falls after this mora; following particles shift low.",
-        startTitle: "Start an analysis",
-        startBody: "Type or paste Japanese text, or insert a random sample. Analysis starts automatically.",
-        editTitle: "Correct the result",
-        editBody: "Tap an accent lane to cycle its pitch. Tap a reading to edit both the kana and pitch in a focused sheet. Undo, redo, or restore from the actions menu.",
-        shareTitle: "Save in the right format",
-        shareBody: "Copy text for notes, or share a native image, HTML file, or plain text through the system share sheet.",
+        editBody: "Tap a word to edit its full reading and pitch pattern. Undo, redo, or restore from the actions menu.",
+        shareBody: "Copy text or share an image through the system share sheet. Text and HTML exports are in the actions menu.",
         about: "About Sessatakuma",
-        aboutBody: "Sessatakuma develops Japanese-learning tools and is planning a speaking-practice community. We share the practice system and tools our team built to help learners practice efficiently and build confidence speaking Japanese.",
+        aboutBody: "Japanese reading and pitch-accent analysis.",
         email: "Email us",
         sourceCode: "Source code",
-        socialPending: "More social accounts are coming soon.",
         close: "Close"
     )
 
     static let ja = GuideText(
         guide: "使い方",
-        heading: "日本語の発音を、より自然に、より明瞭に",
-        intro: "AkuMa は日本語テキストを、確認・修正・共有できる発音教材に変換します。",
         pitchHeading: "アクセント線の見方",
         pitchIntro: "ピッチアクセントは自然さだけでなく、単語の意味にも影響します。声が高い部分と下がる位置を線で示します。",
         pitchNoneTitle: "低い・前に従う",
@@ -637,24 +574,17 @@ private struct GuideText {
         pitchHighBody: "印のある範囲は高いままで、単語の途中では下がりません。",
         pitchDropTitle: "高い・その後下降",
         pitchDropBody: "この拍の後で声が下がり、後続する助詞も低くなります。",
-        startTitle: "解析を始める",
-        startBody: "日本語を入力・貼り付けするか、例文を挿入します。解析は自動で始まります。",
-        editTitle: "結果を修正する",
-        editBody: "アクセント線をタップして切り替え、ふりがなをタップして読みとピッチを編集します。操作メニューから取り消し・やり直し・全復元もできます。",
-        shareTitle: "用途に合わせて保存する",
-        shareBody: "ノート用にテキストをコピーしたり、画像・HTML・テキストをiOSの共有シートから保存できます。",
+        editBody: "単語をタップすると、ふりがな全体とアクセントを編集できます。取り消し・やり直し・全復元は操作メニューにあります。",
+        shareBody: "テキストをコピーするか、画像をiOSの共有シートで共有できます。テキストとHTMLの書き出しは操作メニューにあります。",
         about: "Sessatakuma について",
-        aboutBody: "Sessatakuma は日本語学習ツールを開発しながら、会話練習コミュニティを計画しています。チームが築いた練習体系とツールを共有し、効率的な練習と話す自信づくりを支援します。",
+        aboutBody: "日本語のふりがなとアクセントを解析します。",
         email: "メール",
         sourceCode: "ソースコード",
-        socialPending: "その他のSNSアカウントは準備中です。",
         close: "閉じる"
     )
 
     static let zh = GuideText(
         guide: "指南",
-        heading: "讓日語發音更自然、更清楚",
-        intro: "AkuMa 將日語文字轉換成可以檢查、修正與分享的發音教材。",
         pitchHeading: "如何閱讀音調線",
         pitchIntro: "音調不只影響自然度，也可能改變詞義。線條會標示高音範圍與下降位置。",
         pitchNoneTitle: "低音／承接前詞",
@@ -663,17 +593,12 @@ private struct GuideText {
         pitchHighBody: "標記範圍維持高音，詞內不會下降。",
         pitchDropTitle: "高音、隨後下降",
         pitchDropBody: "聲音在這一拍之後下降，後接助詞也會轉為低音。",
-        startTitle: "開始分析",
-        startBody: "輸入或貼上日語，也可以插入隨機範文；分析會自動開始。",
-        editTitle: "修正結果",
-        editBody: "點按音調線即可循環切換；點按假名可在專用面板中修改讀音與音調。操作選單也支援復原、重做與全部還原。",
-        shareTitle: "選擇合適的格式",
-        shareBody: "可複製文字做筆記，也能透過 iOS 分享面板輸出圖片、HTML 或純文字。",
+        editBody: "點按一個詞即可編輯完整假名與音調。復原、重做與全部還原位於操作選單。",
+        shareBody: "可複製文字，或透過 iOS 分享面板分享圖片。文字與 HTML 匯出位於操作選單。",
         about: "關於 Sessatakuma",
-        aboutBody: "Sessatakuma 開發日語學習工具，並規劃日語口說練習社群。我們分享團隊建立的練習系統與工具，協助學習者有效練習並建立開口說日語的自信。",
+        aboutBody: "分析日語假名與音調。",
         email: "寄送電子郵件",
         sourceCode: "原始碼",
-        socialPending: "其他社群帳號正在準備中。",
         close: "關閉"
     )
 }
@@ -681,59 +606,32 @@ private struct GuideText {
 private struct GuideView: View {
     let text: GuideText
     @Environment(\.dismiss) private var dismiss
-    @State private var isAboutPresented = false
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AkumaTheme.space7) {
-                    VStack(alignment: .leading, spacing: AkumaTheme.space3) {
-                        Text(text.heading)
-                            .font(.system(size: 34, weight: .bold))
-                            .foregroundStyle(AkumaTheme.text)
-                        Text(text.intro)
-                            .font(.system(size: 17))
-                            .foregroundStyle(AkumaTheme.secondaryText)
-                    }
-
-                    VStack(alignment: .leading, spacing: AkumaTheme.space4) {
-                        Text(text.pitchHeading)
-                            .font(.system(size: 24, weight: .bold))
-                        Text(text.pitchIntro)
-                            .foregroundStyle(AkumaTheme.secondaryText)
-
-                        PitchGuideCard(title: text.pitchNoneTitle, detail: text.pitchNoneBody, accent: .none)
-                        PitchGuideCard(title: text.pitchHighTitle, detail: text.pitchHighBody, accent: .flat)
-                        PitchGuideCard(title: text.pitchDropTitle, detail: text.pitchDropBody, accent: .drop)
-                    }
-
-                    VStack(spacing: AkumaTheme.space3) {
-                        GuideStepCard(number: 1, title: text.startTitle, detail: text.startBody, icon: "text.cursor")
-                        GuideStepCard(number: 2, title: text.editTitle, detail: text.editBody, icon: "pencil")
-                        GuideStepCard(number: 3, title: text.shareTitle, detail: text.shareBody, icon: "square.and.arrow.up")
-                    }
+            List {
+                Section {
+                    Text(text.pitchIntro)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(AkumaTheme.space5)
-                .frame(maxWidth: 720)
-                .frame(maxWidth: .infinity)
+
+                Section(text.pitchHeading) {
+                    PitchGuideCard(title: text.pitchNoneTitle, detail: text.pitchNoneBody, accent: .none)
+                    PitchGuideCard(title: text.pitchHighTitle, detail: text.pitchHighBody, accent: .flat)
+                    PitchGuideCard(title: text.pitchDropTitle, detail: text.pitchDropBody, accent: .drop)
+                }
+
+                Section {
+                    Label(text.editBody, systemImage: "hand.tap")
+                    Label(text.shareBody, systemImage: "square.and.arrow.up")
+                }
             }
-            .background(AkumaTheme.background)
             .navigationTitle(text.guide)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isAboutPresented = true
-                    } label: {
-                        Label(text.about, systemImage: "info.circle")
-                    }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(text.close) { dismiss() }
                 }
-            }
-            .sheet(isPresented: $isAboutPresented) {
-                AboutView(text: text)
             }
         }
     }
@@ -761,86 +659,44 @@ private struct PitchGuideCard: View {
                     .foregroundStyle(AkumaTheme.secondaryText)
             }
         }
-        .padding(AkumaTheme.space4)
+        .padding(.vertical, AkumaTheme.space1)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AkumaTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous))
-        .shadow(color: Color.black.opacity(0.06), radius: 8, y: 2)
     }
 }
 
-private struct GuideStepCard: View {
-    let number: Int
-    let title: String
-    let detail: String
-    let icon: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: AkumaTheme.space4) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(AkumaTheme.green)
-                .frame(width: 44, height: 44)
-                .background(AkumaTheme.greenLight)
-                .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusMedium, style: .continuous))
-
-            VStack(alignment: .leading, spacing: AkumaTheme.space1) {
-                Text("\(number). \(title)")
-                    .font(.system(size: 18, weight: .semibold))
-                Text(detail)
-                    .font(.system(size: 15))
-                    .foregroundStyle(AkumaTheme.secondaryText)
-            }
-        }
-        .padding(AkumaTheme.space4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AkumaTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusLarge, style: .continuous))
-    }
-}
-
-private struct AboutView: View {
+private struct SettingsView: View {
     let text: GuideText
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: AkumaTheme.space5) {
-                    Image("Logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 72, height: 72)
-                    Text("Sessatakuma")
-                        .font(.system(size: 28, weight: .bold))
-                    Text(text.aboutBody)
-                        .font(.system(size: 17))
-                        .foregroundStyle(AkumaTheme.secondaryText)
+            List {
+                Section {
+                    HStack(spacing: AkumaTheme.space3) {
+                        Image("Logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 48, height: 48)
+                        VStack(alignment: .leading) {
+                            Text("AkuMa")
+                                .font(.headline)
+                            Text(text.aboutBody)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
 
+                Section(text.about) {
                     Link(destination: URL(string: "mailto:contact@sessatakuma.dev")!) {
                         Label(text.email, systemImage: "envelope")
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(AkumaTheme.green)
 
                     Link(destination: URL(string: "https://github.com/sessatakuma")!) {
                         Label(text.sourceCode, systemImage: "chevron.left.forwardslash.chevron.right")
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
                     }
-                    .buttonStyle(.bordered)
-
-                    Text(text.socialPending)
-                        .font(.system(size: 14))
-                        .foregroundStyle(AkumaTheme.secondaryText)
                 }
-                .padding(AkumaTheme.space5)
-                .frame(maxWidth: 560)
-                .frame(maxWidth: .infinity)
             }
-            .background(AkumaTheme.background)
             .navigationTitle(text.about)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -849,7 +705,7 @@ private struct AboutView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }
 }
@@ -870,9 +726,9 @@ private struct EditorSection: View {
     let guideLabel: String
     let viewportSize: CGSize
     let onOpenGuide: () -> Void
-    let onPaste: () -> Void
     let onInsertSample: () -> Void
     let onAnalyze: () -> Void
+    let onOpenSettings: () -> Void
     let onUpdateWord: (Int, String, Int) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
@@ -896,9 +752,9 @@ private struct EditorSection: View {
                         guideLabel: guideLabel,
                         isCompact: true,
                         onOpenGuide: onOpenGuide,
-                        onPaste: onPaste,
                         onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze
+                        onAnalyze: onAnalyze,
+                        onOpenSettings: onOpenSettings
                     )
                     .frame(minHeight: viewportSize.height)
                 } else {
@@ -906,6 +762,10 @@ private struct EditorSection: View {
                         AnalyzedInputBar(
                             paragraph: paragraph,
                             editLabel: text.editInput,
+                            guideLabel: guideLabel,
+                            settingsLabel: text.settings,
+                            onOpenGuide: onOpenGuide,
+                            onOpenSettings: onOpenSettings,
                             onEdit: { isEditingInput = true }
                         )
 
@@ -929,7 +789,7 @@ private struct EditorSection: View {
                             onRedo: onRedo,
                             onRestore: onRestore
                         )
-                        .frame(minHeight: max(viewportSize.height - 72, 320))
+                        .frame(height: max(viewportSize.height - 64, 320))
                     }
                 }
             } else if isTwoColumn {
@@ -940,9 +800,9 @@ private struct EditorSection: View {
                         guideLabel: guideLabel,
                         isCompact: false,
                         onOpenGuide: onOpenGuide,
-                        onPaste: onPaste,
                         onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze
+                        onAnalyze: onAnalyze,
+                        onOpenSettings: onOpenSettings
                     )
 
                     ResultPanel(
@@ -976,9 +836,9 @@ private struct EditorSection: View {
                         guideLabel: guideLabel,
                         isCompact: false,
                         onOpenGuide: onOpenGuide,
-                        onPaste: onPaste,
                         onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze
+                        onAnalyze: onAnalyze,
+                        onOpenSettings: onOpenSettings
                     )
                     .frame(minHeight: compactPanelHeight)
 
@@ -1019,6 +879,10 @@ private struct EditorSection: View {
 private struct AnalyzedInputBar: View {
     let paragraph: String
     let editLabel: String
+    let guideLabel: String
+    let settingsLabel: String
+    let onOpenGuide: () -> Void
+    let onOpenSettings: () -> Void
     let onEdit: () -> Void
 
     var body: some View {
@@ -1029,6 +893,19 @@ private struct AnalyzedInputBar: View {
                 .lineLimit(1)
 
             Spacer(minLength: 0)
+
+            Menu {
+                Button(action: onOpenGuide) {
+                    Label(guideLabel, systemImage: "questionmark.circle")
+                }
+                Button(action: onOpenSettings) {
+                    Label(settingsLabel, systemImage: "gearshape")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+            }
+            .accessibilityLabel(settingsLabel)
 
             Button(editLabel, action: onEdit)
                 .buttonStyle(.bordered)
@@ -1045,9 +922,9 @@ private struct InputPanel: View {
     let guideLabel: String
     let isCompact: Bool
     let onOpenGuide: () -> Void
-    let onPaste: () -> Void
     let onInsertSample: () -> Void
     let onAnalyze: () -> Void
+    let onOpenSettings: () -> Void
 
     var body: some View {
         PanelContainer(isCompact: isCompact) {
@@ -1055,7 +932,7 @@ private struct InputPanel: View {
                 ZStack(alignment: .topLeading) {
                     if paragraph.isEmpty {
                         Text(text.inputPlaceholder)
-                            .font(.system(size: 24, weight: .regular))
+                            .font(.title2)
                             .foregroundStyle(AkumaTheme.secondaryText.opacity(0.6))
                             .padding(.top, 40)
                             .padding(.horizontal, AkumaTheme.space5)
@@ -1063,9 +940,9 @@ private struct InputPanel: View {
                     }
 
                     TextEditor(text: $paragraph)
-                        .font(.system(size: 24, weight: .regular))
+                        .font(.title2)
                         .foregroundStyle(AkumaTheme.text)
-                        .lineSpacing(24)
+                        .lineSpacing(AkumaTheme.space2)
                         .scrollContentBackground(.hidden)
                         .background(Color.clear)
                         .padding(.top, AkumaTheme.space5)
@@ -1082,37 +959,41 @@ private struct InputPanel: View {
                         action: onOpenGuide
                     )
 
+                    IconButton(
+                        title: text.settings,
+                        systemName: "gearshape",
+                        style: .plain,
+                        action: onOpenSettings
+                    )
+
                     Spacer(minLength: 0)
 
                     if paragraph.isEmpty {
-                        IconButton(
-                            title: text.pasteFromClipboard,
-                            systemName: "doc.on.clipboard",
-                            style: .plain,
-                            action: onPaste
-                        )
+                        PasteButton(payloadType: String.self) { values in
+                            if let value = values.first {
+                                paragraph = value
+                            }
+                        }
+                        .labelStyle(.iconOnly)
+                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
                     }
 
                     if paragraph.isEmpty {
-                        Button(action: onInsertSample) {
-                            if isCompact {
-                                Image(systemName: "dice")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-                            } else {
+                        Menu {
+                            Button(action: onInsertSample) {
                                 Label(text.insertSample, systemImage: "dice")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .lineLimit(1)
-                                    .frame(height: AkumaTheme.actionControlSize)
-                                    .padding(.horizontal, AkumaTheme.space3)
                             }
+                        } label: {
+                            Image(systemName: "plus.circle")
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
                         }
                         .buttonStyle(PanelButtonStyle())
                         .accessibilityLabel(text.randomSample)
                     }
 
                     Button(action: onAnalyze) {
-                        Label(text.analyze, systemImage: "sparkles")
+                        Label(text.analyze, systemImage: "text.magnifyingglass")
                             .font(.system(size: 15, weight: .semibold))
                             .frame(height: AkumaTheme.actionControlSize)
                             .padding(.horizontal, AkumaTheme.space3)
@@ -1123,6 +1004,13 @@ private struct InputPanel: View {
                 }
                 .padding(.horizontal, AkumaTheme.space5)
                 .padding(.bottom, AkumaTheme.space5)
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button(text.analyze, action: onAnalyze)
+                    .disabled(paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
     }
@@ -1209,6 +1097,9 @@ private struct ResultPanel: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: isAnalyzing)
+        .sensoryFeedback(.success, trigger: copyFeedbackVisible) { oldValue, newValue in
+            !oldValue && newValue
+        }
     }
 
     private func copyResult() {
@@ -1265,9 +1156,9 @@ private struct ResultContentView: View {
             if words.isEmpty {
                 VStack(alignment: .leading, spacing: AkumaTheme.space2) {
                     Text(emptyText)
-                        .font(.system(size: 24, weight: .regular))
+                        .font(.title2)
                     Text(text.resultEmptyHint)
-                        .font(.system(size: 15, weight: .regular))
+                        .font(.subheadline)
                 }
                 .foregroundStyle(
                     isDarkResult
@@ -1364,6 +1255,7 @@ private struct AccentWordView: View {
             .disabled(!isInteractive)
             .frame(minWidth: minWidth, minHeight: 44)
             .accessibilityElement(children: .ignore)
+            .accessibilityAddTraits(.isButton)
             .accessibilityLabel(accessibilityLabel)
             .accessibilityHint(text.editWordHint)
             .accessibilityAction(named: text.changeAccent) {
@@ -1586,17 +1478,7 @@ private struct ResultActions: View {
 
             Spacer(minLength: AkumaTheme.space2)
 
-            Menu {
-                Button(action: shareText) {
-                    Label(text.exportText, systemImage: "doc.text")
-                }
-                Button(action: shareImage) {
-                    Label(text.exportImage, systemImage: "photo")
-                }
-                Button(action: shareHTML) {
-                    Label(text.exportHTML, systemImage: "chevron.left.forwardslash.chevron.right")
-                }
-            } label: {
+            Button(action: shareImage) {
                 if isCompact {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 18, weight: .semibold))
@@ -1610,7 +1492,7 @@ private struct ResultActions: View {
                 }
             }
             .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
-            .accessibilityLabel(text.exportOptions)
+            .accessibilityLabel(text.share)
 
             Menu {
                 if canUndo || canRedo || canRestore {
@@ -1639,16 +1521,16 @@ private struct ResultActions: View {
                     }
                 }
 
-                Button {
-                    isDarkResult.toggle()
-                } label: {
-                    Label(
-                        isDarkResult ? text.lightResult : text.darkResult,
-                        systemImage: "circle.lefthalf.filled"
-                    )
+                Section(text.exportOptions) {
+                    Button(action: shareText) {
+                        Label(text.exportText, systemImage: "doc.text")
+                    }
+                    Button(action: shareHTML) {
+                        Label(text.exportHTML, systemImage: "chevron.left.forwardslash.chevron.right")
+                    }
                 }
 
-                if !isResultExpanded {
+                if !isCompact, !isResultExpanded {
                     Button {
                         isResultExpanded = true
                     } label: {
@@ -1698,7 +1580,7 @@ private struct ResultActions: View {
         let renderer = ImageRenderer(content: content)
         renderer.scale = 2
         if let image = renderer.uiImage {
-            sharePayload = SharePayload(items: [image])
+            sharePayload = SharePayload(items: [image, exportText])
         }
     }
 
@@ -1986,6 +1868,9 @@ private struct ExpandedResultView: View {
             }
         }
         .background(isDarkResult ? AkumaTheme.darkPanel : AkumaTheme.surface)
+        .sensoryFeedback(.success, trigger: copyFeedbackVisible) { oldValue, newValue in
+            !oldValue && newValue
+        }
     }
 
     private func copyResult() {
@@ -2157,13 +2042,6 @@ private enum AccentKind: Hashable {
         }
     }
 
-    var next: AccentKind {
-        switch self {
-        case .none: .flat
-        case .flat: .drop
-        case .drop: .none
-        }
-    }
 }
 
 private enum KanaReading {
