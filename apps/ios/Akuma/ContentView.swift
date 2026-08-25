@@ -12,12 +12,10 @@ struct ContentView: View {
     @State private var futureWords: [[AccentWord]] = []
     @State private var isDarkResult = false
     @State private var isEditingInput = true
-    @State private var isResultExpanded = false
     @State private var isAnalyzing = false
     @State private var isStreaming = false
     @State private var isAnalysisIssuePresented = false
     @State private var isGuidePresented = false
-    @State private var isSettingsPresented = false
     @State private var analysisTask: Task<Void, Never>?
     @State private var lastSampleIndex: Int?
     @Environment(\.colorScheme) private var colorScheme
@@ -33,7 +31,6 @@ struct ContentView: View {
                     words: $words,
                     showAccent: $showAccent,
                     isDarkResult: $isDarkResult,
-                    isResultExpanded: $isResultExpanded,
                     isEditingInput: $isEditingInput,
                     isAnalyzing: isAnalyzing,
                     isStreaming: isStreaming,
@@ -46,7 +43,6 @@ struct ContentView: View {
                     onOpenGuide: { isGuidePresented = true },
                     onInsertSample: insertSample,
                     onAnalyze: analyzeParagraph,
-                    onOpenSettings: { isSettingsPresented = true },
                     onUpdateWord: updateWord,
                     onUndo: undoResultEdit,
                     onRedo: redoResultEdit,
@@ -58,23 +54,6 @@ struct ContentView: View {
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
         }
-        .sheet(isPresented: $isResultExpanded) {
-            ExpandedResultView(
-                words: $words,
-                paragraph: paragraph,
-                showAccent: $showAccent,
-                isDarkResult: $isDarkResult,
-                isResultExpanded: $isResultExpanded,
-                text: text,
-                canRestore: words != analyzedWords,
-                canUndo: !pastWords.isEmpty,
-                canRedo: !futureWords.isEmpty,
-                onUpdateWord: updateWord,
-                onUndo: undoResultEdit,
-                onRedo: redoResultEdit,
-                onRestore: restoreResultEdits
-            )
-        }
         .alert(text.temporaryIssuesTitle, isPresented: $isAnalysisIssuePresented) {
             Button(text.retry) {
                 scheduleAnalysis(for: paragraph)
@@ -85,9 +64,6 @@ struct ContentView: View {
         }
         .sheet(isPresented: $isGuidePresented) {
             GuideView(text: guideText)
-        }
-        .sheet(isPresented: $isSettingsPresented) {
-            SettingsView(text: guideText)
         }
         .onChange(of: colorScheme) { _, newValue in
             isDarkResult = newValue == .dark
@@ -311,16 +287,11 @@ private struct AppText {
     let insertSample: String
     let analyze: String
     let editInput: String
-    let settings: String
     let result: String
     let resultEmptyHint: String
-    let copyAsText: String
-    let copied: String
     let accent: String
     let showAccent: String
     let hideAccent: String
-    let expandResult: String
-    let collapseResult: String
     let share: String
     let editReading: String
     let reading: String
@@ -341,9 +312,6 @@ private struct AppText {
     let retry: String
     let continueUsing: String
     let resultOptions: String
-    let exportOptions: String
-    let exportText: String
-    let exportHTML: String
     let editWordHint: String
     let changeAccent: String
     let accentFollowPrevious: String
@@ -385,16 +353,11 @@ private struct AppText {
         insertSample: "Insert sample",
         analyze: "Analyze",
         editInput: "Edit text",
-        settings: "Settings",
         result: "Result",
         resultEmptyHint: "Your analyzed reading and pitch accent will appear here.",
-        copyAsText: "Copy as text",
-        copied: "Copied",
         accent: "accent",
         showAccent: "Show pitch accent",
         hideAccent: "Hide pitch accent",
-        expandResult: "Expand result",
-        collapseResult: "Collapse result",
         share: "Share",
         editReading: "Edit reading",
         reading: "Reading",
@@ -415,9 +378,6 @@ private struct AppText {
         retry: "Try Again",
         continueUsing: "Continue",
         resultOptions: "More result options",
-        exportOptions: "Share or export",
-        exportText: "Share text",
-        exportHTML: "Share HTML",
         editWordHint: "Edit this word's reading and pitch accent",
         changeAccent: "Change pitch accent",
         accentFollowPrevious: "Unmarked or follows previous word",
@@ -432,16 +392,11 @@ private struct AppText {
         insertSample: "例文を挿入",
         analyze: "解析",
         editInput: "文章を編集",
-        settings: "設定",
         result: "結果",
         resultEmptyHint: "解析したふりがなとアクセントがここに表示されます。",
-        copyAsText: "テキスト形式でコピー",
-        copied: "コピーしました",
         accent: "アクセント",
         showAccent: "アクセントを表示",
         hideAccent: "アクセントを非表示",
-        expandResult: "結果を拡大表示",
-        collapseResult: "結果の拡大表示を閉じる",
         share: "共有",
         editReading: "ふりがなを編集",
         reading: "ふりがな",
@@ -462,9 +417,6 @@ private struct AppText {
         retry: "再試行",
         continueUsing: "このまま使う",
         resultOptions: "その他の結果オプション",
-        exportOptions: "共有・書き出し",
-        exportText: "テキストを共有",
-        exportHTML: "HTMLを共有",
         editWordHint: "この単語のふりがなとアクセントを編集",
         changeAccent: "アクセントを変更",
         accentFollowPrevious: "無印・前の語に従う",
@@ -479,16 +431,11 @@ private struct AppText {
         insertSample: "插入範文",
         analyze: "分析",
         editInput: "編輯文字",
-        settings: "設定",
         result: "結果",
         resultEmptyHint: "分析後的假名與音調會顯示在這裡。",
-        copyAsText: "複製為文字",
-        copied: "已複製",
         accent: "音調",
         showAccent: "顯示音調線",
         hideAccent: "隱藏音調線",
-        expandResult: "展開結果面板",
-        collapseResult: "收合結果面板",
         share: "分享",
         editReading: "編輯假名",
         reading: "假名",
@@ -509,9 +456,6 @@ private struct AppText {
         retry: "再試一次",
         continueUsing: "繼續使用",
         resultOptions: "更多結果選項",
-        exportOptions: "分享或匯出",
-        exportText: "分享文字",
-        exportHTML: "分享 HTML",
         editWordHint: "編輯這個詞的假名與音調",
         changeAccent: "更改音調",
         accentFollowPrevious: "無標記或承接前詞",
@@ -532,10 +476,6 @@ private struct GuideText {
     let pitchDropBody: String
     let editBody: String
     let shareBody: String
-    let about: String
-    let aboutBody: String
-    let email: String
-    let sourceCode: String
     let close: String
 
     static var current: GuideText {
@@ -556,11 +496,7 @@ private struct GuideText {
         pitchDropTitle: "High, then fall",
         pitchDropBody: "The voice falls after this mora; following particles shift low.",
         editBody: "Tap a word to edit its full reading and pitch pattern. Undo, redo, or restore from the actions menu.",
-        shareBody: "Copy text or share an image through the system share sheet. Text and HTML exports are in the actions menu.",
-        about: "About Sessatakuma",
-        aboutBody: "Japanese reading and pitch-accent analysis.",
-        email: "Email us",
-        sourceCode: "Source code",
+        shareBody: "Share the result as an image and readable text through the system share sheet.",
         close: "Close"
     )
 
@@ -575,11 +511,7 @@ private struct GuideText {
         pitchDropTitle: "高い・その後下降",
         pitchDropBody: "この拍の後で声が下がり、後続する助詞も低くなります。",
         editBody: "単語をタップすると、ふりがな全体とアクセントを編集できます。取り消し・やり直し・全復元は操作メニューにあります。",
-        shareBody: "テキストをコピーするか、画像をiOSの共有シートで共有できます。テキストとHTMLの書き出しは操作メニューにあります。",
-        about: "Sessatakuma について",
-        aboutBody: "日本語のふりがなとアクセントを解析します。",
-        email: "メール",
-        sourceCode: "ソースコード",
+        shareBody: "結果は画像と読みやすいテキストとして、iOSの共有シートから共有できます。",
         close: "閉じる"
     )
 
@@ -594,11 +526,7 @@ private struct GuideText {
         pitchDropTitle: "高音、隨後下降",
         pitchDropBody: "聲音在這一拍之後下降，後接助詞也會轉為低音。",
         editBody: "點按一個詞即可編輯完整假名與音調。復原、重做與全部還原位於操作選單。",
-        shareBody: "可複製文字，或透過 iOS 分享面板分享圖片。文字與 HTML 匯出位於操作選單。",
-        about: "關於 Sessatakuma",
-        aboutBody: "分析日語假名與音調。",
-        email: "寄送電子郵件",
-        sourceCode: "原始碼",
+        shareBody: "透過 iOS 分享面板，以圖片和易讀文字分享結果。",
         close: "關閉"
     )
 }
@@ -664,58 +592,11 @@ private struct PitchGuideCard: View {
     }
 }
 
-private struct SettingsView: View {
-    let text: GuideText
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    HStack(spacing: AkumaTheme.space3) {
-                        Image("Logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 48, height: 48)
-                        VStack(alignment: .leading) {
-                            Text("AkuMa")
-                                .font(.headline)
-                            Text(text.aboutBody)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                Section(text.about) {
-                    Link(destination: URL(string: "mailto:contact@sessatakuma.dev")!) {
-                        Label(text.email, systemImage: "envelope")
-                    }
-
-                    Link(destination: URL(string: "https://github.com/sessatakuma")!) {
-                        Label(text.sourceCode, systemImage: "chevron.left.forwardslash.chevron.right")
-                    }
-                }
-            }
-            .navigationTitle(text.about)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(text.close) { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-    }
-}
-
 private struct EditorSection: View {
     @Binding var paragraph: String
     @Binding var words: [AccentWord]
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
-    @Binding var isResultExpanded: Bool
     @Binding var isEditingInput: Bool
     let isAnalyzing: Bool
     let isStreaming: Bool
@@ -728,7 +609,6 @@ private struct EditorSection: View {
     let onOpenGuide: () -> Void
     let onInsertSample: () -> Void
     let onAnalyze: () -> Void
-    let onOpenSettings: () -> Void
     let onUpdateWord: (Int, String, Int) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
@@ -753,19 +633,13 @@ private struct EditorSection: View {
                         isCompact: true,
                         onOpenGuide: onOpenGuide,
                         onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze,
-                        onOpenSettings: onOpenSettings
+                        onAnalyze: onAnalyze
                     )
                     .frame(minHeight: viewportSize.height)
                 } else {
                     VStack(spacing: 0) {
-                        AnalyzedInputBar(
-                            paragraph: paragraph,
+                        ResultNavigationBar(
                             editLabel: text.editInput,
-                            guideLabel: guideLabel,
-                            settingsLabel: text.settings,
-                            onOpenGuide: onOpenGuide,
-                            onOpenSettings: onOpenSettings,
                             onEdit: { isEditingInput = true }
                         )
 
@@ -776,7 +650,6 @@ private struct EditorSection: View {
                             paragraph: paragraph,
                             showAccent: $showAccent,
                             isDarkResult: $isDarkResult,
-                            isResultExpanded: $isResultExpanded,
                             isAnalyzing: isAnalyzing,
                             isStreaming: isStreaming,
                             canRestore: canRestore,
@@ -789,7 +662,7 @@ private struct EditorSection: View {
                             onRedo: onRedo,
                             onRestore: onRestore
                         )
-                        .frame(height: max(viewportSize.height - 64, 320))
+                        .frame(height: max(viewportSize.height - 56, 320))
                     }
                 }
             } else if isTwoColumn {
@@ -801,8 +674,7 @@ private struct EditorSection: View {
                         isCompact: false,
                         onOpenGuide: onOpenGuide,
                         onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze,
-                        onOpenSettings: onOpenSettings
+                        onAnalyze: onAnalyze
                     )
 
                     ResultPanel(
@@ -810,7 +682,6 @@ private struct EditorSection: View {
                         paragraph: paragraph,
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
-                        isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
                         isStreaming: isStreaming,
                         canRestore: canRestore,
@@ -837,8 +708,7 @@ private struct EditorSection: View {
                         isCompact: false,
                         onOpenGuide: onOpenGuide,
                         onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze,
-                        onOpenSettings: onOpenSettings
+                        onAnalyze: onAnalyze
                     )
                     .frame(minHeight: compactPanelHeight)
 
@@ -847,7 +717,6 @@ private struct EditorSection: View {
                         paragraph: paragraph,
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
-                        isResultExpanded: $isResultExpanded,
                         isAnalyzing: isAnalyzing,
                         isStreaming: isStreaming,
                         canRestore: canRestore,
@@ -876,42 +745,22 @@ private struct EditorSection: View {
     }
 }
 
-private struct AnalyzedInputBar: View {
-    let paragraph: String
+private struct ResultNavigationBar: View {
     let editLabel: String
-    let guideLabel: String
-    let settingsLabel: String
-    let onOpenGuide: () -> Void
-    let onOpenSettings: () -> Void
     let onEdit: () -> Void
 
     var body: some View {
-        HStack(spacing: AkumaTheme.space3) {
-            Text(paragraph.replacingOccurrences(of: "\n", with: " "))
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-
-            Spacer(minLength: 0)
-
-            Menu {
-                Button(action: onOpenGuide) {
-                    Label(guideLabel, systemImage: "questionmark.circle")
-                }
-                Button(action: onOpenSettings) {
-                    Label(settingsLabel, systemImage: "gearshape")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+        HStack {
+            Button(action: onEdit) {
+                Label(editLabel, systemImage: "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(minHeight: AkumaTheme.actionControlSize)
             }
-            .accessibilityLabel(settingsLabel)
 
-            Button(editLabel, action: onEdit)
-                .buttonStyle(.bordered)
+            Spacer()
         }
         .padding(.horizontal, AkumaTheme.space4)
-        .frame(height: 64)
+        .frame(height: 56)
         .background(Color(.systemBackground))
     }
 }
@@ -924,7 +773,6 @@ private struct InputPanel: View {
     let onOpenGuide: () -> Void
     let onInsertSample: () -> Void
     let onAnalyze: () -> Void
-    let onOpenSettings: () -> Void
 
     var body: some View {
         PanelContainer(isCompact: isCompact) {
@@ -957,13 +805,6 @@ private struct InputPanel: View {
                         systemName: "questionmark.circle",
                         style: .plain,
                         action: onOpenGuide
-                    )
-
-                    IconButton(
-                        title: text.settings,
-                        systemName: "gearshape",
-                        style: .plain,
-                        action: onOpenSettings
                     )
 
                     Spacer(minLength: 0)
@@ -1006,13 +847,6 @@ private struct InputPanel: View {
                 .padding(.bottom, AkumaTheme.space5)
             }
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button(text.analyze, action: onAnalyze)
-                    .disabled(paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-        }
     }
 }
 
@@ -1021,7 +855,6 @@ private struct ResultPanel: View {
     let paragraph: String
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
-    @Binding var isResultExpanded: Bool
     let isAnalyzing: Bool
     let isStreaming: Bool
     let canRestore: Bool
@@ -1033,7 +866,6 @@ private struct ResultPanel: View {
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onRestore: () -> Void
-    @State private var copyFeedbackVisible = false
 
     var body: some View {
         PanelContainer(isCompact: isCompact, isDark: isDarkResult) {
@@ -1063,17 +895,13 @@ private struct ResultPanel: View {
                 if !words.isEmpty && !isAnalyzing && !isStreaming {
                     ResultActions(
                         words: words,
-                        paragraph: paragraph,
                         showAccent: $showAccent,
                         isDarkResult: $isDarkResult,
-                        isResultExpanded: $isResultExpanded,
                         text: text,
                         isCompact: isCompact,
                         canRestore: canRestore,
                         canUndo: canUndo,
                         canRedo: canRedo,
-                        copyFeedbackVisible: $copyFeedbackVisible,
-                        onCopy: copyResult,
                         onUndo: onUndo,
                         onRedo: onRedo,
                         onRestore: onRestore
@@ -1081,40 +909,7 @@ private struct ResultPanel: View {
                 }
             }
         }
-        .overlay(alignment: .bottom) {
-            if copyFeedbackVisible {
-                Text(text.copied)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AkumaTheme.invertedText)
-                    .padding(.horizontal, AkumaTheme.space4)
-                    .frame(height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: AkumaTheme.radiusMedium, style: .continuous)
-                            .fill(AkumaTheme.green)
-                    )
-                    .padding(.bottom, AkumaTheme.space7)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
         .animation(.easeOut(duration: 0.2), value: isAnalyzing)
-        .sensoryFeedback(.success, trigger: copyFeedbackVisible) { oldValue, newValue in
-            !oldValue && newValue
-        }
-    }
-
-    private func copyResult() {
-        UIPasteboard.general.string = ResultExporter.plainText(words: words, showAccent: showAccent)
-
-        withAnimation(.snappy(duration: 0.24, extraBounce: 0)) {
-            copyFeedbackVisible = true
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
-            withAnimation(.snappy(duration: 0.24, extraBounce: 0)) {
-                copyFeedbackVisible = false
-            }
-        }
     }
 }
 
@@ -1416,17 +1211,13 @@ private struct AccentLineView: View {
 
 private struct ResultActions: View {
     let words: [AccentWord]
-    let paragraph: String
     @Binding var showAccent: Bool
     @Binding var isDarkResult: Bool
-    @Binding var isResultExpanded: Bool
     let text: AppText
     let isCompact: Bool
     let canRestore: Bool
     let canUndo: Bool
     let canRedo: Bool
-    @Binding var copyFeedbackVisible: Bool
-    let onCopy: () -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onRestore: () -> Void
@@ -1439,22 +1230,6 @@ private struct ResultActions: View {
 
     var body: some View {
         HStack(spacing: isCompact ? 0 : AkumaTheme.space2) {
-            Button(action: onCopy) {
-                if isCompact {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 18, weight: .semibold))
-                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-                } else {
-                    Label(text.copyAsText, systemImage: "doc.on.doc")
-                        .font(.system(size: 14, weight: .medium))
-                        .lineLimit(1)
-                        .frame(height: AkumaTheme.actionControlSize)
-                        .padding(.horizontal, AkumaTheme.space3)
-                }
-            }
-            .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
-            .accessibilityLabel(text.copyAsText)
-
             Button {
                 showAccent.toggle()
             } label: {
@@ -1478,7 +1253,7 @@ private struct ResultActions: View {
 
             Spacer(minLength: AkumaTheme.space2)
 
-            Button(action: shareImage) {
+            Button(action: shareResult) {
                 if isCompact {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 18, weight: .semibold))
@@ -1494,8 +1269,8 @@ private struct ResultActions: View {
             .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
             .accessibilityLabel(text.share)
 
-            Menu {
-                if canUndo || canRedo || canRestore {
+            if canUndo || canRedo || canRestore {
+                Menu {
                     Section {
                         if canUndo {
                             Button(action: onUndo) {
@@ -1519,31 +1294,14 @@ private struct ResultActions: View {
                             }
                         }
                     }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
                 }
-
-                Section(text.exportOptions) {
-                    Button(action: shareText) {
-                        Label(text.exportText, systemImage: "doc.text")
-                    }
-                    Button(action: shareHTML) {
-                        Label(text.exportHTML, systemImage: "chevron.left.forwardslash.chevron.right")
-                    }
-                }
-
-                if !isCompact, !isResultExpanded {
-                    Button {
-                        isResultExpanded = true
-                    } label: {
-                        Label(text.expandResult, systemImage: "arrow.up.left.and.arrow.down.right")
-                    }
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
+                .accessibilityLabel(text.resultOptions)
             }
-            .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
-            .accessibilityLabel(text.resultOptions)
         }
         .padding(.horizontal, isCompact ? AkumaTheme.space4 : AkumaTheme.space5)
         .padding(.top, AkumaTheme.space4)
@@ -1564,12 +1322,8 @@ private struct ResultActions: View {
         }
     }
 
-    private func shareText() {
-        sharePayload = SharePayload(items: [exportText])
-    }
-
     @MainActor
-    private func shareImage() {
+    private func shareResult() {
         let content = ExportResultSnapshot(
             words: words,
             showAccent: showAccent,
@@ -1581,19 +1335,8 @@ private struct ResultActions: View {
         renderer.scale = 2
         if let image = renderer.uiImage {
             sharePayload = SharePayload(items: [image, exportText])
-        }
-    }
-
-    private func shareHTML() {
-        let html = ResultExporter.html(words: words, showAccent: showAccent, isDark: isDarkResult)
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("akuma-accented-text-\(UUID().uuidString).html")
-
-        do {
-            try html.write(to: url, atomically: true, encoding: .utf8)
-            sharePayload = SharePayload(items: [url])
-        } catch {
-            sharePayload = SharePayload(items: [html])
+        } else {
+            sharePayload = SharePayload(items: [exportText])
         }
     }
 }
@@ -1799,87 +1542,6 @@ private struct PanelButtonStyle: ButtonStyle {
         }
 
         return Color.clear
-    }
-}
-
-private struct ExpandedResultView: View {
-    @Binding var words: [AccentWord]
-    let paragraph: String
-    @Binding var showAccent: Bool
-    @Binding var isDarkResult: Bool
-    @Binding var isResultExpanded: Bool
-    let text: AppText
-    let canRestore: Bool
-    let canUndo: Bool
-    let canRedo: Bool
-    let onUpdateWord: (Int, String, Int) -> Void
-    let onUndo: () -> Void
-    let onRedo: () -> Void
-    let onRestore: () -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var copyFeedbackVisible = false
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(text.result)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(isDarkResult ? AkumaTheme.darkText : AkumaTheme.text)
-
-                Spacer()
-
-                IconButton(
-                    title: text.collapseResult,
-                    systemName: "xmark",
-                    isDark: isDarkResult
-                ) {
-                    dismiss()
-                }
-            }
-            .padding(AkumaTheme.space5)
-
-            ResultContentView(
-                words: words,
-                showAccent: showAccent,
-                isDarkResult: isDarkResult,
-                emptyText: text.result,
-                text: text,
-                onUpdateWord: onUpdateWord
-            )
-
-            if !words.isEmpty {
-                ResultActions(
-                    words: words,
-                    paragraph: paragraph,
-                    showAccent: $showAccent,
-                    isDarkResult: $isDarkResult,
-                    isResultExpanded: $isResultExpanded,
-                    text: text,
-                    isCompact: true,
-                    canRestore: canRestore,
-                    canUndo: canUndo,
-                    canRedo: canRedo,
-                    copyFeedbackVisible: $copyFeedbackVisible,
-                    onCopy: copyResult,
-                    onUndo: onUndo,
-                    onRedo: onRedo,
-                    onRestore: onRestore
-                )
-            }
-        }
-        .background(isDarkResult ? AkumaTheme.darkPanel : AkumaTheme.surface)
-        .sensoryFeedback(.success, trigger: copyFeedbackVisible) { oldValue, newValue in
-            !oldValue && newValue
-        }
-    }
-
-    private func copyResult() {
-        UIPasteboard.general.string = ResultExporter.plainText(words: words, showAccent: showAccent)
-        copyFeedbackVisible = true
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
-            copyFeedbackVisible = false
-        }
     }
 }
 
@@ -2133,60 +1795,6 @@ private enum ResultExporter {
         .joined()
     }
 
-    static func html(words: [AccentWord], showAccent: Bool, isDark: Bool) -> String {
-        let wordMarkup = words.map { word in
-            if word.isLineBreak {
-                return "<span class=\"line-break\"></span>"
-            }
-
-            let readingMarkup = word.units.map { unit in
-                let accentClass: String
-                switch unit.accent {
-                case .none: accentClass = "none"
-                case .flat: accentClass = "high"
-                case .drop: accentClass = "drop"
-                }
-                let visibleClass = showAccent ? accentClass : "none"
-                return "<span class=\"unit \(visibleClass)\">\(escape(unit.reading))</span>"
-            }.joined()
-
-            return "<span class=\"word\"><span class=\"reading\">\(readingMarkup)</span><span class=\"surface\">\(escape(word.surface))</span></span>"
-        }.joined()
-
-        let background = isDark ? "#1f2937" : "#ffffff"
-        let foreground = isDark ? "#f9fafb" : "#1f2937"
-        let secondary = isDark ? "#9ca3af" : "#6b7280"
-
-        return """
-        <!doctype html>
-        <html lang="ja">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>AkuMa Export</title>
-          <style>
-            body{margin:0;padding:32px;background:\(background);color:\(foreground);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif}
-            .result{display:flex;flex-wrap:wrap;align-items:flex-end;line-height:1.15}
-            .word{display:inline-flex;flex-direction:column;align-items:center;margin:0 1px 12px}
-            .reading{display:flex;color:\(secondary);font-size:14px;min-height:30px}
-            .unit{min-width:18px;text-align:center;padding-top:10px;border-top:2px solid transparent}
-            .unit.high{border-top-color:#9e4145}.unit.drop{border-top-color:#9e4145;border-right:2px solid #9e4145}
-            .surface{font-size:24px}.line-break{flex-basis:100%;height:1px}
-          </style>
-        </head>
-        <body><main class="result" aria-label="Pitch accent analysis result">\(wordMarkup)</main></body>
-        </html>
-        """
-    }
-
-    private static func escape(_ value: String) -> String {
-        value
-            .replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\"", with: "&quot;")
-            .replacingOccurrences(of: "'", with: "&#39;")
-    }
 }
 
 private enum MarkAccentAPI {
