@@ -749,27 +749,26 @@ private struct InputPanel: View {
     var body: some View {
         PanelContainer(isCompact: isCompact) {
             VStack(spacing: 0) {
-                ZStack(alignment: .topLeading) {
-                    if paragraph.isEmpty {
-                        Text(text.inputPlaceholder)
-                            .font(.title2)
-                            .foregroundStyle(AkumaTheme.secondaryText.opacity(0.6))
-                            .padding(.top, 40)
-                            .padding(.horizontal, AkumaTheme.space5)
-                            .allowsHitTesting(false)
+                TextEditor(text: $paragraph)
+                    .font(.title2)
+                    .foregroundStyle(AkumaTheme.text)
+                    .lineSpacing(AkumaTheme.space2)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .overlay(alignment: .topLeading) {
+                        if paragraph.isEmpty {
+                            Text(text.inputPlaceholder)
+                                .font(.title2)
+                                .foregroundStyle(AkumaTheme.secondaryText.opacity(0.6))
+                                .padding(.top, 8)
+                                .padding(.leading, 5)
+                                .allowsHitTesting(false)
+                        }
                     }
-
-                    TextEditor(text: $paragraph)
-                        .font(.title2)
-                        .foregroundStyle(AkumaTheme.text)
-                        .lineSpacing(AkumaTheme.space2)
-                        .scrollContentBackground(.hidden)
-                        .background(Color.clear)
-                        .padding(.top, AkumaTheme.space5)
-                        .padding(.horizontal, AkumaTheme.space4)
-                        .accessibilityLabel(text.inputPlaceholder)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, AkumaTheme.space5)
+                    .padding(.horizontal, AkumaTheme.space4)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityLabel(text.inputPlaceholder)
 
                 HStack(spacing: AkumaTheme.space3) {
                     IconButton(
