@@ -637,33 +637,25 @@ private struct EditorSection: View {
                     )
                     .frame(minHeight: viewportSize.height)
                 } else {
-                    VStack(spacing: 0) {
-                        ResultNavigationBar(
-                            editLabel: text.editInput,
-                            onEdit: { isEditingInput = true }
-                        )
-
-                        Divider()
-
-                        ResultPanel(
-                            words: $words,
-                            paragraph: paragraph,
-                            showAccent: $showAccent,
-                            isDarkResult: $isDarkResult,
-                            isAnalyzing: isAnalyzing,
-                            isStreaming: isStreaming,
-                            canRestore: canRestore,
-                            canUndo: canUndo,
-                            canRedo: canRedo,
-                            text: text,
-                            isCompact: true,
-                            onUpdateWord: onUpdateWord,
-                            onUndo: onUndo,
-                            onRedo: onRedo,
-                            onRestore: onRestore
-                        )
-                        .frame(height: max(viewportSize.height - 56, 320))
-                    }
+                    ResultPanel(
+                        words: $words,
+                        paragraph: paragraph,
+                        showAccent: $showAccent,
+                        isDarkResult: $isDarkResult,
+                        isAnalyzing: isAnalyzing,
+                        isStreaming: isStreaming,
+                        canRestore: canRestore,
+                        canUndo: canUndo,
+                        canRedo: canRedo,
+                        text: text,
+                        isCompact: true,
+                        onEdit: { isEditingInput = true },
+                        onUpdateWord: onUpdateWord,
+                        onUndo: onUndo,
+                        onRedo: onRedo,
+                        onRestore: onRestore
+                    )
+                    .frame(height: max(viewportSize.height, 320))
                 }
             } else if isTwoColumn {
                 HStack(alignment: .top, spacing: AkumaTheme.space6) {
@@ -742,26 +734,6 @@ private struct EditorSection: View {
 
     private var compactPanelHeight: CGFloat {
         return AkumaTheme.editorPanelMinHeight
-    }
-}
-
-private struct ResultNavigationBar: View {
-    let editLabel: String
-    let onEdit: () -> Void
-
-    var body: some View {
-        HStack {
-            Button(action: onEdit) {
-                Label(editLabel, systemImage: "chevron.left")
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(minHeight: AkumaTheme.actionControlSize)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, AkumaTheme.space4)
-        .frame(height: 56)
-        .background(Color(.systemBackground))
     }
 }
 
@@ -862,6 +834,7 @@ private struct ResultPanel: View {
     let canRedo: Bool
     let text: AppText
     let isCompact: Bool
+    var onEdit: (() -> Void)? = nil
     let onUpdateWord: (Int, String, Int) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
@@ -904,7 +877,8 @@ private struct ResultPanel: View {
                         canRedo: canRedo,
                         onUndo: onUndo,
                         onRedo: onRedo,
-                        onRestore: onRestore
+                        onRestore: onRestore,
+                        onEdit: onEdit
                     )
                 }
             }
@@ -1221,6 +1195,7 @@ private struct ResultActions: View {
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onRestore: () -> Void
+    let onEdit: (() -> Void)?
     @State private var isRestoreConfirmationVisible = false
     @State private var sharePayload: SharePayload?
 
@@ -1230,6 +1205,16 @@ private struct ResultActions: View {
 
     var body: some View {
         HStack(spacing: isCompact ? 0 : AkumaTheme.space2) {
+            if let onEdit {
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                }
+                .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
+                .accessibilityLabel(text.editInput)
+            }
+
             Button {
                 showAccent.toggle()
             } label: {
