@@ -1079,29 +1079,46 @@ private struct AccentWordMark: View {
         if word.isLineBreak {
             Color.clear.frame(width: 1, height: style.lineBreakHeight)
         } else {
-            HStack(alignment: .bottom, spacing: 0) {
-                ForEach(Array(layout.prefixMoras.enumerated()), id: \.offset) { _, mora in
-                    plainMora(mora)
-                }
+            VStack(spacing: 2) {
+                accentTrack
 
-                if !layout.annotatedSurface.isEmpty, !layout.annotatedUnits.isEmpty {
-                    annotatedMark
-                }
+                HStack(alignment: .bottom, spacing: 0) {
+                    ForEach(Array(layout.prefixMoras.enumerated()), id: \.offset) { _, mora in
+                        plainMora(mora)
+                    }
 
-                ForEach(Array(layout.suffixMoras.enumerated()), id: \.offset) { _, mora in
-                    plainMora(mora)
+                    if !layout.annotatedSurface.isEmpty, !layout.annotatedUnits.isEmpty {
+                        annotatedMark
+                    }
+
+                    ForEach(Array(layout.suffixMoras.enumerated()), id: \.offset) { _, mora in
+                        plainMora(mora)
+                    }
                 }
             }
             .lineLimit(1)
         }
     }
 
+    private var accentTrack: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(layout.prefixMoras.enumerated()), id: \.offset) { _, mora in
+                accentSegment(mora.accent, width: plainMoraWidth(mora))
+            }
+
+            ForEach(Array(layout.annotatedUnits.enumerated()), id: \.offset) { index, unit in
+                accentSegment(unit.accent, width: annotatedReadingWidths[index])
+            }
+
+            ForEach(Array(layout.suffixMoras.enumerated()), id: \.offset) { _, mora in
+                accentSegment(mora.accent, width: plainMoraWidth(mora))
+            }
+        }
+        .frame(height: style.accentLaneHeight)
+    }
+
     private var annotatedMark: some View {
         let width = annotationWidth
-        let readingWidths = distributedWidths(
-            weights: layout.annotatedUnits.map { CGFloat(max($0.reading.count, 1)) * rubyUnitWidth },
-            totalWidth: width
-        )
         let surfaceWidths = distributedWidths(
             weights: layout.annotatedSurface.map { CGFloat(max($0.count, 1)) * baseUnitWidth },
             totalWidth: width
@@ -1110,15 +1127,10 @@ private struct AccentWordMark: View {
         return VStack(spacing: 2) {
             HStack(spacing: 0) {
                 ForEach(Array(layout.annotatedUnits.enumerated()), id: \.offset) { index, unit in
-                    VStack(spacing: 2) {
-                        AccentLineView(accent: unit.accent, isVisible: showAccent)
-                            .frame(height: style.accentLaneHeight)
-
-                        Text(unit.reading.isEmpty ? "　" : unit.reading)
-                            .font(style.readingFont)
-                            .foregroundStyle(readingColor)
-                    }
-                    .frame(width: readingWidths[index])
+                    Text(unit.reading.isEmpty ? "　" : unit.reading)
+                        .font(style.readingFont)
+                        .foregroundStyle(readingColor)
+                        .frame(width: annotatedReadingWidths[index])
                 }
             }
 
@@ -1135,12 +1147,7 @@ private struct AccentWordMark: View {
     }
 
     private func plainMora(_ mora: AccentWordAnnotation.Mora) -> some View {
-        let width = CGFloat(max(mora.surface.count, 1)) * baseUnitWidth
-
         return VStack(spacing: 2) {
-            AccentLineView(accent: mora.accent, isVisible: showAccent)
-                .frame(height: style.accentLaneHeight)
-
             Text("　")
                 .font(style.readingFont)
                 .hidden()
@@ -1149,7 +1156,23 @@ private struct AccentWordMark: View {
                 .font(style.baseFont)
                 .foregroundStyle(baseColor)
         }
-        .frame(width: width)
+        .frame(width: plainMoraWidth(mora))
+    }
+
+    private func accentSegment(_ accent: AccentKind, width: CGFloat) -> some View {
+        AccentLineView(accent: accent, isVisible: showAccent)
+            .frame(width: width, height: style.accentLaneHeight)
+    }
+
+    private func plainMoraWidth(_ mora: AccentWordAnnotation.Mora) -> CGFloat {
+        CGFloat(max(mora.surface.count, 1)) * baseUnitWidth
+    }
+
+    private var annotatedReadingWidths: [CGFloat] {
+        distributedWidths(
+            weights: layout.annotatedUnits.map { CGFloat(max($0.reading.count, 1)) * rubyUnitWidth },
+            totalWidth: annotationWidth
+        )
     }
 
     private var annotationWidth: CGFloat {
@@ -1372,6 +1395,7 @@ private struct AccentLineView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
     }
 }
 
