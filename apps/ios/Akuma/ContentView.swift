@@ -988,7 +988,6 @@ private struct AccentWordView: View {
     let isInteractive: Bool
     let onCycleAccent: () -> Void
     let onEdit: () -> Void
-    @ScaledMetric(relativeTo: .title2) private var unitBaseWidth: CGFloat = 18
 
     var body: some View {
         if word.isLineBreak {
@@ -996,33 +995,18 @@ private struct AccentWordView: View {
                 .frame(width: 1, height: 60)
         } else {
             Button(action: onEdit) {
-                VStack(spacing: 2) {
-                    HStack(spacing: 0) {
-                        ForEach(Array(word.units.enumerated()), id: \.offset) { _, unit in
-                            VStack(spacing: 2) {
-                                AccentLineView(accent: unit.accent, isVisible: showAccent)
-                                    .frame(height: 20)
-
-                                Text(unit.reading.isEmpty ? "　" : unit.reading)
-                                    .font(.caption)
-                                    .foregroundStyle(readingColor)
-                                    .lineLimit(1)
-                            }
-                            .frame(minWidth: unitWidth(unit))
-                        }
-                    }
-
-                    Text(word.surface)
-                        .font(.title2)
-                        .foregroundStyle(baseColor)
-                        .lineLimit(1)
-                }
+                AccentWordMark(
+                    word: word,
+                    showAccent: showAccent,
+                    isDarkResult: isDarkResult,
+                    style: .result
+                )
                 .padding(.vertical, AkumaTheme.space1)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(!isInteractive)
-            .frame(minWidth: minWidth, minHeight: 44)
+            .frame(minHeight: 44)
             .accessibilityElement(children: .ignore)
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel(accessibilityLabel)
@@ -1033,12 +1017,154 @@ private struct AccentWordView: View {
         }
     }
 
-    private var minWidth: CGFloat {
-        max(CGFloat(max(word.surface.count, 1)) * unitBaseWidth, word.units.reduce(0) { $0 + unitWidth($1) })
+    private var accessibilityLabel: String {
+        let reading = word.editableReading.isEmpty ? "" : ", \(word.editableReading)"
+        return "\(word.surface)\(reading), \(text.accent): \(text.accentLabel(for: word.accentPosition))"
+    }
+}
+
+private struct AccentWordMark: View {
+    let word: AccentWord
+    let showAccent: Bool
+    let isDarkResult: Bool
+    let style: Style
+    @ScaledMetric(relativeTo: .title2) private var resultBaseUnitWidth: CGFloat = 24
+
+    enum Style: Equatable {
+        case result
+        case export
+
+        var baseFont: Font {
+            switch self {
+            case .result: .title2
+            case .export: .system(size: 24)
+            }
+        }
+
+        var readingFont: Font {
+            switch self {
+            case .result: .caption
+            case .export: .system(size: 14)
+            }
+        }
+
+        var accentLaneHeight: CGFloat {
+            switch self {
+            case .result: 20
+            case .export: 16
+            }
+        }
+
+        var lineBreakHeight: CGFloat {
+            switch self {
+            case .result: 60
+            case .export: 64
+            }
+        }
     }
 
-    private func unitWidth(_ unit: AccentUnit) -> CGFloat {
-        CGFloat(max(unit.reading.count, 1)) * unitBaseWidth
+    private var layout: AccentWordAnnotation {
+        AccentWordAnnotation(word: word)
+    }
+
+    private var baseUnitWidth: CGFloat {
+        style == .result ? resultBaseUnitWidth : 24
+    }
+
+    private var rubyUnitWidth: CGFloat {
+        baseUnitWidth * 0.6
+    }
+
+    var body: some View {
+        if word.isLineBreak {
+            Color.clear.frame(width: 1, height: style.lineBreakHeight)
+        } else {
+            HStack(alignment: .bottom, spacing: 0) {
+                ForEach(Array(layout.prefixMoras.enumerated()), id: \.offset) { _, mora in
+                    plainMora(mora)
+                }
+
+                if !layout.annotatedSurface.isEmpty, !layout.annotatedUnits.isEmpty {
+                    annotatedMark
+                }
+
+                ForEach(Array(layout.suffixMoras.enumerated()), id: \.offset) { _, mora in
+                    plainMora(mora)
+                }
+            }
+            .lineLimit(1)
+        }
+    }
+
+    private var annotatedMark: some View {
+        let width = annotationWidth
+        let readingWidths = distributedWidths(
+            weights: layout.annotatedUnits.map { CGFloat(max($0.reading.count, 1)) * rubyUnitWidth },
+            totalWidth: width
+        )
+        let surfaceWidths = distributedWidths(
+            weights: layout.annotatedSurface.map { CGFloat(max($0.count, 1)) * baseUnitWidth },
+            totalWidth: width
+        )
+
+        return VStack(spacing: 2) {
+            HStack(spacing: 0) {
+                ForEach(Array(layout.annotatedUnits.enumerated()), id: \.offset) { index, unit in
+                    VStack(spacing: 2) {
+                        AccentLineView(accent: unit.accent, isVisible: showAccent)
+                            .frame(height: style.accentLaneHeight)
+
+                        Text(unit.reading.isEmpty ? "　" : unit.reading)
+                            .font(style.readingFont)
+                            .foregroundStyle(readingColor)
+                    }
+                    .frame(width: readingWidths[index])
+                }
+            }
+
+            HStack(spacing: 0) {
+                ForEach(Array(layout.annotatedSurface.enumerated()), id: \.offset) { index, segment in
+                    Text(segment)
+                        .font(style.baseFont)
+                        .foregroundStyle(baseColor)
+                        .frame(width: surfaceWidths[index])
+                }
+            }
+        }
+        .frame(width: width)
+    }
+
+    private func plainMora(_ mora: AccentWordAnnotation.Mora) -> some View {
+        let width = CGFloat(max(mora.surface.count, 1)) * baseUnitWidth
+
+        return VStack(spacing: 2) {
+            AccentLineView(accent: mora.accent, isVisible: showAccent)
+                .frame(height: style.accentLaneHeight)
+
+            Text("　")
+                .font(style.readingFont)
+                .hidden()
+
+            Text(mora.surface)
+                .font(style.baseFont)
+                .foregroundStyle(baseColor)
+        }
+        .frame(width: width)
+    }
+
+    private var annotationWidth: CGFloat {
+        let readingWidth = layout.annotatedUnits.reduce(CGFloat.zero) {
+            $0 + (CGFloat(max($1.reading.count, 1)) * rubyUnitWidth)
+        }
+        let surfaceWidth = layout.annotatedSurface.reduce(CGFloat.zero) {
+            $0 + (CGFloat(max($1.count, 1)) * baseUnitWidth)
+        }
+        return max(readingWidth, surfaceWidth, baseUnitWidth)
+    }
+
+    private func distributedWidths(weights: [CGFloat], totalWidth: CGFloat) -> [CGFloat] {
+        let totalWeight = max(weights.reduce(0, +), 1)
+        return weights.map { totalWidth * ($0 / totalWeight) }
     }
 
     private var baseColor: Color {
@@ -1048,10 +1174,76 @@ private struct AccentWordView: View {
     private var readingColor: Color {
         isDarkResult ? AkumaTheme.darkSecondaryText : AkumaTheme.secondaryText
     }
+}
 
-    private var accessibilityLabel: String {
-        let reading = word.editableReading.isEmpty ? "" : ", \(word.editableReading)"
-        return "\(word.surface)\(reading), \(text.accent): \(text.accentLabel(for: word.accentPosition))"
+private struct AccentWordAnnotation {
+    struct Mora {
+        let surface: String
+        let accent: AccentKind
+    }
+
+    let prefixMoras: [Mora]
+    let annotatedSurface: [String]
+    let annotatedUnits: [AccentUnit]
+    let suffixMoras: [Mora]
+
+    init(word: AccentWord) {
+        let surfaceSegments = KanaReading.syllables(in: word.surface)
+
+        if KanaReading.isKanaSurface(word.surface) {
+            prefixMoras = surfaceSegments.enumerated().map { index, segment in
+                Mora(
+                    surface: segment,
+                    accent: word.units.indices.contains(index) ? word.units[index].accent : .none
+                )
+            }
+            annotatedSurface = []
+            annotatedUnits = []
+            suffixMoras = []
+            return
+        }
+
+        let readingSegments = word.units.map(\.reading)
+        var prefixCount = 0
+        while prefixCount < surfaceSegments.count,
+              prefixCount < readingSegments.count,
+              KanaReading.isKanaSurface(surfaceSegments[prefixCount]),
+              surfaceSegments[prefixCount] == readingSegments[prefixCount] {
+            prefixCount += 1
+        }
+
+        var suffixCount = 0
+        while suffixCount < surfaceSegments.count - prefixCount,
+              suffixCount < readingSegments.count - prefixCount,
+              KanaReading.isKanaSurface(surfaceSegments[surfaceSegments.count - 1 - suffixCount]),
+              surfaceSegments[surfaceSegments.count - 1 - suffixCount]
+                == readingSegments[readingSegments.count - 1 - suffixCount] {
+            suffixCount += 1
+        }
+
+        let surfaceEnd = surfaceSegments.count - suffixCount
+        let readingEnd = word.units.count - suffixCount
+        let middleSurface = Array(surfaceSegments[prefixCount..<surfaceEnd])
+        let middleUnits = Array(word.units[prefixCount..<readingEnd])
+
+        guard !middleSurface.isEmpty, !middleUnits.isEmpty else {
+            prefixMoras = []
+            annotatedSurface = surfaceSegments
+            annotatedUnits = word.units
+            suffixMoras = []
+            return
+        }
+
+        prefixMoras = (0..<prefixCount).map { index in
+            Mora(surface: surfaceSegments[index], accent: word.units[index].accent)
+        }
+        annotatedSurface = middleSurface
+        annotatedUnits = middleUnits
+        suffixMoras = (0..<suffixCount).map { offset in
+            let surfaceIndex = surfaceEnd + offset
+            let readingIndex = readingEnd + offset
+            return Mora(surface: surfaceSegments[surfaceIndex], accent: word.units[readingIndex].accent)
+        }
     }
 }
 
@@ -1359,10 +1551,11 @@ private struct ExportResultSnapshot: View {
 
             FlowLayout(spacing: 0, lineSpacing: AkumaTheme.space4) {
                 ForEach(Array(words.enumerated()), id: \.offset) { _, word in
-                    ExportAccentWordView(
+                    AccentWordMark(
                         word: word,
                         showAccent: showAccent,
-                        isDarkResult: isDarkResult
+                        isDarkResult: isDarkResult,
+                        style: .export
                     )
                 }
             }
@@ -1370,41 +1563,6 @@ private struct ExportResultSnapshot: View {
         .foregroundStyle(isDarkResult ? AkumaTheme.darkText : AkumaTheme.text)
         .padding(AkumaTheme.space6)
         .background(isDarkResult ? AkumaTheme.darkPanel : AkumaTheme.surface)
-    }
-}
-
-private struct ExportAccentWordView: View {
-    let word: AccentWord
-    let showAccent: Bool
-    let isDarkResult: Bool
-
-    var body: some View {
-        if word.isLineBreak {
-            Color.clear.frame(width: 1, height: 64)
-        } else {
-            VStack(spacing: 2) {
-                HStack(spacing: 0) {
-                    ForEach(Array(word.units.enumerated()), id: \.offset) { _, unit in
-                        VStack(spacing: 2) {
-                            AccentLineView(accent: unit.accent, isVisible: showAccent)
-                                .frame(height: 16)
-                            Text(unit.reading.isEmpty ? "　" : unit.reading)
-                                .font(.system(size: 14))
-                                .foregroundStyle(
-                                    isDarkResult
-                                        ? AkumaTheme.darkSecondaryText
-                                        : AkumaTheme.secondaryText
-                                )
-                        }
-                        .frame(minWidth: CGFloat(max(unit.reading.count, 1)) * 18)
-                    }
-                }
-                Text(word.surface)
-                    .font(.system(size: 24))
-                    .foregroundStyle(isDarkResult ? AkumaTheme.darkText : AkumaTheme.text)
-            }
-            .padding(.horizontal, 1)
-        }
     }
 }
 
