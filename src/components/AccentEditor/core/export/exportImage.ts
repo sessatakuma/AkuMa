@@ -4,16 +4,12 @@ type ExportModules = {
     toPng: typeof import('html-to-image').toPng;
 };
 
-const preloadExportModules = (() => {
-    let cache: Promise<ExportModules> | null = null;
-    return () =>
-        (cache ??= Promise.all([import('html-to-image')]).then(([htmlToImage]) => ({
-            toPng: htmlToImage.toPng,
-        })));
-})();
+let exportModules: Promise<ExportModules> | null = null;
 
 export function preloadImageExport(): Promise<ExportModules> {
-    return preloadExportModules();
+    return (exportModules ??= import('html-to-image').then(({ toPng }) => ({
+        toPng,
+    })));
 }
 
 export async function exportResultAsImage(
@@ -23,7 +19,7 @@ export async function exportResultAsImage(
     const backgroundColor = isDarkResult ? '#1F2937' : '#FFFFFF';
     const width = element.offsetWidth + EXPORT_PADDING_PX * 2;
     const height = element.offsetHeight + EXPORT_PADDING_PX * 2;
-    const { toPng } = await preloadExportModules();
+    const { toPng } = await preloadImageExport();
     const dataUrl = await toPng(element, {
         backgroundColor,
         pixelRatio: 2,
