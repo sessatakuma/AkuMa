@@ -8,6 +8,7 @@
         "build": "next build",
         "ios": "scripts/ios-run-simulator.sh",
         "ios:check": "scripts/ios-check.sh",
+        "ios:test": "bash scripts/ios-test.sh",
         "ios:screenshot": "scripts/ios-screenshot.sh",
         "ios:simulator": "scripts/ios-build.sh",
         "lint": "eslint .",

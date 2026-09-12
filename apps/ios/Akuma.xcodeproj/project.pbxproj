@@ -10,6 +10,9 @@
 		A10000000000000000000011 /* AkumaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* AkumaApp.swift */; };
 		A10000000000000000000012 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* ContentView.swift */; };
 		A10000000000000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000023 /* Assets.xcassets */; };
+		A10000000000000000000014 /* AccentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000025 /* AccentModel.swift */; };
+		A10000000000000000000015 /* MarkAccentAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* MarkAccentAPI.swift */; };
+		A10000000000000000000016 /* ReadingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000027 /* ReadingSession.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +21,9 @@
 		A10000000000000000000022 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A10000000000000000000023 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000024 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000025 /* AccentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccentModel.swift; sourceTree = "<group>"; };
+		A10000000000000000000026 /* MarkAccentAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkAccentAPI.swift; sourceTree = "<group>"; };
+		A10000000000000000000027 /* ReadingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingSession.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +50,9 @@
 			children = (
 				A10000000000000000000021 /* AkumaApp.swift */,
 				A10000000000000000000022 /* ContentView.swift */,
+				A10000000000000000000027 /* ReadingSession.swift */,
+				A10000000000000000000026 /* MarkAccentAPI.swift */,
+				A10000000000000000000025 /* AccentModel.swift */,
 				A10000000000000000000023 /* Assets.xcassets */,
 				A10000000000000000000024 /* Info.plist */,
 			);
@@ -129,6 +138,9 @@
 			files = (
 				A10000000000000000000011 /* AkumaApp.swift in Sources */,
 				A10000000000000000000012 /* ContentView.swift in Sources */,
+				A10000000000000000000016 /* ReadingSession.swift in Sources */,
+				A10000000000000000000015 /* MarkAccentAPI.swift in Sources */,
+				A10000000000000000000014 /* AccentModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

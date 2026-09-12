@@ -1,228 +1,107 @@
 import Foundation
-import NaturalLanguage
 import SwiftUI
 import UIKit
 
 struct ContentView: View {
-    @AppStorage("draftParagraph") private var paragraph = ContentView.initialParagraph()
+    @StateObject private var session = ReadingSession()
     @AppStorage("showsPitchAccent") private var showAccent = true
-    @State private var words: [AccentWord] = []
-    @State private var analyzedWords: [AccentWord] = []
-    @State private var pastWords: [[AccentWord]] = []
-    @State private var futureWords: [[AccentWord]] = []
-    @State private var isDarkResult = false
-    @State private var isEditingInput = true
-    @State private var isAnalyzing = false
-    @State private var isStreaming = false
-    @State private var isAnalysisIssuePresented = false
     @State private var isGuidePresented = false
-    @State private var analysisTask: Task<Void, Never>?
+    @State private var confirmsReplacement = false
     @State private var lastSampleIndex: Int?
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     private let text = AppText.current
     private let guideText = GuideText.current
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                EditorSection(
-                    paragraph: $paragraph,
-                    words: $words,
-                    showAccent: $showAccent,
-                    isDarkResult: $isDarkResult,
-                    isEditingInput: $isEditingInput,
-                    isAnalyzing: isAnalyzing,
-                    isStreaming: isStreaming,
-                    canRestore: words != analyzedWords,
-                    canUndo: !pastWords.isEmpty,
-                    canRedo: !futureWords.isEmpty,
-                    text: text,
-                    guideLabel: guideText.guide,
-                    viewportSize: geometry.size,
-                    onOpenGuide: { isGuidePresented = true },
-                    onInsertSample: insertSample,
-                    onAnalyze: analyzeParagraph,
-                    onUpdateWord: updateWord,
-                    onUndo: undoResultEdit,
-                    onRedo: redoResultEdit,
-                    onRestore: restoreResultEdits
-                )
-                .frame(width: geometry.size.width)
+        NavigationStack {
+            GeometryReader { geometry in
+                if geometry.size.width >= 1_024 {
+                    HStack(spacing: AkumaTheme.space5) {
+                        inputPanel(isCompact: false)
+                        resultPanel(isCompact: false)
+                    }
+                    .padding(AkumaTheme.space5)
+                    .background(AkumaTheme.background)
+                } else {
+                    inputPanel(isCompact: true)
+                        .navigationDestination(isPresented: Binding(
+                            get: { session.showsResult },
+                            set: { if !$0 { session.editDraft() } }
+                        )) {
+                            resultPanel(isCompact: true)
+                                .navigationTitle(text.result)
+                                .navigationBarTitleDisplayMode(.inline)
+                        }
+                }
             }
-            .background(geometry.size.width <= 768 ? AkumaTheme.surface : AkumaTheme.background)
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle("AkuMa")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .alert(text.temporaryIssuesTitle, isPresented: $isAnalysisIssuePresented) {
-            Button(text.retry) {
-                scheduleAnalysis(for: paragraph)
-            }
-            Button(text.continueUsing, role: .cancel) {}
+        .sheet(isPresented: $isGuidePresented) { GuideView(text: guideText) }
+        .confirmationDialog(text.replaceResultTitle, isPresented: $confirmsReplacement, titleVisibility: .visible) {
+            Button(text.analyze, role: .destructive) { session.beginAnalysis() }
+            Button(text.cancel, role: .cancel) {}
         } message: {
-            Text(text.temporaryIssuesBody)
+            Text(text.replaceResultBody)
         }
-        .sheet(isPresented: $isGuidePresented) {
-            GuideView(text: guideText)
+        .onChange(of: session.phase) { oldValue, newValue in
+            if oldValue == .loading || oldValue == .streaming {
+                if newValue == .idle && session.showsResult {
+                    UIAccessibility.post(notification: .announcement, argument: text.analysisComplete)
+                } else if newValue == .failed {
+                    UIAccessibility.post(notification: .announcement, argument: text.temporaryIssuesTitle)
+                }
+            }
         }
-        .onChange(of: colorScheme) { _, newValue in
-            isDarkResult = newValue == .dark
-        }
-        .onDisappear {
-            analysisTask?.cancel()
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { session.persist() }
         }
         .task {
-            isDarkResult = colorScheme == .dark
-            if ProcessInfo.processInfo.arguments.contains("--showcase-data"), !paragraph.isEmpty {
-                scheduleAnalysis(for: paragraph)
-                isEditingInput = false
+            if ProcessInfo.processInfo.arguments.contains("--showcase-data"), session.draft.isEmpty {
+                session.draft = Self.sampleParagraphs[0]
+                session.beginAnalysis()
             }
         }
     }
 
-    private func analyzeParagraph() {
-        guard !paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return
-        }
-
-        isEditingInput = false
-        scheduleAnalysis(for: paragraph)
+    private func inputPanel(isCompact: Bool) -> some View {
+        InputPanel(
+            paragraph: $session.draft,
+            text: text,
+            guideLabel: guideText.guide,
+            isCompact: isCompact,
+            hasSavedResult: session.result != nil,
+            matchesSavedResult: session.result?.source == session.draft,
+            isBusy: session.isBusy,
+            onOpenGuide: { isGuidePresented = true },
+            onInsertSample: insertSample,
+            onViewResult: session.openSavedResult,
+            onAnalyze: {
+                if session.needsReplacementConfirmation { confirmsReplacement = true }
+                else { session.beginAnalysis() }
+            }
+        )
     }
 
-    private func scheduleAnalysis(for sourceParagraph: String) {
-        analysisTask?.cancel()
-        isAnalyzing = true
-        isStreaming = false
-
-        guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            words = []
-            return
-        }
-
-        analysisTask = Task {
-            if Task.isCancelled {
-                return
-            }
-
-            await fetchAnalysis(for: sourceParagraph)
-        }
-    }
-
-    @MainActor
-    private func fetchAnalysis(for sourceParagraph: String) async {
-        guard !sourceParagraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return
-        }
-
-        isStreaming = false
-
-        do {
-            let analyzedWords = try await MarkAccentAPI.analyze(sourceParagraph) { streamedWords in
-                guard paragraph == sourceParagraph, !Task.isCancelled else {
-                    return
-                }
-
-                withAnimation(.easeOut(duration: 0.2)) {
-                    words = streamedWords
-                }
-                isAnalyzing = false
-                isStreaming = true
-            }
-            guard paragraph == sourceParagraph, !Task.isCancelled else {
-                return
-            }
-
-            words = analyzedWords
-            self.analyzedWords = analyzedWords
-            pastWords = []
-            futureWords = []
-            isAnalyzing = false
-            isStreaming = false
-        } catch is CancellationError {
-            if paragraph == sourceParagraph {
-                isAnalyzing = false
-                isStreaming = false
-            }
-        } catch {
-            if paragraph == sourceParagraph, !Task.isCancelled {
-                words = MockAccentAnalyzer.analyze(sourceParagraph)
-                analyzedWords = words
-                pastWords = []
-                futureWords = []
-                isAnalysisIssuePresented = true
-                isAnalyzing = false
-                isStreaming = false
-            }
-        }
+    private func resultPanel(isCompact: Bool) -> some View {
+        ResultPanel(
+            session: session,
+            showAccent: $showAccent,
+            isDarkResult: colorScheme == .dark,
+            text: text,
+            guideLabel: guideText.guide,
+            isCompact: isCompact,
+            onOpenGuide: { isGuidePresented = true }
+        )
     }
 
     private func insertSample() {
-        guard !Self.sampleParagraphs.isEmpty else {
-            return
-        }
-
-        var nextIndex = Int.random(in: Self.sampleParagraphs.indices)
-        if Self.sampleParagraphs.count > 1 {
-            while nextIndex == lastSampleIndex {
-                nextIndex = Int.random(in: Self.sampleParagraphs.indices)
-            }
-        }
-
-        lastSampleIndex = nextIndex
-        paragraph = Self.sampleParagraphs[nextIndex]
-    }
-
-    private func updateWord(wordIndex: Int, reading: String, accentPosition: Int) {
-        guard words.indices.contains(wordIndex) else {
-            return
-        }
-
-        var updatedWords = words
-        updatedWords[wordIndex].apply(reading: reading, accentPosition: accentPosition)
-        commitResultEdit(updatedWords)
-    }
-
-    private func commitResultEdit(_ updatedWords: [AccentWord]) {
-        guard updatedWords != words else {
-            return
-        }
-
-        pastWords.append(words)
-        if pastWords.count > 50 {
-            pastWords.removeFirst(pastWords.count - 50)
-        }
-        futureWords = []
-        words = updatedWords
-    }
-
-    private func undoResultEdit() {
-        guard let previousWords = pastWords.popLast() else {
-            return
-        }
-
-        futureWords.insert(words, at: 0)
-        words = previousWords
-    }
-
-    private func redoResultEdit() {
-        guard !futureWords.isEmpty else {
-            return
-        }
-
-        pastWords.append(words)
-        words = futureWords.removeFirst()
-    }
-
-    private func restoreResultEdits() {
-        commitResultEdit(analyzedWords)
-    }
-
-    private static func initialParagraph() -> String {
-        guard ProcessInfo.processInfo.arguments.contains("--showcase-data") else {
-            return ""
-        }
-
-        return sampleParagraphs[0]
+        let choices = Self.sampleParagraphs.indices.filter { $0 != lastSampleIndex }
+        guard let index = choices.randomElement() else { return }
+        lastSampleIndex = index
+        session.draft = Self.sampleParagraphs[index]
     }
 
     private static let sampleParagraphs = [
@@ -332,6 +211,27 @@ private struct AppText {
         return dropAfter(position)
     }
 
+    private func localized(_ en: String, _ ja: String, _ zh: String) -> String {
+        switch Locale.current.language.languageCode?.identifier {
+        case "ja": ja
+        case "zh": zh
+        default: en
+        }
+    }
+
+    var tryExample: String { localized("Try an example", "例文を試す", "試用範例") }
+    var viewSavedResult: String { localized("View saved result", "保存した結果を見る", "查看已儲存結果") }
+    var savedResultHint: String { localized("Saved result · Draft has changes", "保存済みの結果・文章に変更があります", "已儲存結果・文字已有變更") }
+    var tapWordHint: String { localized("Tap a word to edit its reading or pitch.", "単語をタップして、ふりがなやアクセントを編集できます。", "點按詞語即可編輯假名或音調。") }
+    var pitchPreview: String { localized("Pitch preview", "アクセントのプレビュー", "音調預覽") }
+    var tapMoraHint: String { localized("Tap a mora to place the pitch drop.", "拍をタップして、下降位置を選びます。", "點按音拍以選擇下降位置。") }
+    var discardChanges: String { localized("Discard changes", "変更を破棄", "捨棄變更") }
+    var discardChangesTitle: String { localized("Discard your changes?", "変更を破棄しますか？", "要捨棄變更嗎？") }
+    var keepEditing: String { localized("Keep editing", "編集を続ける", "繼續編輯") }
+    var replaceResultTitle: String { localized("Replace the corrected result?", "編集した結果を置き換えますか？", "要取代已修正的結果嗎？") }
+    var replaceResultBody: String { localized("A successful analysis of this new text will replace your saved result and its corrections.", "新しい文章の解析が完了すると、保存した結果と編集内容が置き換わります。", "新文字分析成功後，將取代已儲存的結果與修正內容。") }
+    var analysisComplete: String { localized("Analysis complete", "解析が完了しました", "分析完成") }
+
     static var current: AppText {
         let languageCode = Locale.current.language.languageCode?.identifier.lowercased()
 
@@ -373,8 +273,8 @@ private struct AppText {
         restoreAllEditsBody: "This will discard all reading and accent edits and return the result to the latest analyzed state.",
         restore: "Restore",
         furiganaInputWarning: "Only kana can be entered for a reading.",
-        temporaryIssuesTitle: "Using a local result",
-        temporaryIssuesBody: "Online analysis is unavailable. You can keep using this simplified result or try again.",
+        temporaryIssuesTitle: "Analysis unavailable",
+        temporaryIssuesBody: "Your text and any saved result are safe. Check your connection and try again.",
         retry: "Try Again",
         continueUsing: "Continue",
         resultOptions: "More result options",
@@ -412,8 +312,8 @@ private struct AppText {
         restoreAllEditsBody: "ふりがなとアクセントの編集内容をすべて破棄し、最新の解析結果の状態に戻します。",
         restore: "元に戻す",
         furiganaInputWarning: "ふりがなにはかなのみ入力できます。",
-        temporaryIssuesTitle: "ローカル結果を表示中",
-        temporaryIssuesBody: "オンライン解析を利用できません。簡易結果をそのまま使うか、もう一度お試しください。",
+        temporaryIssuesTitle: "解析できませんでした",
+        temporaryIssuesBody: "入力した文章と保存済みの結果は保持されています。接続を確認して、もう一度お試しください。",
         retry: "再試行",
         continueUsing: "このまま使う",
         resultOptions: "その他の結果オプション",
@@ -451,8 +351,8 @@ private struct AppText {
         restoreAllEditsBody: "這會捨棄目前所有振假名與音調編輯，並回到最近一次分析完成時的結果。",
         restore: "還原",
         furiganaInputWarning: "振假名只能輸入假名。",
-        temporaryIssuesTitle: "正在使用本機結果",
-        temporaryIssuesBody: "目前無法使用線上分析。你可以繼續使用簡化結果，或再試一次。",
+        temporaryIssuesTitle: "目前無法分析",
+        temporaryIssuesBody: "輸入文字與已儲存的結果都已保留。請檢查連線後再試一次。",
         retry: "再試一次",
         continueUsing: "繼續使用",
         resultOptions: "更多結果選項",
@@ -576,14 +476,14 @@ private struct PitchGuideCard: View {
                 AccentLineView(accent: accent, isVisible: true)
                     .frame(width: 40, height: 16)
                 Text("あ")
-                    .font(.system(size: 24))
+                    .font(.title2)
             }
             .frame(width: 48)
 
             VStack(alignment: .leading, spacing: AkumaTheme.space1) {
-                Text(title).font(.system(size: 17, weight: .semibold))
+                Text(title).font(.headline)
                 Text(detail)
-                    .font(.system(size: 15))
+                    .font(.subheadline)
                     .foregroundStyle(AkumaTheme.secondaryText)
             }
         }
@@ -592,297 +492,167 @@ private struct PitchGuideCard: View {
     }
 }
 
-private struct EditorSection: View {
-    @Binding var paragraph: String
-    @Binding var words: [AccentWord]
-    @Binding var showAccent: Bool
-    @Binding var isDarkResult: Bool
-    @Binding var isEditingInput: Bool
-    let isAnalyzing: Bool
-    let isStreaming: Bool
-    let canRestore: Bool
-    let canUndo: Bool
-    let canRedo: Bool
-    let text: AppText
-    let guideLabel: String
-    let viewportSize: CGSize
-    let onOpenGuide: () -> Void
-    let onInsertSample: () -> Void
-    let onAnalyze: () -> Void
-    let onUpdateWord: (Int, String, Int) -> Void
-    let onUndo: () -> Void
-    let onRedo: () -> Void
-    let onRestore: () -> Void
-
-    private var isCompact: Bool {
-        viewportSize.width <= 768
-    }
-
-    private var isTwoColumn: Bool {
-        viewportSize.width >= 1_024
-    }
-
-    var body: some View {
-        Group {
-            if isCompact {
-                if isEditingInput || words.isEmpty {
-                    InputPanel(
-                        paragraph: $paragraph,
-                        text: text,
-                        guideLabel: guideLabel,
-                        isCompact: true,
-                        onOpenGuide: onOpenGuide,
-                        onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze
-                    )
-                    .frame(minHeight: viewportSize.height)
-                } else {
-                    ResultPanel(
-                        words: $words,
-                        paragraph: paragraph,
-                        showAccent: $showAccent,
-                        isDarkResult: $isDarkResult,
-                        isAnalyzing: isAnalyzing,
-                        isStreaming: isStreaming,
-                        canRestore: canRestore,
-                        canUndo: canUndo,
-                        canRedo: canRedo,
-                        text: text,
-                        isCompact: true,
-                        onEdit: { isEditingInput = true },
-                        onUpdateWord: onUpdateWord,
-                        onUndo: onUndo,
-                        onRedo: onRedo,
-                        onRestore: onRestore
-                    )
-                    .frame(height: max(viewportSize.height, 320))
-                }
-            } else if isTwoColumn {
-                HStack(alignment: .top, spacing: AkumaTheme.space6) {
-                    InputPanel(
-                        paragraph: $paragraph,
-                        text: text,
-                        guideLabel: guideLabel,
-                        isCompact: false,
-                        onOpenGuide: onOpenGuide,
-                        onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze
-                    )
-
-                    ResultPanel(
-                        words: $words,
-                        paragraph: paragraph,
-                        showAccent: $showAccent,
-                        isDarkResult: $isDarkResult,
-                        isAnalyzing: isAnalyzing,
-                        isStreaming: isStreaming,
-                        canRestore: canRestore,
-                        canUndo: canUndo,
-                        canRedo: canRedo,
-                        text: text,
-                        isCompact: false,
-                        onUpdateWord: onUpdateWord,
-                        onUndo: onUndo,
-                        onRedo: onRedo,
-                        onRestore: onRestore
-                    )
-                }
-                .frame(minHeight: max(viewportSize.height - (AkumaTheme.space6 * 2), 520))
-                .padding(AkumaTheme.space6)
-                .frame(maxWidth: AkumaTheme.maxContentWidth)
-                .frame(maxWidth: .infinity)
-            } else {
-                VStack(spacing: AkumaTheme.space2) {
-                    InputPanel(
-                        paragraph: $paragraph,
-                        text: text,
-                        guideLabel: guideLabel,
-                        isCompact: false,
-                        onOpenGuide: onOpenGuide,
-                        onInsertSample: onInsertSample,
-                        onAnalyze: onAnalyze
-                    )
-                    .frame(minHeight: compactPanelHeight)
-
-                    ResultPanel(
-                        words: $words,
-                        paragraph: paragraph,
-                        showAccent: $showAccent,
-                        isDarkResult: $isDarkResult,
-                        isAnalyzing: isAnalyzing,
-                        isStreaming: isStreaming,
-                        canRestore: canRestore,
-                        canUndo: canUndo,
-                        canRedo: canRedo,
-                        text: text,
-                        isCompact: false,
-                        onUpdateWord: onUpdateWord,
-                        onUndo: onUndo,
-                        onRedo: onRedo,
-                        onRestore: onRestore
-                    )
-                    .frame(minHeight: compactPanelHeight)
-                }
-                .padding(AkumaTheme.space5)
-                .frame(maxWidth: AkumaTheme.maxContentWidth)
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .frame(minHeight: viewportSize.height, alignment: .top)
-        .background(isCompact ? Color(.systemBackground) : AkumaTheme.background)
-    }
-
-    private var compactPanelHeight: CGFloat {
-        return AkumaTheme.editorPanelMinHeight
-    }
-}
-
 private struct InputPanel: View {
     @Binding var paragraph: String
     let text: AppText
     let guideLabel: String
     let isCompact: Bool
+    let hasSavedResult: Bool
+    let matchesSavedResult: Bool
+    let isBusy: Bool
     let onOpenGuide: () -> Void
     let onInsertSample: () -> Void
+    let onViewResult: () -> Void
     let onAnalyze: () -> Void
 
     var body: some View {
         PanelContainer(isCompact: isCompact) {
-            VStack(spacing: 0) {
-                TextEditor(text: $paragraph)
-                    .font(.title2)
-                    .foregroundStyle(AkumaTheme.text)
-                    .lineSpacing(AkumaTheme.space2)
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .overlay(alignment: .topLeading) {
-                        if paragraph.isEmpty {
-                            Text(text.inputPlaceholder)
-                                .font(.title2)
-                                .foregroundStyle(AkumaTheme.secondaryText.opacity(0.6))
-                                .padding(.top, 8)
-                                .padding(.leading, 5)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .padding(.top, AkumaTheme.space5)
-                    .padding(.horizontal, AkumaTheme.space4)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .accessibilityLabel(text.inputPlaceholder)
-
-                HStack(spacing: AkumaTheme.space3) {
-                    IconButton(
-                        title: guideLabel,
-                        systemName: "questionmark.circle",
-                        style: .plain,
-                        action: onOpenGuide
-                    )
-
-                    Spacer(minLength: 0)
-
+            TextEditor(text: $paragraph)
+                .font(.title2)
+                .foregroundStyle(AkumaTheme.text)
+                .lineSpacing(AkumaTheme.space2)
+                .scrollContentBackground(.hidden)
+                .scrollDismissesKeyboard(.interactively)
+                .overlay(alignment: .topLeading) {
                     if paragraph.isEmpty {
-                        PasteButton(payloadType: String.self) { values in
-                            if let value = values.first {
-                                paragraph = value
-                            }
-                        }
-                        .labelStyle(.iconOnly)
-                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                        Text(text.inputPlaceholder)
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 8)
+                            .padding(.leading, 5)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
                     }
-
-                    if paragraph.isEmpty {
-                        Menu {
-                            Button(action: onInsertSample) {
-                                Label(text.insertSample, systemImage: "dice")
-                            }
-                        } label: {
-                            Image(systemName: "plus.circle")
-                                .font(.system(size: 18, weight: .semibold))
-                                .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
-                        }
-                        .buttonStyle(PanelButtonStyle())
-                        .accessibilityLabel(text.randomSample)
-                    }
-
-                    Button(action: onAnalyze) {
-                        Label(text.analyze, systemImage: "text.magnifyingglass")
-                            .font(.system(size: 15, weight: .semibold))
-                            .frame(height: AkumaTheme.actionControlSize)
-                            .padding(.horizontal, AkumaTheme.space3)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(AkumaTheme.green)
-                    .disabled(paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-                .padding(.horizontal, AkumaTheme.space5)
-                .padding(.bottom, AkumaTheme.space5)
-            }
+                .padding(.top, AkumaTheme.space4)
+                .padding(.horizontal, AkumaTheme.space4)
+                .accessibilityLabel(text.inputPlaceholder)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: AkumaTheme.space2) {
+                        if paragraph.isEmpty {
+                            Button(text.tryExample, action: onInsertSample)
+                                .font(.body)
+                                .frame(minHeight: 44)
+                        }
+                        if hasSavedResult && !matchesSavedResult {
+                            Button(text.viewSavedResult, action: onViewResult)
+                                .font(.body)
+                                .frame(minHeight: 44)
+                        }
+                        HStack(spacing: AkumaTheme.space3) {
+                            IconButton(title: guideLabel, systemName: "questionmark.circle", action: onOpenGuide)
+                            Spacer(minLength: 0)
+                            if paragraph.isEmpty {
+                                PasteButton(payloadType: String.self) { values in
+                                    if let value = values.first { paragraph = value }
+                                }
+                                .labelStyle(.iconOnly)
+                                .frame(minWidth: 44, minHeight: 44)
+                            }
+                            Button(action: onAnalyze) {
+                                Label(matchesSavedResult ? text.viewSavedResult : text.analyze, systemImage: matchesSavedResult ? "doc.text" : "text.magnifyingglass")
+                                    .font(.body.weight(.semibold))
+                                    .frame(minHeight: 44)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(AkumaTheme.green)
+                            .disabled(isBusy || paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                    .padding(.horizontal, AkumaTheme.space4)
+                    .padding(.vertical, AkumaTheme.space2)
+                    .background(.bar)
+                }
         }
     }
 }
 
 private struct ResultPanel: View {
-    @Binding var words: [AccentWord]
-    let paragraph: String
+    @ObservedObject var session: ReadingSession
     @Binding var showAccent: Bool
-    @Binding var isDarkResult: Bool
-    let isAnalyzing: Bool
-    let isStreaming: Bool
-    let canRestore: Bool
-    let canUndo: Bool
-    let canRedo: Bool
+    let isDarkResult: Bool
     let text: AppText
+    let guideLabel: String
     let isCompact: Bool
-    var onEdit: (() -> Void)? = nil
-    let onUpdateWord: (Int, String, Int) -> Void
-    let onUndo: () -> Void
-    let onRedo: () -> Void
-    let onRestore: () -> Void
+    let onOpenGuide: () -> Void
+
+    private var editAction: (() -> Void)? {
+        guard isCompact else { return nil }
+        return { session.editDraft() }
+    }
 
     var body: some View {
         PanelContainer(isCompact: isCompact, isDark: isDarkResult) {
             VStack(spacing: 0) {
-                Group {
-                    if isAnalyzing {
-                        SkeletonResultView(
-                            paragraph: paragraph,
-                            isDarkResult: isDarkResult,
-                            analyzingText: text.analyzing
-                        )
-                    } else {
-                        ResultContentView(
-                            words: words,
-                            showAccent: showAccent,
-                            isDarkResult: isDarkResult,
-                            emptyText: text.result,
-                            text: text,
-                            isInteractive: !isStreaming,
-                            onUpdateWord: onUpdateWord
-                        )
+                if session.phase == .failed {
+                    ContentUnavailableView {
+                        Label(text.temporaryIssuesTitle, systemImage: "wifi.exclamationmark")
+                    } description: {
+                        Text(text.temporaryIssuesBody)
+                    } actions: {
+                        Button(text.retry) { session.beginAnalysis() }
+                            .buttonStyle(.borderedProminent)
+                        if session.result != nil {
+                            Button(text.viewSavedResult) { session.openSavedResult() }
+                        }
+                        Button(text.editInput) { session.editDraft() }
                     }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .transition(.opacity.combined(with: .offset(y: 8)))
-
-                if !words.isEmpty && !isAnalyzing && !isStreaming {
-                    ResultActions(
-                        words: words,
-                        showAccent: $showAccent,
-                        isDarkResult: $isDarkResult,
+                } else if session.phase == .loading {
+                    SkeletonResultView(paragraph: session.draft, isDarkResult: isDarkResult, analyzingText: text.analyzing)
+                        .accessibilityHidden(true)
+                } else {
+                    if !session.isBusy, let result = session.result, result.source != session.draft {
+                        Label(text.savedResultHint, systemImage: "doc.badge.clock")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal)
+                            .padding(.top, AkumaTheme.space2)
+                    }
+                    ResultContentView(
+                        words: session.isBusy ? session.streamedWords : session.result?.words ?? [],
+                        showAccent: showAccent,
+                        isDarkResult: isDarkResult,
+                        emptyText: text.result,
                         text: text,
-                        isCompact: isCompact,
-                        canRestore: canRestore,
-                        canUndo: canUndo,
-                        canRedo: canRedo,
-                        onUndo: onUndo,
-                        onRedo: onRedo,
-                        onRestore: onRestore,
-                        onEdit: onEdit
+                        isInteractive: !session.isBusy,
+                        onUpdateWord: { index, reading, accent in
+                            session.updateWord(index: index, reading: reading, accentPosition: accent)
+                        }
                     )
                 }
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if session.isBusy {
+                    HStack {
+                        Text(text.analyzing).font(.subheadline)
+                        Spacer()
+                        Button(text.cancel) { session.cancelAnalysis() }
+                            .frame(minHeight: 44)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, AkumaTheme.space2)
+                    .background(.bar)
+                } else if session.phase != .failed, let result = session.result {
+                    ResultActions(
+                        words: result.words,
+                        showAccent: $showAccent,
+                        isDarkResult: .constant(isDarkResult),
+                        text: text,
+                        isCompact: isCompact,
+                        canRestore: result.hasEdits,
+                        canUndo: !result.past.isEmpty,
+                        canRedo: !result.future.isEmpty,
+                        onUndo: session.undo,
+                        onRedo: session.redo,
+                        onRestore: session.restore,
+                        onEdit: editAction,
+                        guideLabel: guideLabel,
+                        onOpenGuide: onOpenGuide
+                    )
+                    .background(.bar)
+                }
+            }
         }
-        .animation(.easeOut(duration: 0.2), value: isAnalyzing)
     }
 }
 
@@ -918,6 +688,8 @@ private struct ResultContentView: View {
     var isInteractive = true
     let onUpdateWord: (Int, String, Int) -> Void
     @State private var editTarget: ReadingEditTarget?
+    @AppStorage("didEditWord") private var didEditWord = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ScrollView {
@@ -937,6 +709,14 @@ private struct ResultContentView: View {
                     .padding(.top, 40)
                     .padding(.horizontal, AkumaTheme.space5)
             } else {
+                if isInteractive && !didEditWord {
+                    Text(text.tapWordHint)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, AkumaTheme.space5)
+                        .padding(.top, AkumaTheme.space3)
+                }
                 FlowLayout(spacing: 0, lineSpacing: 10) {
                     ForEach(Array(words.enumerated()), id: \.offset) { wordIndex, word in
                         AccentWordView(
@@ -953,6 +733,7 @@ private struct ResultContentView: View {
                                 )
                             },
                             onEdit: {
+                                didEditWord = true
                                 editTarget = ReadingEditTarget(
                                     wordIndex: wordIndex,
                                     surface: word.surface,
@@ -973,7 +754,7 @@ private struct ResultContentView: View {
             ReadingEditorSheet(target: target, text: text) { reading, accentPosition in
                 onUpdateWord(target.wordIndex, reading, accentPosition)
             }
-            .presentationDetents([.medium])
+            .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large])
             .presentationDragIndicator(.visible)
         }
     }
@@ -991,29 +772,37 @@ private struct AccentWordView: View {
     var body: some View {
         if word.isLineBreak {
             Color.clear
-                .frame(width: 1, height: 60)
+                .frame(width: 0, height: 60)
+                .layoutValue(key: FlowBreakKey.self, value: true)
+                .accessibilityHidden(true)
         } else {
-            Button(action: onEdit) {
-                AccentWordMark(
-                    word: word,
-                    showAccent: showAccent,
-                    isDarkResult: isDarkResult,
-                    style: .result
-                )
-                .padding(.vertical, AkumaTheme.space1)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(!isInteractive)
-            .frame(minHeight: 44)
-            .accessibilityElement(children: .ignore)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel(accessibilityLabel)
-            .accessibilityHint(text.editWordHint)
-            .accessibilityAction(named: text.changeAccent) {
-                onCycleAccent()
+            ViewThatFits(in: .horizontal) {
+                wordButton.fixedSize()
+                ScrollView(.horizontal) { wordButton.fixedSize() }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .scrollIndicatorsFlash(onAppear: true)
             }
         }
+    }
+
+    private var wordButton: some View {
+        Button(action: onEdit) {
+            mark
+                .padding(.vertical, AkumaTheme.space1)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!isInteractive)
+        .frame(minHeight: 44)
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(text.editWordHint)
+        .accessibilityAction(named: text.changeAccent) { onCycleAccent() }
+    }
+
+    private var mark: some View {
+        AccentWordMark(word: word, showAccent: showAccent, isDarkResult: isDarkResult, style: .result)
     }
 
     private var accessibilityLabel: String {
@@ -1027,25 +816,12 @@ private struct AccentWordMark: View {
     let showAccent: Bool
     let isDarkResult: Bool
     let style: Style
-    @ScaledMetric(relativeTo: .title2) private var resultBaseUnitWidth: CGFloat = 24
+    @ScaledMetric(relativeTo: .title2) private var resultBaseFontSize: CGFloat = 22
+    @ScaledMetric(relativeTo: .caption) private var resultReadingFontSize: CGFloat = 12
 
     enum Style: Equatable {
         case result
         case export
-
-        var baseFont: Font {
-            switch self {
-            case .result: .title2
-            case .export: .system(size: 24)
-            }
-        }
-
-        var readingFont: Font {
-            switch self {
-            case .result: .caption
-            case .export: .system(size: 14)
-            }
-        }
 
         var accentLaneHeight: CGFloat {
             switch self {
@@ -1066,17 +842,20 @@ private struct AccentWordMark: View {
         AccentWordAnnotation(word: word)
     }
 
-    private var baseUnitWidth: CGFloat {
-        style == .result ? resultBaseUnitWidth : 24
-    }
+    private var baseFontSize: CGFloat { style == .result ? resultBaseFontSize : 24 }
+    private var readingFontSize: CGFloat { style == .result ? resultReadingFontSize : 14 }
+    private var baseFont: Font { .system(size: baseFontSize) }
+    private var readingFont: Font { .system(size: readingFontSize) }
 
-    private var rubyUnitWidth: CGFloat {
-        baseUnitWidth * 0.6
+    private func width(of string: String, fontSize: CGFloat) -> CGFloat {
+        let value = string.isEmpty ? "　" : string
+        return ceil((value as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: fontSize)]).width) + 2
     }
 
     var body: some View {
         if word.isLineBreak {
-            Color.clear.frame(width: 1, height: style.lineBreakHeight)
+            Color.clear.frame(width: 0, height: style.lineBreakHeight)
+                .layoutValue(key: FlowBreakKey.self, value: true)
         } else {
             VStack(spacing: 2) {
                 accentTrack
@@ -1119,7 +898,7 @@ private struct AccentWordMark: View {
     private var annotatedMark: some View {
         let width = annotationWidth
         let surfaceWidths = distributedWidths(
-            weights: layout.annotatedSurface.map { CGFloat(max($0.count, 1)) * baseUnitWidth },
+            weights: layout.annotatedSurface.map { self.width(of: $0, fontSize: baseFontSize) },
             totalWidth: width
         )
 
@@ -1127,7 +906,8 @@ private struct AccentWordMark: View {
             HStack(spacing: 0) {
                 ForEach(Array(layout.annotatedUnits.enumerated()), id: \.offset) { index, unit in
                     Text(unit.reading.isEmpty ? "　" : unit.reading)
-                        .font(style.readingFont)
+                        .font(readingFont)
+                        .fixedSize()
                         .foregroundStyle(readingColor)
                         .frame(width: annotatedReadingWidths[index])
                 }
@@ -1136,7 +916,8 @@ private struct AccentWordMark: View {
             HStack(spacing: 0) {
                 ForEach(Array(layout.annotatedSurface.enumerated()), id: \.offset) { index, segment in
                     Text(segment)
-                        .font(style.baseFont)
+                        .font(baseFont)
+                        .fixedSize()
                         .foregroundStyle(baseColor)
                         .frame(width: surfaceWidths[index])
                 }
@@ -1148,11 +929,11 @@ private struct AccentWordMark: View {
     private func plainMora(_ mora: AccentWordAnnotation.Mora) -> some View {
         return VStack(spacing: 2) {
             Text("　")
-                .font(style.readingFont)
+                .font(readingFont)
                 .hidden()
 
             Text(mora.surface)
-                .font(style.baseFont)
+                .font(baseFont)
                 .foregroundStyle(baseColor)
         }
         .frame(width: plainMoraWidth(mora))
@@ -1164,24 +945,24 @@ private struct AccentWordMark: View {
     }
 
     private func plainMoraWidth(_ mora: AccentWordAnnotation.Mora) -> CGFloat {
-        CGFloat(max(mora.surface.count, 1)) * baseUnitWidth
+        width(of: mora.surface, fontSize: baseFontSize)
     }
 
     private var annotatedReadingWidths: [CGFloat] {
         distributedWidths(
-            weights: layout.annotatedUnits.map { CGFloat(max($0.reading.count, 1)) * rubyUnitWidth },
+            weights: layout.annotatedUnits.map { width(of: $0.reading, fontSize: readingFontSize) },
             totalWidth: annotationWidth
         )
     }
 
     private var annotationWidth: CGFloat {
         let readingWidth = layout.annotatedUnits.reduce(CGFloat.zero) {
-            $0 + (CGFloat(max($1.reading.count, 1)) * rubyUnitWidth)
+            $0 + width(of: $1.reading, fontSize: readingFontSize)
         }
         let surfaceWidth = layout.annotatedSurface.reduce(CGFloat.zero) {
-            $0 + (CGFloat(max($1.count, 1)) * baseUnitWidth)
+            $0 + width(of: $1, fontSize: baseFontSize)
         }
-        return max(readingWidth, surfaceWidth, baseUnitWidth)
+        return max(readingWidth, surfaceWidth)
     }
 
     private func distributedWidths(weights: [CGFloat], totalWidth: CGFloat) -> [CGFloat] {
@@ -1212,7 +993,7 @@ private struct AccentWordAnnotation {
     init(word: AccentWord) {
         let surfaceSegments = KanaReading.syllables(in: word.surface)
 
-        if KanaReading.isKanaSurface(word.surface) {
+        if KanaReading.isKanaSurface(word.surface), word.reading.isEmpty || word.reading == word.surface {
             prefixMoras = surfaceSegments.enumerated().map { index, segment in
                 Mora(
                     surface: segment,
@@ -1283,9 +1064,10 @@ private struct ReadingEditorSheet: View {
     let text: AppText
     let onSave: (String, Int) -> Void
     @Environment(\.dismiss) private var dismiss
-    @FocusState private var isReadingFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
     @State private var reading: String
     @State private var accentPosition: Int
+    @State private var confirmsDiscard = false
 
     init(target: ReadingEditTarget, text: AppText, onSave: @escaping (String, Int) -> Void) {
         self.target = target
@@ -1298,25 +1080,23 @@ private struct ReadingEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    VStack(alignment: .leading, spacing: AkumaTheme.space1) {
-                        Text(target.surface)
-                            .font(.title2.weight(.semibold))
-                        Text(target.reading)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                Section(text.pitchPreview) {
+                    ScrollView(.horizontal) {
+                        AccentWordMark(word: previewWord, showAccent: true, isDarkResult: colorScheme == .dark, style: .result)
+                            .fixedSize()
+                            .padding(.vertical, AkumaTheme.space2)
                     }
-                    .accessibilityElement(children: .combine)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(target.surface), \(normalizedReading), \(text.accentLabel(for: accentPosition))")
                 }
 
                 Section(text.reading) {
                     TextField(text.reading, text: $reading)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .focused($isReadingFocused)
                         .submitLabel(.done)
                         .onSubmit(save)
-
                     if !isReadingValid {
                         Label(text.furiganaInputWarning, systemImage: "exclamationmark.circle")
                             .font(.footnote)
@@ -1324,52 +1104,73 @@ private struct ReadingEditorSheet: View {
                     }
                 }
 
-                Section(text.accent) {
+                Section {
+                    if !moras.isEmpty {
+                        FlowLayout(spacing: 8, lineSpacing: 8) {
+                            ForEach(Array(moras.enumerated()), id: \.offset) { index, mora in
+                                Button { accentPosition = index + 1 } label: {
+                                    Text(mora)
+                                        .font(.title3)
+                                        .frame(minWidth: 44, minHeight: 44)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(accentPosition == index + 1 ? AkumaTheme.red : AkumaTheme.green)
+                                .accessibilityLabel("\(mora), \(text.dropAfter(index + 1))")
+                                .accessibilityAddTraits(accentPosition == index + 1 ? .isSelected : [])
+                            }
+                        }
+                    }
                     Picker(text.accent, selection: $accentPosition) {
                         Text(text.accentFollowPrevious).tag(-1)
                         Text(text.accentNoDrop).tag(0)
-                        ForEach(1...max(syllableCount, 1), id: \.self) { position in
-                            Text(text.dropAfter(position)).tag(position)
+                        ForEach(moras.indices, id: \.self) { index in
+                            Text(text.dropAfter(index + 1)).tag(index + 1)
                         }
                     }
                     .pickerStyle(.menu)
+                } header: {
+                    Text(text.accent)
+                } footer: {
+                    Text(text.tapMoraHint)
                 }
             }
             .navigationTitle(text.editReading)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(text.cancel) { dismiss() }
+                    Button(text.cancel) {
+                        if hasChanges { confirmsDiscard = true }
+                        else { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(text.done, action: save)
-                        .disabled(!isReadingValid)
+                    Button(text.done, action: save).disabled(!isReadingValid)
                 }
             }
+            .confirmationDialog(text.discardChangesTitle, isPresented: $confirmsDiscard, titleVisibility: .visible) {
+                Button(text.discardChanges, role: .destructive) { dismiss() }
+                Button(text.keepEditing, role: .cancel) {}
+            }
         }
-        .task {
-            isReadingFocused = true
+        .interactiveDismissDisabled(hasChanges)
+        .onChange(of: reading) { _, _ in
+            accentPosition = min(accentPosition, moras.count)
         }
     }
 
-    private var normalizedReading: String {
-        KanaReading.normalized(reading)
-    }
-
-    private var isReadingValid: Bool {
-        KanaReading.isValid(normalizedReading)
-    }
-
-    private var syllableCount: Int {
-        KanaReading.syllables(in: normalizedReading).count
+    private var normalizedReading: String { KanaReading.normalized(reading) }
+    private var isReadingValid: Bool { KanaReading.isValid(normalizedReading) }
+    private var moras: [String] { KanaReading.syllables(in: normalizedReading) }
+    private var hasChanges: Bool { reading != target.reading || accentPosition != target.accentPosition }
+    private var previewWord: AccentWord {
+        var word = AccentWord(surface: target.surface, units: [])
+        word.apply(reading: normalizedReading, accentPosition: accentPosition)
+        return word
     }
 
     private func save() {
-        guard isReadingValid else {
-            return
-        }
-
-        onSave(normalizedReading, min(accentPosition, max(syllableCount, 0)))
+        guard isReadingValid else { return }
+        onSave(normalizedReading, min(accentPosition, moras.count))
         dismiss()
     }
 }
@@ -1411,6 +1212,8 @@ private struct ResultActions: View {
     let onRedo: () -> Void
     let onRestore: () -> Void
     let onEdit: (() -> Void)?
+    let guideLabel: String
+    let onOpenGuide: () -> Void
     @State private var isRestoreConfirmationVisible = false
     @State private var sharePayload: SharePayload?
 
@@ -1422,12 +1225,13 @@ private struct ResultActions: View {
         HStack(spacing: isCompact ? 0 : AkumaTheme.space2) {
             if let onEdit {
                 Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 18, weight: .semibold))
-                        .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
+                    Label(text.editInput, systemImage: "pencil")
+                        .font(.body)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(minHeight: 44)
+                        .padding(.horizontal, AkumaTheme.space2)
                 }
-                .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
-                .accessibilityLabel(text.editInput)
+                .buttonStyle(.plain)
             }
 
             Button {
@@ -1442,7 +1246,7 @@ private struct ResultActions: View {
                         showAccent ? text.hideAccent : text.showAccent,
                         systemImage: showAccent ? "eye" : "eye.slash"
                     )
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.subheadline)
                         .lineLimit(1)
                         .frame(height: AkumaTheme.actionControlSize)
                         .padding(.horizontal, AkumaTheme.space3)
@@ -1460,7 +1264,7 @@ private struct ResultActions: View {
                         .frame(width: AkumaTheme.actionControlSize, height: AkumaTheme.actionControlSize)
                 } else {
                     Label(text.share, systemImage: "square.and.arrow.up")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.subheadline)
                         .lineLimit(1)
                         .frame(height: AkumaTheme.actionControlSize)
                         .padding(.horizontal, AkumaTheme.space3)
@@ -1469,8 +1273,9 @@ private struct ResultActions: View {
             .buttonStyle(PanelButtonStyle(isDark: isDarkResult))
             .accessibilityLabel(text.share)
 
-            if canUndo || canRedo || canRestore {
+            Group {
                 Menu {
+                    Button(action: onOpenGuide) { Label(guideLabel, systemImage: "questionmark.circle") }
                     Section {
                         if canUndo {
                             Button(action: onUndo) {
@@ -1504,8 +1309,7 @@ private struct ResultActions: View {
             }
         }
         .padding(.horizontal, isCompact ? AkumaTheme.space4 : AkumaTheme.space5)
-        .padding(.top, AkumaTheme.space4)
-        .padding(.bottom, AkumaTheme.space5)
+        .padding(.vertical, AkumaTheme.space2)
         .confirmationDialog(
             text.restoreAllEditsTitle,
             isPresented: $isRestoreConfirmationVisible,
@@ -1678,6 +1482,7 @@ private struct IconButton: View {
 }
 
 private struct PanelButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var isDark = false
     var isActive = false
 
@@ -1686,8 +1491,8 @@ private struct PanelButtonStyle: ButtonStyle {
             .foregroundStyle(foregroundColor)
             .background(background(configuration: configuration))
             .clipShape(RoundedRectangle(cornerRadius: AkumaTheme.radiusMedium, style: .continuous))
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.snappy(duration: 0.15, extraBounce: 0), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.15, extraBounce: 0), value: configuration.isPressed)
     }
 
     private var foregroundColor: Color {
@@ -1709,6 +1514,10 @@ private struct PanelButtonStyle: ButtonStyle {
 
         return Color.clear
     }
+}
+
+private struct FlowBreakKey: LayoutValueKey {
+    static let defaultValue = false
 }
 
 private struct FlowLayout: Layout {
@@ -1733,7 +1542,7 @@ private struct FlowLayout: Layout {
                     x: bounds.minX + result.positions[offset].x,
                     y: bounds.minY + result.positions[offset].y
                 ),
-                proposal: .unspecified
+                proposal: ProposedViewSize(width: min(subviews[index].sizeThatFits(.unspecified).width, bounds.width), height: nil)
             )
         }
     }
@@ -1747,7 +1556,16 @@ private struct FlowLayout: Layout {
         var measuredWidth: CGFloat = 0
 
         for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
+            let idealSize = subviews[index].sizeThatFits(.unspecified)
+            if subviews[index][FlowBreakKey.self] {
+                positions.append(CGPoint(x: x, y: y))
+                measuredWidth = max(measuredWidth, x)
+                y += (x > 0 ? lineHeight : idealSize.height) + lineSpacing
+                x = 0
+                lineHeight = 0
+                continue
+            }
+            let size = subviews[index].sizeThatFits(ProposedViewSize(width: min(idealSize.width, availableWidth), height: nil))
 
             if x > 0, x + size.width > availableWidth {
                 measuredWidth = max(measuredWidth, x - spacing)
@@ -1767,172 +1585,6 @@ private struct FlowLayout: Layout {
             CGSize(width: width, height: y + lineHeight),
             positions
         )
-    }
-}
-
-private struct AccentUnit: Equatable {
-    var reading: String
-    var accent: AccentKind
-}
-
-private struct AccentWord: Equatable {
-    let surface: String
-    var units: [AccentUnit]
-    var isLineBreak = false
-
-    init(surface: String, units: [AccentUnit], isLineBreak: Bool = false) {
-        self.surface = surface
-        self.units = units
-        self.isLineBreak = isLineBreak
-    }
-
-    var reading: String {
-        units.map(\.reading).joined()
-    }
-
-    var editableReading: String {
-        if !reading.isEmpty {
-            return reading
-        }
-
-        return KanaReading.isValid(surface) ? surface : ""
-    }
-
-    var accentPosition: Int {
-        if let dropIndex = units.firstIndex(where: { $0.accent == .drop }) {
-            return dropIndex + 1
-        }
-
-        return units.contains(where: { $0.accent == .flat }) ? 0 : -1
-    }
-
-    var nextAccentPosition: Int {
-        let count = max(units.count, 1)
-        if accentPosition < 0 {
-            return 0
-        }
-        if accentPosition < count {
-            return accentPosition + 1
-        }
-        return -1
-    }
-
-    mutating func apply(reading: String, accentPosition: Int) {
-        let normalizedReading = KanaReading.normalized(reading)
-        let syllables = KanaReading.syllables(in: normalizedReading)
-        let unitCount = max(syllables.count, 1)
-        let hidesReading = KanaReading.isKanaSurface(surface)
-
-        units = (0..<unitCount).map { index in
-            let accent: AccentKind
-            if accentPosition < 0 {
-                accent = .none
-            } else if accentPosition == 0 {
-                accent = .flat
-            } else if index < accentPosition - 1 {
-                accent = .flat
-            } else if index == accentPosition - 1 {
-                accent = .drop
-            } else {
-                accent = .none
-            }
-
-            return AccentUnit(
-                reading: hidesReading || syllables.isEmpty ? "" : syllables[index],
-                accent: accent
-            )
-        }
-    }
-
-    var accentIndex: Int {
-        if let dropIndex = units.firstIndex(where: { $0.accent == .drop }) {
-            return dropIndex + 1
-        }
-
-        let highIndices = units.indices.filter { units[$0].accent == .flat }
-        return highIndices.count == 1 && highIndices.first == 0 ? 1 : 0
-    }
-}
-
-private enum AccentKind: Hashable {
-    case none
-    case flat
-    case drop
-
-    init(apiValue: Int) {
-        switch apiValue {
-        case 1:
-            self = .flat
-        case 2:
-            self = .drop
-        default:
-            self = .none
-        }
-    }
-
-}
-
-private enum KanaReading {
-    private static let smallKana = Set("ゃゅょァィゥェォャュョヮぁぃぅぇぉ")
-    private static let supplementalCharacters = Set("ーゔゞ゛゜・･")
-
-    static func normalized(_ text: String) -> String {
-        text
-            .precomposedStringWithCanonicalMapping
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    static func isValid(_ text: String) -> Bool {
-        text.isEmpty || text.allSatisfy(isReadingCharacter)
-    }
-
-    static func isKanaSurface(_ text: String) -> Bool {
-        let normalizedText = text.precomposedStringWithCanonicalMapping
-        guard !normalizedText.isEmpty else {
-            return false
-        }
-
-        let punctuation = CharacterSet(charactersIn: "　、。・「」『』（）《》【】！？：；—…‥〜")
-        return normalizedText.allSatisfy { character in
-            isReadingCharacter(character)
-                || character.unicodeScalars.allSatisfy(punctuation.contains)
-        }
-    }
-
-    static func syllables(in text: String) -> [String] {
-        let characters = Array(normalized(text))
-        var result: [String] = []
-        var index = 0
-
-        while index < characters.count {
-            let character = characters[index]
-            if index + 1 < characters.count, smallKana.contains(characters[index + 1]) {
-                result.append(String([character, characters[index + 1]]))
-                index += 2
-            } else {
-                result.append(String(character))
-                index += 1
-            }
-        }
-
-        return result
-    }
-
-    private static func isReadingCharacter(_ character: Character) -> Bool {
-        if supplementalCharacters.contains(character) {
-            return true
-        }
-
-        return character.unicodeScalars.allSatisfy(isKanaScalar)
-    }
-
-    private static func isKanaScalar(_ scalar: Unicode.Scalar) -> Bool {
-        switch scalar.value {
-        case 0x3041...0x3096, 0x30A1...0x30FA:
-            true
-        default:
-            false
-        }
     }
 }
 
@@ -1961,233 +1613,4 @@ private enum ResultExporter {
         .joined()
     }
 
-}
-
-private enum MarkAccentAPI {
-    private static let productionOrigin = "https://akuma.sessatakuma.dev"
-    private static let streamPath = "/api/mark-accent/stream"
-
-    static func analyze(
-        _ text: String,
-        onUpdate: @escaping @MainActor ([AccentWord]) -> Void
-    ) async throws -> [AccentWord] {
-        let endpoint = try streamEndpoint()
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(origin(for: endpoint), forHTTPHeaderField: "Origin")
-        request.httpBody = try JSONEncoder().encode(["text": text])
-
-        let (lines, response) = try await URLSession.shared.bytes(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.invalidResponse
-        }
-
-        var accumulatedWords: [AccentWord] = []
-        var lastChunkIndex = -1
-        for try await line in lines.lines {
-            guard let chunk = try? JSONDecoder().decode(MarkAccentStreamChunk.self, from: Data(line.utf8)),
-                  chunk.status == 200 else {
-                continue
-            }
-
-            if chunk.subchunk == 0 {
-                let lineBreaks = lastChunkIndex < 0 ? chunk.chunk : chunk.chunk - lastChunkIndex
-                accumulatedWords.append(contentsOf: Self.lineBreakWords(count: lineBreaks))
-            }
-            lastChunkIndex = chunk.chunk
-            accumulatedWords.append(contentsOf: chunk.result.map(Self.mapWord))
-            await onUpdate(accumulatedWords)
-        }
-
-        guard !accumulatedWords.isEmpty else {
-            throw APIError.emptyResult
-        }
-
-        return accumulatedWords
-    }
-
-    private static func streamEndpoint() throws -> URL {
-        let configuredOrigin = ProcessInfo.processInfo.environment["AKUMA_API_ORIGIN"] ?? productionOrigin
-        let origin = configuredOrigin.trimmingCharacters(in: .whitespacesAndNewlines).trimmingTrailingSlash()
-        guard let url = URL(string: "\(origin)\(streamPath)") else {
-            throw APIError.invalidURL
-        }
-
-        return url
-    }
-
-    private static func origin(for url: URL) -> String {
-        var components = URLComponents()
-        components.scheme = url.scheme
-        components.host = url.host
-        components.port = url.port
-        return components.string ?? productionOrigin
-    }
-
-    private static func mapWord(_ word: MarkAccentResultWord) -> AccentWord {
-        let hidesReading = KanaReading.isKanaSurface(word.surface)
-        let units = word.accent.map { entry in
-            AccentUnit(
-                reading: hidesReading || entry.furigana == word.surface ? "" : entry.furigana,
-                accent: AccentKind(apiValue: entry.accentMarkingType)
-            )
-        }
-
-        if !units.isEmpty {
-            return AccentWord(surface: word.surface, units: units)
-        }
-
-        let reading = word.furigana == word.surface ? "" : word.furigana
-        return AccentWord(surface: word.surface, units: [AccentUnit(reading: reading, accent: .none)])
-    }
-
-    private static func lineBreakWords(count: Int) -> [AccentWord] {
-        guard count > 0 else {
-            return []
-        }
-
-        return Array(
-            repeating: AccentWord(surface: "", units: [], isLineBreak: true),
-            count: count
-        )
-    }
-
-    private enum APIError: Error {
-        case invalidResponse
-        case invalidURL
-        case emptyResult
-    }
-}
-
-private struct MarkAccentStreamChunk: Decodable {
-    let chunk: Int
-    let subchunk: Int
-    let status: Int
-    let result: [MarkAccentResultWord]
-}
-
-private struct MarkAccentResultWord: Decodable {
-    let surface: String
-    let furigana: String
-    let accent: [MarkAccentEntry]
-}
-
-private struct MarkAccentEntry: Decodable {
-    let furigana: String
-    let accentMarkingType: Int
-
-    private enum CodingKeys: String, CodingKey {
-        case furigana
-        case accentMarkingType = "accent_marking_type"
-    }
-}
-
-private extension String {
-    func trimmingTrailingSlash() -> String {
-        var value = self
-        while value.hasSuffix("/") {
-            value.removeLast()
-        }
-        return value
-    }
-}
-
-private enum MockAccentAnalyzer {
-    static func analyze(_ text: String) -> [AccentWord] {
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedText.isEmpty else {
-            return []
-        }
-
-        if trimmedText.contains("今日は朝から猫") {
-            return [
-                word("今日", "きょう", [.flat, .flat]),
-                word("は", "は", [.none]),
-                word("朝", "あさ", [.flat, .drop]),
-                word("から", "から", [.none, .none]),
-                word("猫", "ねこ", [.flat, .drop]),
-                word("が", "が", [.none]),
-                word("ベランダ", "べらんだ", [.flat, .flat, .flat, .flat]),
-                word("で", "で", [.none]),
-                word("日向", "ひなた", [.flat, .flat, .drop]),
-                word("ぼっこ", "ぼっこ", [.flat, .flat, .flat]),
-                word("して", "して", [.none, .none]),
-                word("いた", "いた", [.flat, .drop]),
-                word("ので", "ので", [.none, .none]),
-                word("、", "", [.none]),
-                word("つい", "つい", [.flat, .flat]),
-                word("一緒", "いっしょ", [.flat, .flat, .drop]),
-                word("に", "に", [.none]),
-                word("ゴロゴロ", "ごろごろ", [.flat, .flat, .flat, .flat]),
-                word("して", "して", [.none, .none]),
-                word("しまった", "しまった", [.flat, .flat, .flat, .drop]),
-                word("。", "", [.none]),
-            ]
-        }
-
-        return fallbackWords(for: text)
-    }
-
-    private static func fallbackWords(for text: String) -> [AccentWord] {
-        var result: [AccentWord] = []
-        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
-
-        lines.enumerated().forEach { index, line in
-            let lineText = String(line)
-            let tokenizer = NLTokenizer(unit: .word)
-            tokenizer.string = lineText
-            var cursor = lineText.startIndex
-
-            tokenizer.enumerateTokens(in: lineText.startIndex..<lineText.endIndex) { range, _ in
-                if cursor < range.lowerBound {
-                    appendFallbackSegment(String(lineText[cursor..<range.lowerBound]), to: &result)
-                }
-                appendFallbackSegment(String(lineText[range]), to: &result)
-                cursor = range.upperBound
-                return true
-            }
-
-            if cursor < lineText.endIndex {
-                appendFallbackSegment(String(lineText[cursor...]), to: &result)
-            }
-
-            if index < lines.count - 1 {
-                result.append(AccentWord(surface: "", units: [], isLineBreak: true))
-            }
-        }
-
-        return result
-    }
-
-    private static func appendFallbackSegment(_ surface: String, to result: inout [AccentWord]) {
-        guard !surface.isEmpty else {
-            return
-        }
-
-        let unitCount = KanaReading.isKanaSurface(surface)
-            ? max(KanaReading.syllables(in: surface).count, 1)
-            : 1
-        result.append(
-            AccentWord(
-                surface: surface,
-                units: Array(
-                    repeating: AccentUnit(reading: "", accent: .none),
-                    count: unitCount
-                )
-            )
-        )
-    }
-
-    private static func word(_ surface: String, _ reading: String, _ accents: [AccentKind]) -> AccentWord {
-        let syllables = KanaReading.syllables(in: reading)
-        let hidesReading = KanaReading.isKanaSurface(surface)
-        let units = accents.enumerated().map { index, accent in
-            AccentUnit(
-                reading: hidesReading ? "" : (index < syllables.count ? syllables[index] : ""),
-                accent: accent
-            )
-        }
-        return AccentWord(surface: surface, units: units)
-    }
 }
